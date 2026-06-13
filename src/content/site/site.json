@@ -8,7 +8,9 @@
         "tamil_names": "சங்கர் & பிரியா",
         "tamil_thanks": "நன்றி",
         "footer_note": "We can't wait to celebrate with you.",
-        "upload_url": "",
-        "photo_qr_url": ""
+        "upload_url": "https://drive.sankaranarayan.in/u/d/66c9e88323ee472f8828/",
+        "upload_parent_dir": "/Priya-Sankar Wedding Photos/",
+        "photo_qr_url": "",
+        "rsvp_webhook_url": "https://workflow.sankars.in/webhook/rsvp"
     }
 ]

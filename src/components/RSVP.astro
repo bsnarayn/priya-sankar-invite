@@ -1,8 +1,11 @@
 ---
-
+interface Props {
+    site: { rsvp_webhook_url?: string };
+}
+const { site } = Astro.props;
 ---
 
-<section id="rsvp">
+<section id="rsvp" data-webhook-url={site.rsvp_webhook_url ?? ""}>
     <div class="inner">
         <span class="eyebrow">RSVP</span>
         <h2 class="sec-heading">Will you</h2>
@@ -49,6 +52,19 @@
                     class="field-input"
                 />
             </div>
+            <div
+                style="position:absolute;left:-9999px;top:-9999px;"
+                aria-hidden="true"
+            >
+                <label for="rsvp-website">Leave this field empty</label>
+                <input
+                    id="rsvp-website"
+                    name="website"
+                    type="text"
+                    tabindex="-1"
+                    autocomplete="off"
+                />
+            </div>
             <div class="btn-row">
                 <button id="rsvp-submit" class="btn-primary"
                     >Confirm attendance</button
@@ -71,37 +87,103 @@
             </div>
             <p
                 id="rsvp-success"
-                style="display:none; font-family:'Cormorant Garant',serif; font-style:italic; font-size:14px; color:#C4622D;"
+                style="display:none; font-family:'Cormorant Garant',serif; font-style:italic; font-size:14px; color:#146B72;"
             >
                 Thank you — we'll see you there.
+            </p>
+            <p
+                id="rsvp-error"
+                style="display:none; font-family:'Jost',sans-serif; font-size:12px; color:#B33E66;"
+            >
             </p>
         </div>
     </div>
 </section>
 
 <script>
-    const submitBtn = document.getElementById("rsvp-submit");
+    const section = document.getElementById("rsvp") as HTMLElement | null;
+    const webhookUrl = section?.dataset.webhookUrl?.trim();
+
+    const submitBtn = document.getElementById(
+        "rsvp-submit",
+    ) as HTMLButtonElement | null;
     const calBtn = document.getElementById("cal-btn");
     const success = document.getElementById("rsvp-success");
+    const error = document.getElementById("rsvp-error");
 
-    submitBtn?.addEventListener("click", () => {
+    const originalLabel = submitBtn?.textContent ?? "Confirm attendance";
+
+    submitBtn?.addEventListener("click", async () => {
         const name = (
             document.getElementById("rsvp-name") as HTMLInputElement
         )?.value.trim();
-        const guests = (
+        const guestsRaw = (
             document.getElementById("rsvp-guests") as HTMLInputElement
-        )?.value;
+        )?.value.trim();
         const email = (
             document.getElementById("rsvp-email") as HTMLInputElement
         )?.value.trim();
+
+        if (error) error.style.display = "none";
+
+        const honeypot = (
+            document.getElementById("rsvp-website") as HTMLInputElement
+        )?.value;
+
+        if (honeypot) {
+            // Bot filled the hidden field — pretend success, do nothing else
+            submitBtn.textContent = "Confirmed ✓";
+            submitBtn.disabled = true;
+            if (success) success.style.display = "block";
+            return;
+        }
+
         if (!name) {
             alert("Please enter your name.");
             return;
         }
-        console.log("RSVP:", { name, guests, email });
-        (submitBtn as HTMLButtonElement).textContent = "Confirmed ✓";
-        (submitBtn as HTMLButtonElement).disabled = true;
-        if (success) success.style.display = "block";
+
+        const guests = guestsRaw ? parseInt(guestsRaw, 10) : 1;
+
+        if (!webhookUrl) {
+            console.warn("RSVP webhook URL not configured in site.json.");
+            if (error) {
+                error.textContent =
+                    "RSVP submission isn't set up yet — please message the couple directly for now.";
+                error.style.display = "block";
+            }
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Sending...";
+
+        try {
+            const res = await fetch(webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name,
+                    guests,
+                    email,
+                    timestamp: new Date().toISOString(),
+                }),
+            });
+
+            if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
+            submitBtn.textContent = "Confirmed ✓";
+            if (success) success.style.display = "block";
+        } catch (err) {
+            console.error("RSVP submission failed:", err);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel;
+            if (error) {
+                error.textContent =
+                    "Something went wrong sending your RSVP — please try again, or message us directly.";
+                error.style.display = "block";
+            }
+        }
     });
 
     calBtn?.addEventListener("click", () => {

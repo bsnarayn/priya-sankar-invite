@@ -1,11 +1,19 @@
 ---
 interface Props {
-    site: { upload_url?: string; photo_qr_url?: string };
+    site: {
+        upload_url?: string;
+        photo_qr_url?: string;
+        upload_parent_dir?: string;
+    };
 }
 const { site } = Astro.props;
 ---
 
-<section id="photos">
+<section
+    id="photos"
+    data-upload-url={site.upload_url ?? ""}
+    data-upload-parent-dir={site.upload_parent_dir ?? "/"}
+>
     <div class="inner">
         <span class="eyebrow">Photos</span>
         <h2 class="sec-heading">Share your</h2>
@@ -32,11 +40,11 @@ const { site } = Astro.props;
                     ></path><circle cx="12" cy="13" r="4"></circle>
                 </svg>
                 <p class="upload-title">Drop your photos here</p>
-                <p class="upload-sub">JPEG or PNG · Max 5MB per photo</p>
+                <p class="upload-sub">Photos from your phone · Max 5MB each</p>
                 <input
                     id="file-input"
                     type="file"
-                    accept="image/jpeg,image/png"
+                    accept="image/*"
                     multiple
                     style="display:none;"
                 />
@@ -74,8 +82,14 @@ const { site } = Astro.props;
 </section>
 
 <script>
+    const section = document.getElementById("photos") as HTMLElement | null;
+    const shareUrl = section?.dataset.uploadUrl?.trim();
+    const parentDir = section?.dataset.uploadParentDir?.trim() || "/";
+
     const uploadBtn = document.getElementById("upload-btn");
-    const fileInput = document.getElementById("file-input") as HTMLInputElement;
+    const fileInput = document.getElementById(
+        "file-input",
+    ) as HTMLInputElement | null;
     const uploadZone = document.getElementById("upload-zone");
     const status = document.getElementById("upload-status");
 
@@ -96,24 +110,76 @@ const { site } = Astro.props;
         if (fileInput.files) handleFiles(fileInput.files);
     });
 
-    function handleFiles(files: FileList) {
-        const valid = Array.from(files).filter(
-            (f) => f.size <= 5 * 1024 * 1024,
-        );
-        if (!valid.length) {
-            showStatus("Files exceed 5MB limit.");
-            return;
-        }
-        showStatus(`${valid.length} photo(s) selected — upload coming soon.`);
-        console.log(
-            "Files:",
-            valid.map((f) => f.name),
-        );
-    }
-
     function showStatus(msg: string) {
         if (!status) return;
         status.textContent = msg;
         status.style.display = "block";
+    }
+
+    // https://drive.sankaranarayan.in/u/d/<token>/
+    //   -> https://drive.sankaranarayan.in/api/v2.1/upload-links/<token>/upload/
+    function uploadLinkEndpoint(): string | null {
+        if (!shareUrl) return null;
+        const match = shareUrl.match(/\/u\/d\/([^/]+)/);
+        if (!match) return null;
+        const token = match[1];
+        const origin = new URL(shareUrl).origin;
+        return `${origin}/api/v2.1/upload-links/${token}/upload/`;
+    }
+
+    async function handleFiles(files: FileList) {
+        const valid = Array.from(files).filter(
+            (f) => f.size <= 5 * 1024 * 1024,
+        );
+        const skipped = files.length - valid.length;
+
+        if (!valid.length) {
+            showStatus("Files exceed 5MB limit.");
+            return;
+        }
+
+        const endpoint = uploadLinkEndpoint();
+        if (!endpoint) {
+            showStatus(
+                "Upload isn't set up yet — please use the QR code at the venue.",
+            );
+            return;
+        }
+
+        showStatus(`Uploading ${valid.length} photo(s)...`);
+
+        try {
+            const linkRes = await fetch(endpoint);
+            if (!linkRes.ok) {
+                throw new Error(`Could not get upload link: ${linkRes.status}`);
+            }
+            const { upload_link } = await linkRes.json();
+            if (!upload_link) {
+                throw new Error("No upload_link in response");
+            }
+
+            const formData = new FormData();
+            formData.append("parent_dir", parentDir);
+            formData.append("replace", "0");
+            valid.forEach((f) => formData.append("file", f));
+
+            const uploadRes = await fetch(`${upload_link}?ret-json=1`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!uploadRes.ok) {
+                throw new Error(`Upload failed: ${uploadRes.status}`);
+            }
+
+            let msg = `${valid.length} photo(s) uploaded — thank you!`;
+            if (skipped > 0) msg += ` (${skipped} skipped — over 5MB)`;
+            showStatus(msg);
+            if (fileInput) fileInput.value = "";
+        } catch (err) {
+            console.error("Photo upload failed:", err);
+            showStatus(
+                "Upload failed — please try the QR code at the venue, or try again.",
+            );
+        }
     }
 </script>

@@ -44,6 +44,8 @@ const site = defineCollection({
         footer_note: z.string(),
         upload_url: z.string().optional(),
         photo_qr_url: z.string().optional(),
+        rsvp_webhook_url: z.string().optional(),
+        upload_parent_dir: z.string().optional(),
     }),
 });
 
