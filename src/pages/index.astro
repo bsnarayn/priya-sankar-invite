@@ -1,17 +1,35 @@
 ---
+import { getEntry } from "astro:content";
+import Base from "../layouts/Base.astro";
+import Entry from "../components/Entry.astro";
+import Hero from "../components/Hero.astro";
+import Story from "../components/Story.astro";
+import Profiles from "../components/Profiles.astro";
+import EventDetails from "../components/EventDetails.astro";
+import RSVP from "../components/RSVP.astro";
+import PhotoUpload from "../components/PhotoUpload.astro";
+import Footer from "../components/Footer.astro";
+import PlaneNav from "../components/PlaneNav.astro";
 
+const siteEntry = await getEntry("site", "site");
+const eventEntry = await getEntry("event", "event");
+
+if (!siteEntry || !eventEntry) throw new Error("Missing content entries");
+
+const site = siteEntry.data;
+const event = eventEntry.data;
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base>
+	<Entry />
+	<main id="invite" style="opacity:0;transform:translateY(16px);">
+		<Hero site={site} event={event} />
+		<Story />
+		<Profiles />
+		<EventDetails event={event} />
+		<RSVP />
+		<PhotoUpload site={site} />
+		<Footer site={site} />
+	</main>
+	<PlaneNav />
+</Base>

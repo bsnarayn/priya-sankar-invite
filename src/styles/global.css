@@ -1,0 +1,74 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garant:ital,wght@0,300;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&family=Catamaran:wght@300;400&display=swap");
+
+
+@theme {
+    --font-family-display: "Italiana", serif;
+    --font-family-script: "Great Vibes", cursive;
+    --font-family-serif: "Cormorant Garant", serif;
+    --font-family-sans: "Jost", sans-serif;
+    --font-family-tamil: "Catamaran", sans-serif;
+
+    --color-base: #fffbf6;
+    --color-surface: #fdf6ee;
+    --color-card: #ede4d8;
+    --color-border: #e8ddd2;
+    --color-border-soft: #ede4d8;
+    --color-accent: #146b72;
+    --color-accent-dark: #7d1a6b;
+    --color-accent-gold: #c9a227;
+    --color-text-primary: #3a2e28;
+    --color-text-body: #5c4d43;
+    --color-text-muted: #7a6a5e;
+    --color-text-faint: #b0998a;
+    --color-footer-bg: #f5ead8;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+body {
+    background-color: var(--color-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-sans);
+    font-weight: 300;
+    overflow-x: hidden;
+}
+
+.font-display {
+    font-family: "Italiana", serif;
+}
+
+.font-script {
+    font-family: "Great Vibes", cursive;
+}
+
+.font-serif {
+    font-family: "Cormorant Garant", serif;
+}
+
+.font-sans {
+    font-family: "Jost", sans-serif;
+}
+
+.font-tamil {
+    font-family: "Catamaran", sans-serif;
+}
+
+body.no-scroll {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+}

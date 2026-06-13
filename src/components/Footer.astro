@@ -1,0 +1,92 @@
+---
+interface Props {
+    site: {
+        groom_name: string;
+        bride_name: string;
+        tamil_thanks: string;
+        footer_note: string;
+    };
+}
+const { site } = Astro.props;
+---
+
+<div
+    id="curtain-left"
+    style="position:fixed;top:0;left:0;height:100%;width:50%;z-index:40;background:#FDF6EE;transform:translateX(-100%);pointer-events:none;"
+>
+</div>
+<div
+    id="curtain-right"
+    style="position:fixed;top:0;right:0;height:100%;width:50%;z-index:40;background:#FDF6EE;transform:translateX(100%);pointer-events:none;"
+>
+</div>
+
+<footer id="footer">
+    <div class="footer-rule"></div>
+    <span class="footer-tamil">{site.tamil_thanks}</span>
+    <span class="footer-script">with love &amp; gratitude</span>
+    <p class="footer-names">
+        {site.groom_name}
+        <span class="footer-amp">&amp;</span>
+        {site.bride_name}
+    </p>
+    <p class="footer-note">{site.footer_note}</p>
+    <div class="footer-rule" style="margin-top:28px;opacity:0.3;"></div>
+</footer>
+
+<script>
+    import { gsap } from "gsap";
+
+    const footer = document.getElementById("footer");
+    const curtainL = document.getElementById("curtain-left");
+    const curtainR = document.getElementById("curtain-right");
+    const entryScreen = document.getElementById("entry-screen");
+    const invite = document.getElementById("invite");
+    let closed = false;
+
+    function closeDoors() {
+        closed = true;
+        gsap.to([curtainL, curtainR], {
+            x: 0,
+            duration: 1.0,
+            ease: "power3.inOut",
+            onComplete: () => {
+                window.scrollTo({ top: 0, behavior: "instant" });
+                gsap.set(invite, { opacity: 0, y: 16 });
+                if (entryScreen) {
+                    gsap.set(entryScreen, { display: "flex", opacity: 1 });
+                }
+                if (typeof (window as any).__resetEntry === "function") {
+                    (window as any).__resetEntry();
+                }
+                setTimeout(() => {
+                    gsap.set(curtainL, { x: "-100%" });
+                    gsap.set(curtainR, { x: "100%" });
+                    closed = false;
+                }, 50);
+            },
+        });
+    }
+
+    let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting && !closed) {
+                    if (closeTimer) clearTimeout(closeTimer);
+                    closeTimer = setTimeout(() => {
+                        closeDoors();
+                        closeTimer = null;
+                    }, 5000);
+                } else if (closeTimer) {
+                    clearTimeout(closeTimer);
+                    closeTimer = null;
+                }
+            });
+        },
+        { threshold: 0.6 },
+    );
+
+    if (footer) observer.observe(footer);
+</script>

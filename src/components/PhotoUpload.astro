@@ -1,0 +1,119 @@
+---
+interface Props {
+    site: { upload_url?: string; photo_qr_url?: string };
+}
+const { site } = Astro.props;
+---
+
+<section id="photos">
+    <div class="inner">
+        <span class="eyebrow">Photos</span>
+        <h2 class="sec-heading">Share your</h2>
+        <span class="sec-script">moments</span>
+        <p class="sec-sub">
+            Upload from the celebration — straight into our private album. No
+            social media.
+        </p>
+
+        <div class="photo-grid">
+            <div class="upload-zone" id="upload-zone">
+                <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#146B72"
+                    stroke-width="1"
+                    stroke-linecap="round"
+                    style="margin:0 auto 12px;opacity:0.6;display:block;"
+                >
+                    <path
+                        d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+                    ></path><circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <p class="upload-title">Drop your photos here</p>
+                <p class="upload-sub">JPEG or PNG · Max 5MB per photo</p>
+                <input
+                    id="file-input"
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    multiple
+                    style="display:none;"
+                />
+                <button
+                    id="upload-btn"
+                    class="btn-primary"
+                    style="margin-top:16px;">Choose photos</button
+                >
+                <p
+                    id="upload-status"
+                    style="display:none; margin-top:12px; font-family:'Jost',sans-serif; font-size:12px; color:#7A6A5E;"
+                >
+                </p>
+            </div>
+
+            <div class="qr-card">
+                <p class="qr-label">Scan to upload</p>
+                <div class="qr-box">
+                    {
+                        site.photo_qr_url ? (
+                            <img
+                                src={site.photo_qr_url}
+                                alt="Upload QR"
+                                style="width:100%;padding:8px;"
+                            />
+                        ) : (
+                            "QR code"
+                        )
+                    }
+                </div>
+                <p class="qr-note">Point your camera here at the venue</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const uploadBtn = document.getElementById("upload-btn");
+    const fileInput = document.getElementById("file-input") as HTMLInputElement;
+    const uploadZone = document.getElementById("upload-zone");
+    const status = document.getElementById("upload-status");
+
+    uploadBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        fileInput?.click();
+    });
+    uploadZone?.addEventListener("click", () => fileInput?.click());
+
+    uploadZone?.addEventListener("dragover", (e) => {
+        e.preventDefault();
+    });
+    uploadZone?.addEventListener("drop", (e: DragEvent) => {
+        e.preventDefault();
+        if (e.dataTransfer?.files) handleFiles(e.dataTransfer.files);
+    });
+    fileInput?.addEventListener("change", () => {
+        if (fileInput.files) handleFiles(fileInput.files);
+    });
+
+    function handleFiles(files: FileList) {
+        const valid = Array.from(files).filter(
+            (f) => f.size <= 5 * 1024 * 1024,
+        );
+        if (!valid.length) {
+            showStatus("Files exceed 5MB limit.");
+            return;
+        }
+        showStatus(`${valid.length} photo(s) selected — upload coming soon.`);
+        console.log(
+            "Files:",
+            valid.map((f) => f.name),
+        );
+    }
+
+    function showStatus(msg: string) {
+        if (!status) return;
+        status.textContent = msg;
+        status.style.display = "block";
+    }
+</script>

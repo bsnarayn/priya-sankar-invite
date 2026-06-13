@@ -1,0 +1,27 @@
+---
+import { getCollection } from "astro:content";
+const couple = await getCollection("couple");
+const groom = couple.find((p) => p.id === "groom");
+const bride = couple.find((p) => p.id === "bride");
+if (!groom || !bride) throw new Error("Missing couple content");
+---
+
+<section id="people">
+  <div class="inner">
+    <span class="eyebrow">The people</span>
+    <h2 class="sec-heading">Behind the</h2>
+    <span class="sec-script">celebration</span>
+
+    <div class="profile-grid">
+      {
+        [groom, bride].map((person) => (
+          <div class="profile-card">
+            <div class={`profile-card profile-card--${person.id}`} />
+            <p class="profile-role">{person.data.role}</p>
+            <p class="profile-bio">"{person.data.bio}"</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,45 @@
+---
+// Persistent plane — bottom right, back to top
+---
+
+<button
+    id="plane-nav"
+    aria-label="Back to top"
+    style="opacity:0;pointer-events:none;transition:opacity 0.5s ease;"
+>
+    <svg
+        width="22"
+        height="22"
+        viewBox="0 0 64 64"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style="transform:rotate(45deg);transition:transform 0.3s ease;"
+    >
+        <path d="M8 32L56 8L44 32L56 56L8 32Z" fill="#146B72" opacity="0.8"
+        ></path>
+    </svg>
+</button>
+
+<script>
+    const btn = document.getElementById(
+        "plane-nav",
+    ) as HTMLButtonElement | null;
+
+    // Show after entry animation clears
+    setTimeout(() => {
+        window.addEventListener("scroll", () => {
+            if (!btn) return;
+            if (window.scrollY > 300) {
+                btn.style.opacity = "1";
+                btn.style.pointerEvents = "auto";
+            } else {
+                btn.style.opacity = "0";
+                btn.style.pointerEvents = "none";
+            }
+        });
+    }, 2000);
+
+    btn?.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+</script>

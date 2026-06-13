@@ -12,6 +12,17 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^6.4.4"
+    "@astrojs/cloudflare": "^13.6.1",
+    "@astrojs/mdx": "^6.0.2",
+    "astro": "^6.4.4",
+    "gsap": "^3.15.0",
+    "howler": "^2.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/howler": "^2.2.13",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0"
   }
 }

@@ -1,0 +1,60 @@
+---
+import { getEntry, render } from "astro:content";
+const story = await getEntry("story", "story");
+if (!story) throw new Error("Missing story content");
+const { Content } = await render(story);
+---
+
+<section id="story">
+    <div class="inner">
+        <span class="eyebrow">The story</span>
+        <h2 class="sec-heading">How we got</h2>
+        <span class="sec-script">here</span>
+
+        <div class="story-card">
+            <div class="story-text">
+                <p class="story-period">{story.data.period}</p>
+                <h3 class="story-title">{story.data.title}</h3>
+                <div class="story-body">
+                    <Content />
+                </div>
+            </div>
+            <div class="story-img">
+                {
+                    story.data.photo ? (
+                        <img
+                            src={story.data.photo}
+                            alt="Our story"
+                            style="width:100%;height:100%;object-fit:cover;"
+                        />
+                    ) : (
+                        <>
+                            <svg
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#C4622D"
+                                stroke-width="1"
+                                stroke-linecap="round"
+                            >
+                                <>
+                                    <rect
+                                        x="3"
+                                        y="3"
+                                        width="18"
+                                        height="18"
+                                        rx="2"
+                                    />
+                                    <circle cx="8.5" cy="8.5" r="1.5" />
+                                    <path d="M21 15l-5-5L5 21" />
+                                </>
+                            </svg>
+                            <span>Your photo here</span>
+                        </>
+                    )
+                }
+            </div>
+        </div>
+    </div>
+</section>
