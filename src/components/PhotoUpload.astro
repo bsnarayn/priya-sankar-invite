@@ -1,4 +1,6 @@
 ---
+import QR from "./QR.astro";
+
 interface Props {
     site: {
         photo_qr_url?: string;
@@ -62,53 +64,23 @@ const { site } = Astro.props;
             </div>
 
             <!-- Right: QR to /camera page -->
-            <!-- Right: QR to /camera page -->
-            <div class="qr-card">
-                <p class="qr-label">Scan to use our camera</p>
-                <div class="qr-box">
-                    <img
-                        id="camera-qr"
-                        alt="Scan to open camera"
-                        style="width:100%;padding:8px;"
-                    />
-                </div>
-                <p class="qr-note">
-                    Opens our disposable camera — 36 shots, uploads straight to
-                    the album
-                </p>
-                <a id="camera-link" href="/camera" class="qr-link">
-                    Open on this device →
-                </a>
-            </div>
+            <QR />
         </div>
     </div>
 </section>
 
 <style>
-    .qr-link {
-        display: block;
-        margin-top: 10px;
-        font-family: "Jost", sans-serif;
-        font-size: 12px;
-        color: #146b72;
-        text-align: center;
-        text-decoration: none;
-    }
-    .qr-link:hover {
-        text-decoration: underline;
+    .upload-zone {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
     }
 </style>
 
 <script>
     import { uploadFiles } from "@lib/immich-upload";
 
-    const cameraUrl = `${window.location.origin}/camera`;
-    const qrImg = document.getElementById(
-        "camera-qr",
-    ) as HTMLImageElement | null;
-    if (qrImg) {
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(cameraUrl)}`;
-    }
     const section = document.getElementById("photos") as HTMLElement | null;
     const immichBase =
         section?.dataset.immichBase?.trim().replace(/\/$/, "") ?? "";

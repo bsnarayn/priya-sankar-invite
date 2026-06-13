@@ -43,11 +43,11 @@ const site = defineCollection({
         tamil_thanks: z.string(),
         footer_note: z.string(),
         upload_url: z.string().optional(),
-        photo_qr_url: z.string().optional(),
         rsvp_webhook_url: z.string().optional(),
         upload_parent_dir: z.string().optional(),
         immich_base_url: z.string().optional(),
         immich_share_slug: z.string().optional(),
+        camera_max_shots: z.number().optional(),
     }),
 });
 

@@ -1,0 +1,158 @@
+---
+import { getCollection } from "astro:content";
+
+const [siteEntry] = await getCollection("site");
+const site = siteEntry.data;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="theme-color" content="#FFFBF6" />
+        <title>Our Camera — {site.groom_name} &amp; {site.bride_name}</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garant:ital,wght@0,300;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&family=Catamaran:wght@300;400&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            html,
+            body {
+                height: 100%;
+                background: #fffbf6;
+                color: #3a2e28;
+                font-family: "Jost", sans-serif;
+                font-weight: 300;
+            }
+            #page {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: space-between;
+                min-height: 100dvh;
+                max-width: 480px;
+                margin: 0 auto;
+                padding: 56px 32px 40px;
+                text-align: center;
+            }
+            .top {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0;
+            }
+            .tamil {
+                font-family: "Catamaran", sans-serif;
+                font-weight: 300;
+                font-size: 13px;
+                letter-spacing: 0.25em;
+                color: #146b72;
+                opacity: 0.7;
+                margin-bottom: 24px;
+            }
+            .names {
+                font-family: "Italiana", serif;
+                font-size: clamp(52px, 15vw, 72px);
+                line-height: 1;
+                color: #3a2e28;
+            }
+            .amp {
+                font-family: "Great Vibes", cursive;
+                color: #146b72;
+                font-size: clamp(40px, 12vw, 56px);
+                display: block;
+                margin: 4px 0;
+            }
+            .intro-monogram {
+                width: 120px;
+                height: 120px;
+                object-fit: contain;
+                margin: 0 auto 28px;
+                display: block;
+            }
+            .tagline {
+                font-family: "Cormorant Garant", serif;
+                font-style: italic;
+                font-weight: 300;
+                font-size: 17px;
+                color: #5c4d43;
+                line-height: 1.85;
+                max-width: 300px;
+            }
+            .bottom {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 14px;
+            }
+            .load-btn {
+                width: 100%;
+                padding: 17px 28px;
+                background: #146b72;
+                color: #fffbf6;
+                border: none;
+                border-radius: 8px;
+                font-family: "Jost", sans-serif;
+                font-size: 12px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                font-weight: 500;
+                cursor: pointer;
+                text-decoration: none;
+                display: block;
+            }
+            .legal {
+                font-family: "Jost", sans-serif;
+                font-size: 10px;
+                color: #b0998a;
+                letter-spacing: 0.05em;
+                line-height: 1.7;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="page">
+            <div class="top">
+                <img
+                    src="/images/logo-monogram.webp"
+                    alt="Priya & Sankar"
+                    class="intro-monogram"
+                />
+                <span class="tamil">{site.tamil_names}</span>
+                <h1 class="names">
+                    {site.groom_name}
+                    <span class="amp">&amp;</span>
+                    {site.bride_name}
+                </h1>
+            </div>
+
+            <div class="centre">
+                <p class="tagline">
+                    Help us fill our album with moments only you can capture.
+                    Every photo goes straight into our shared gallery.
+                </p>
+            </div>
+
+            <div class="bottom">
+                <a href="/camera/shoot" class="load-btn">Load camera</a>
+                <p class="legal">
+                    Photos are added to our private event album<br />and shared
+                    after the celebration.
+                </p>
+            </div>
+        </div>
+    </body>
+</html>

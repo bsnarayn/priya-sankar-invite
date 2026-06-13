@@ -1,0 +1,450 @@
+---
+import { getCollection } from "astro:content";
+
+const [siteEntry] = await getCollection("site");
+const site = siteEntry.data;
+
+const immichBase = (site.immich_base_url ?? "").replace(/\/$/, "");
+const immichSlug = site.immich_share_slug ?? "";
+const MAX_SHOTS = site.camera_max_shots ?? 0; // 0 = unlimited
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="theme-color" content="#FFFBF6" />
+        <title>Our Camera — {site.groom_name} &amp; {site.bride_name}</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garant:ital,wght@0,300;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&family=Catamaran:wght@300;400&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            html,
+            body {
+                height: 100%;
+                background: #fffbf6;
+                color: #3a2e28;
+                font-family: "Jost", sans-serif;
+                font-weight: 300;
+                overscroll-behavior: none;
+            }
+            #app {
+                display: flex;
+                flex-direction: column;
+                min-height: 100dvh;
+                max-width: 480px;
+                margin: 0 auto;
+                padding: 28px 24px 40px;
+                gap: 20px;
+            }
+
+            /* ── Header ── */
+            .cam-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .cam-header-title {
+                font-family: "Jost", sans-serif;
+                font-size: 11px;
+                font-weight: 500;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: #7a6a5e;
+            }
+            .album-link {
+                background: #fdf6ee;
+                border: 0.5px solid #ede4d8;
+                border-radius: 20px;
+                padding: 8px 16px;
+                font-size: 11px;
+                font-weight: 500;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: #146b72;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            /* ── Shots badge (hidden when unlimited) ── */
+            #shots-badge {
+                text-align: center;
+                display: none;
+            }
+            #shots-badge.visible {
+                display: block;
+            }
+            .shots-count {
+                font-family: "Italiana", serif;
+                font-size: 56px;
+                line-height: 1;
+                color: #3a2e28;
+            }
+            .shots-count.low {
+                color: #c4622d;
+            }
+            .shots-count.empty {
+                color: #b0998a;
+            }
+            .shots-label {
+                font-family: "Jost", sans-serif;
+                font-size: 11px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: #7a6a5e;
+                margin-top: 4px;
+            }
+
+            /* ── Camera card ── */
+            #cam-card {
+                flex: 1;
+                background: #fdf6ee;
+                border: 0.5px solid #ede4d8;
+                border-radius: 16px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 14px;
+                padding: 40px 24px;
+                cursor: pointer;
+                text-align: center;
+                transition:
+                    border-color 0.2s,
+                    opacity 0.2s;
+                min-height: 240px;
+                -webkit-tap-highlight-color: transparent;
+            }
+            #cam-card:active:not(.disabled) {
+                border-color: #146b72;
+            }
+            #cam-card.disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+            .cam-icon {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: #146b72;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .cam-title {
+                font-family: "Italiana", serif;
+                font-size: 28px;
+                color: #3a2e28;
+            }
+            .cam-sub {
+                font-family: "Cormorant Garant", serif;
+                font-style: italic;
+                font-weight: 300;
+                font-size: 15px;
+                color: #7a6a5e;
+                line-height: 1.7;
+                max-width: 240px;
+            }
+
+            /* ── Status ── */
+            #status-text {
+                text-align: center;
+                font-family: "Jost", sans-serif;
+                font-size: 12px;
+                color: #7a6a5e;
+                min-height: 18px;
+                letter-spacing: 0.03em;
+            }
+
+            /* ── Bottom buttons ── */
+            .cam-actions {
+                display: flex;
+                gap: 12px;
+            }
+            .btn-ghost {
+                flex: 1;
+                padding: 14px 16px;
+                background: transparent;
+                color: #3a2e28;
+                border: 0.5px solid #c8baa8;
+                border-radius: 8px;
+                font-family: "Jost", sans-serif;
+                font-size: 11px;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                font-weight: 500;
+                cursor: pointer;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            input[type="file"] {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div class="cam-header">
+                <span class="cam-header-title">Our Camera</span>
+                <a href="/album" class="album-link">
+                    <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    >
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <path d="M3 9h18M9 21V9"></path>
+                    </svg>
+                    Album
+                </a>
+            </div>
+
+            <div id="shots-badge">
+                <div id="shots-count" class="shots-count">0</div>
+                <div id="shots-label" class="shots-label">photos remaining</div>
+            </div>
+
+            <div id="cam-card">
+                <div class="cam-icon">
+                    <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#FFFBF6"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                    >
+                        <path
+                            d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+                        ></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                </div>
+                <p class="cam-title">Open Camera</p>
+                <p class="cam-sub">Tap to take a photo for the album</p>
+            </div>
+
+            <p id="status-text"></p>
+
+            <div class="cam-actions">
+                <button id="gallery-btn" class="btn-ghost">
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    >
+                        <path
+                            d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                        ></path>
+                    </svg>
+                    Upload
+                </button>
+                <a href="/album" class="btn-ghost">
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    >
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <path d="M21 15l-5-5L5 21"></path>
+                    </svg>
+                    Album
+                </a>
+            </div>
+        </div>
+
+        <input
+            type="file"
+            id="cam-input"
+            accept="image/*"
+            capture="environment"
+        />
+        <input type="file" id="gallery-input" accept="image/*" multiple />
+
+        <!-- All logic inlined — avoids Astro's two-script module/define:vars limitation -->
+        <script define:vars={{ immichBase, immichSlug, MAX_SHOTS }}>
+            /* ── Upload helpers (inlined from immich-upload.ts) ── */
+            async function uploadToImmich(file, config) {
+                if (!config.base || !config.slug) return false;
+                const ts = Date.now();
+                const now = new Date(file.lastModified || ts).toISOString();
+                const assetId = config.userId
+                    ? `${config.userId}-${ts}`
+                    : `${config.deviceId ?? "WEB"}-${file.name}-${ts}`;
+                const form = new FormData();
+                form.append("deviceAssetId", assetId);
+                form.append("deviceId", config.deviceId ?? "WEB");
+                form.append("fileCreatedAt", now);
+                form.append("fileModifiedAt", now);
+                form.append("isFavorite", "false");
+                form.append("duration", "0:00:00.000000");
+                form.append("assetData", file);
+                try {
+                    const res = await fetch(
+                        `${config.base}/api/assets?slug=${encodeURIComponent(config.slug)}`,
+                        { method: "POST", body: form },
+                    );
+                    return res.ok;
+                } catch {
+                    return false;
+                }
+            }
+
+            async function uploadFiles(files, config, onProgress) {
+                let uploaded = 0;
+                for (const file of files) {
+                    const ok = await uploadToImmich(file, config);
+                    if (ok) uploaded++;
+                    onProgress?.(uploaded, files.length);
+                }
+                return uploaded;
+            }
+
+            /* ── Persistent identity & shot count ── */
+            function getOrCreateUserId() {
+                let id = localStorage.getItem("cam_user_id");
+                if (!id) {
+                    id =
+                        "u_" +
+                        Math.random().toString(36).slice(2) +
+                        Date.now().toString(36);
+                    localStorage.setItem("cam_user_id", id);
+                }
+                return id;
+            }
+
+            const userId = getOrCreateUserId();
+            const countKey = "cam_shots_used_" + userId;
+            const capped = MAX_SHOTS > 0;
+            let shotsUsed = parseInt(localStorage.getItem(countKey) ?? "0", 10);
+            if (capped) shotsUsed = Math.min(shotsUsed, MAX_SHOTS);
+
+            const config = {
+                base: immichBase,
+                slug: immichSlug,
+                deviceId: "WEB-CAM",
+                userId,
+            };
+
+            /* ── DOM refs ── */
+            const shotsBadge = document.getElementById("shots-badge");
+            const shotsCount = document.getElementById("shots-count");
+            const shotsLabel = document.getElementById("shots-label");
+            const camCard = document.getElementById("cam-card");
+            const statusEl = document.getElementById("status-text");
+            const galleryBtn = document.getElementById("gallery-btn");
+            const camInput = document.getElementById("cam-input");
+            const galleryInput = document.getElementById("gallery-input");
+
+            /* ── Shots badge ── */
+            function renderBadge() {
+                if (!capped) return;
+                shotsBadge.classList.add("visible");
+                const remaining = Math.max(MAX_SHOTS - shotsUsed, 0);
+                shotsCount.textContent = String(remaining);
+                shotsCount.className =
+                    "shots-count" +
+                    (remaining === 0 ? " empty" : remaining <= 6 ? " low" : "");
+                shotsLabel.textContent =
+                    remaining === 0 ? "no shots left" : "photos remaining";
+                camCard.classList.toggle("disabled", remaining === 0);
+            }
+
+            function useShots(n) {
+                shotsUsed += n;
+                if (capped) shotsUsed = Math.min(shotsUsed, MAX_SHOTS);
+                localStorage.setItem(countKey, String(shotsUsed));
+                renderBadge();
+            }
+
+            function setStatus(msg) {
+                statusEl.textContent = msg;
+            }
+
+            /* ── Camera capture ── */
+            camCard.addEventListener("click", () => {
+                if (capped && MAX_SHOTS - shotsUsed <= 0) {
+                    setStatus(
+                        "No shots left — upload from your gallery instead.",
+                    );
+                    return;
+                }
+                camInput.click();
+            });
+
+            camInput.addEventListener("change", async () => {
+                const file = camInput.files?.[0];
+                camInput.value = "";
+                if (!file) return;
+                setStatus("Uploading…");
+                const ok = await uploadToImmich(file, config);
+                if (ok) useShots(1);
+                setStatus(
+                    ok
+                        ? "Uploaded ✓  Tap to take another."
+                        : "Upload failed — please try again.",
+                );
+            });
+
+            /* ── Gallery upload ── */
+            galleryBtn.addEventListener("click", () => galleryInput.click());
+
+            galleryInput.addEventListener("change", async () => {
+                const files = Array.from(galleryInput.files ?? []);
+                galleryInput.value = "";
+                if (!files.length) return;
+                const uploaded = await uploadFiles(
+                    files,
+                    config,
+                    (done, total) => {
+                        setStatus(`Uploading ${done} of ${total}…`);
+                    },
+                );
+                if (uploaded > 0) useShots(uploaded);
+                setStatus(
+                    uploaded === files.length
+                        ? `${uploaded === 1 ? "Photo" : `${uploaded} photos`} uploaded ✓`
+                        : `${uploaded} of ${files.length} uploaded — please try again.`,
+                );
+            });
+
+            /* ── Init ── */
+            renderBadge();
+        </script>
+    </body>
+</html>

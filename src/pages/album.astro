@@ -7,11 +7,17 @@ if (!siteEntry) throw new Error("Missing site content entry");
 const site = siteEntry.data;
 ---
 
-<Base title="Our Shared Album — Sankar & Priya">
+<Base title="Event Album — Sankar & Priya">
     <section id="album">
         <div class="inner">
-            <span class="eyebrow">Photos</span>
-            <h2 class="sec-heading">Our shared</h2>
+            <div class="album-header">
+                <img
+                    src="/images/logo-full.webp"
+                    alt="Priya & Sankar"
+                    class="album-logo"
+                />
+            </div>
+            <h2 class="sec-heading">Event</h2>
             <span class="sec-script">album</span>
             <p class="sec-sub">
                 Every photo our guests have shared so far — tap any photo to see
@@ -49,6 +55,19 @@ const site = siteEntry.data;
 </Base>
 
 <style is:global>
+    .album-header {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 32px;
+    }
+
+    .album-logo {
+        max-width: 280px;
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
     #album {
         padding: 64px 24px;
         min-height: 100vh;
