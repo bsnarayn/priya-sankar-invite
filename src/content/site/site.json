@@ -8,10 +8,12 @@
         "tamil_names": "சங்கர் & பிரியா",
         "tamil_thanks": "நன்றி",
         "footer_note": "We can't wait to celebrate with you.",
-        "upload_url": "https://drive.sankaranarayan.in/u/d/66c9e88323ee472f8828/",
-        "upload_parent_dir": "/Priya-Sankar Wedding Photos/",
         "rsvp_webhook_url": "https://workflow.sankars.in/webhook/rsvp",
         "immich_base_url": "https://photos.sankaranarayan.in",
-        "immich_share_slug": "priya-sankar-reception"
+        "immich_share_slug": "priya-sankar-reception",
+        "camera_max_shots": 36,
+        "camera_max_uploads": 10,
+        "album_available_after": "2025-12-31T23:00:00",
+        "album_notify_webhook_url": "https://workflow.sankars.in/webhook/album-notify"
     }
 ]

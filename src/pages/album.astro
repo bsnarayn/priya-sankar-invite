@@ -5,10 +5,70 @@ import Base from "../layouts/Base.astro";
 const siteEntry = await getEntry("site", "site");
 if (!siteEntry) throw new Error("Missing site content entry");
 const site = siteEntry.data;
+
+// "2025-12-31T23:00:00" — local IST datetime string, no timezone suffix
+const albumAvailableAfter = site.album_available_after ?? "";
+const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
 ---
 
 <Base title="Event Album — Sankar & Priya">
-    <section id="album">
+    <!-- Gate — shown by default, hidden once JS confirms album is live -->
+    <section id="gate">
+        <div class="gate-inner">
+            <div class="album-header">
+                <img
+                    src="/images/logo-full.webp"
+                    alt="Priya & Sankar"
+                    class="album-logo"
+                />
+            </div>
+
+            <h2 class="sec-heading">Event</h2>
+            <span class="sec-script">album</span>
+
+            <p class="gate-message">
+                The album will be available after the celebration. Leave your
+                details and we'll notify you as soon as it's live.
+            </p>
+
+            <div class="gate-form" id="gate-form">
+                <div>
+                    <label class="field-label">Your name</label>
+                    <input
+                        id="notify-name"
+                        type="text"
+                        placeholder="Full name"
+                        class="field-input"
+                    />
+                </div>
+                <div>
+                    <label class="field-label">Email</label>
+                    <input
+                        id="notify-email"
+                        type="email"
+                        placeholder="We'll let you know when it's ready"
+                        class="field-input"
+                    />
+                </div>
+                <button id="notify-submit" class="btn-primary">
+                    Notify me
+                </button>
+                <p
+                    id="notify-success"
+                    class="gate-success"
+                    style="display:none;"
+                >
+                    Thank you — we'll let you know when the album is live.
+                </p>
+                <p id="notify-error" class="gate-error" style="display:none;">
+                    Something went wrong — please try again.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Album — hidden until JS confirms the time has passed -->
+    <section id="album-content" style="display:none;">
         <div class="inner">
             <div class="album-header">
                 <img
@@ -36,6 +96,7 @@ const site = siteEntry.data;
         </div>
     </section>
 
+    <!-- Lightbox: viewport over a horizontal strip of all photos -->
     <div id="lightbox" class="lightbox" aria-hidden="true">
         <button id="lightbox-close" class="lightbox-close" aria-label="Close"
             >&times;</button
@@ -45,7 +106,9 @@ const site = siteEntry.data;
             class="lightbox-nav lightbox-prev"
             aria-label="Previous photo">&#8249;</button
         >
-        <img id="lightbox-img" src="" alt="" />
+        <div class="lightbox-viewport">
+            <div id="lightbox-track" class="lightbox-track"></div>
+        </div>
         <button
             id="lightbox-next"
             class="lightbox-nav lightbox-next"
@@ -55,12 +118,12 @@ const site = siteEntry.data;
 </Base>
 
 <style is:global>
+    /* ── Shared header ── */
     .album-header {
         display: flex;
         justify-content: center;
         margin-bottom: 32px;
     }
-
     .album-logo {
         max-width: 280px;
         width: 100%;
@@ -68,12 +131,57 @@ const site = siteEntry.data;
         display: block;
     }
 
-    #album {
+    /* ── Gate ── */
+    #gate {
+        min-height: 100vh;
+        background: #fffbf6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 64px 24px;
+    }
+    .gate-inner {
+        max-width: 480px;
+        width: 100%;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .gate-message {
+        font-family: "Cormorant Garant", serif;
+        font-style: italic;
+        font-weight: 300;
+        font-size: 17px;
+        color: #5c4d43;
+        line-height: 1.85;
+        margin: 24px 0 36px;
+    }
+    .gate-form {
+        display: grid;
+        gap: 14px;
+        text-align: left;
+    }
+    .gate-success {
+        font-family: "Cormorant Garant", serif;
+        font-style: italic;
+        font-size: 15px;
+        color: #146b72;
+        text-align: center;
+        margin-top: 4px;
+    }
+    .gate-error {
+        font-family: "Jost", sans-serif;
+        font-size: 12px;
+        color: #c4622d;
+        text-align: center;
+        margin-top: 4px;
+    }
+
+    /* ── Album ── */
+    #album-content {
         padding: 64px 24px;
         min-height: 100vh;
         background: #fffbf6;
     }
-
     .album-status {
         font-family: "Cormorant Garant", serif;
         font-style: italic;
@@ -81,21 +189,18 @@ const site = siteEntry.data;
         color: #7a6a5e;
         margin-top: 24px;
     }
-
     .album-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         margin-top: 32px;
     }
-
     @media (min-width: 640px) {
         .album-grid {
             grid-template-columns: repeat(4, 1fr);
             gap: 12px;
         }
     }
-
     .album-grid img {
         width: 100%;
         aspect-ratio: 1;
@@ -106,6 +211,7 @@ const site = siteEntry.data;
         display: block;
     }
 
+    /* ── Lightbox ── */
     .lightbox {
         position: fixed;
         inset: 0;
@@ -114,24 +220,58 @@ const site = siteEntry.data;
         display: none;
         align-items: center;
         justify-content: center;
-        padding: 24px;
+        overflow: hidden;
+        touch-action: none;
     }
-
     .lightbox.open {
         display: flex;
     }
 
-    .lightbox img {
+    .lightbox-viewport {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* Track: one slide per photo, laid out side by side.
+       Width = numSlides * 100vw. Positioned via translateX in px. */
+    .lightbox-track {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        display: flex;
+        will-change: transform;
+    }
+    .lightbox-track.snap {
+        transition: transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    .lightbox-slide {
+        flex: 0 0 100vw;
+        width: 100vw;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 24px;
+    }
+    .lightbox-slide img {
         max-width: 100%;
         max-height: 100%;
         border-radius: 4px;
         object-fit: contain;
+        pointer-events: none;
+        user-select: none;
     }
 
     .lightbox-close {
         position: absolute;
         top: 16px;
         right: 16px;
+        z-index: 2;
         background: transparent;
         border: none;
         color: #fffbf6;
@@ -140,11 +280,11 @@ const site = siteEntry.data;
         cursor: pointer;
         font-family: "Jost", sans-serif;
     }
-
     .lightbox-nav {
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
+        z-index: 2;
         background: rgba(255, 251, 246, 0.12);
         border: none;
         color: #fffbf6;
@@ -158,167 +298,378 @@ const site = siteEntry.data;
         align-items: center;
         justify-content: center;
     }
-
     .lightbox-nav:hover {
         background: rgba(255, 251, 246, 0.22);
     }
-
     .lightbox-prev {
         left: 12px;
     }
-
     .lightbox-next {
         right: 12px;
     }
+
+    /* On touch devices, de-emphasize arrows slightly since swipe is primary */
+    @media (hover: none) and (pointer: coarse) {
+        .lightbox-nav {
+            opacity: 0.55;
+        }
+    }
 </style>
 
-<script>
-    const grid = document.getElementById("album-grid") as HTMLElement | null;
-    const status = document.getElementById("album-status");
-    const lightbox = document.getElementById("lightbox");
-    const lightboxImg = document.getElementById(
-        "lightbox-img",
-    ) as HTMLImageElement | null;
-    const lightboxClose = document.getElementById("lightbox-close");
-    const lightboxPrev = document.getElementById("lightbox-prev");
-    const lightboxNext = document.getElementById("lightbox-next");
-
-    const base = grid?.dataset.immichBase?.trim().replace(/\/$/, "");
-    const slug = grid?.dataset.immichSlug?.trim();
-
-    const assetIds: string[] = [];
-    let currentIndex = -1;
-
-    function thumbUrl(id: string, size: "thumbnail" | "preview") {
-        return `${base}/api/assets/${id}/thumbnail?slug=${encodeURIComponent(slug ?? "")}&size=${size}`;
+<!-- Step 1: time gate check — runs immediately, no module boundary -->
+<script define:vars={{ albumAvailableAfter, notifyWebhookUrl }}>
+    function isAlbumLive() {
+        if (!albumAvailableAfter) return true; // no gate configured → always open
+        // Parse the IST datetime string as UTC+5:30
+        // Format expected: "YYYY-MM-DDTHH:MM:SS"
+        const [datePart, timePart] = albumAvailableAfter.split("T");
+        const [y, mo, d] = datePart.split("-").map(Number);
+        const [h, mi, s] = (timePart ?? "00:00:00").split(":").map(Number);
+        // IST = UTC+5:30, so subtract 5h30m to get UTC ms
+        const istOffsetMs = (5 * 60 + 30) * 60 * 1000;
+        const availableUtcMs =
+            Date.UTC(y, mo - 1, d, h, mi, s ?? 0) - istOffsetMs;
+        return Date.now() >= availableUtcMs;
     }
 
-    function showAtIndex(index: number) {
-        if (!lightboxImg || !assetIds.length) return;
-        currentIndex = (index + assetIds.length) % assetIds.length;
-        lightboxImg.src = thumbUrl(assetIds[currentIndex], "preview");
+    if (isAlbumLive()) {
+        document.getElementById("gate").style.display = "none";
+        document.getElementById("album-content").style.display = "block";
     }
 
-    function openLightbox(index: number) {
-        if (!lightbox) return;
-        showAtIndex(index);
-        lightbox.classList.add("open");
-        lightbox.setAttribute("aria-hidden", "false");
-    }
+    // Notification form
+    const submitBtn = document.getElementById("notify-submit");
+    const successEl = document.getElementById("notify-success");
+    const errorEl = document.getElementById("notify-error");
 
-    function closeLightbox() {
-        if (!lightbox || !lightboxImg) return;
-        lightbox.classList.remove("open");
-        lightbox.setAttribute("aria-hidden", "true");
-        lightboxImg.src = "";
-        currentIndex = -1;
-    }
+    submitBtn?.addEventListener("click", async () => {
+        const name = document.getElementById("notify-name").value.trim();
+        const email = document.getElementById("notify-email").value.trim();
 
-    lightboxClose?.addEventListener("click", closeLightbox);
-    lightboxPrev?.addEventListener("click", () =>
-        showAtIndex(currentIndex - 1),
-    );
-    lightboxNext?.addEventListener("click", () =>
-        showAtIndex(currentIndex + 1),
-    );
-    lightbox?.addEventListener("click", (e) => {
-        if (e.target === lightbox) closeLightbox();
-    });
-    document.addEventListener("keydown", (e) => {
-        if (!lightbox?.classList.contains("open")) return;
-        if (e.key === "Escape") closeLightbox();
-        if (e.key === "ArrowLeft") showAtIndex(currentIndex - 1);
-        if (e.key === "ArrowRight") showAtIndex(currentIndex + 1);
-    });
-
-    function monthBuckets(start: string, end: string): string[] {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        const buckets: string[] = [];
-        const cursor = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            1,
-        );
-        const last = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-        while (cursor <= last) {
-            const y = cursor.getFullYear();
-            const m = String(cursor.getMonth() + 1).padStart(2, "0");
-            buckets.push(`${y}-${m}-01T00:00:00.0`);
-            cursor.setMonth(cursor.getMonth() + 1);
+        if (!name || !email) {
+            errorEl.textContent = "Please enter your name and email.";
+            errorEl.style.display = "block";
+            return;
         }
-        return buckets;
-    }
-
-    async function loadAlbum() {
-        if (!base || !slug || !grid) {
-            if (status) status.textContent = "Album isn't set up yet.";
+        if (!notifyWebhookUrl) {
+            errorEl.textContent = "Notification sign-up isn't configured yet.";
+            errorEl.style.display = "block";
             return;
         }
 
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Saving…";
+        errorEl.style.display = "none";
+
         try {
-            const infoRes = await fetch(
-                `${base}/api/shared-links/me?slug=${encodeURIComponent(slug)}`,
-            );
-            if (!infoRes.ok)
-                throw new Error(`Album lookup failed: ${infoRes.status}`);
-            const info = await infoRes.json();
-
-            const albumId = info?.album?.id;
-            const startDate = info?.album?.startDate;
-            const endDate = info?.album?.endDate;
-            const assetCount = info?.album?.assetCount ?? 0;
-
-            if (!albumId || !startDate || !endDate) {
-                throw new Error("Album info missing expected fields");
+            const res = await fetch(notifyWebhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    timestamp: new Date().toISOString(),
+                }),
+            });
+            if (res.ok) {
+                document.getElementById("gate-form").style.display = "none";
+                successEl.style.display = "block";
+            } else {
+                throw new Error("non-ok response");
             }
+        } catch {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Notify me";
+            errorEl.textContent = "Something went wrong — please try again.";
+            errorEl.style.display = "block";
+        }
+    });
+</script>
 
-            if (assetCount === 0) {
-                if (status)
-                    status.textContent = "No photos shared yet — be the first!";
+<!-- Step 2: album loading — only runs if album is live -->
+<script>
+    const gate = document.getElementById("gate");
+    if (gate?.style.display === "none") {
+        // Album is live — load photos
+        const grid = document.getElementById(
+            "album-grid",
+        ) as HTMLElement | null;
+        const status = document.getElementById("album-status");
+        const lightbox = document.getElementById("lightbox");
+        const lightboxClose = document.getElementById("lightbox-close");
+        const lightboxPrev = document.getElementById("lightbox-prev");
+        const lightboxNext = document.getElementById("lightbox-next");
+        const track = document.getElementById(
+            "lightbox-track",
+        ) as HTMLElement | null;
+
+        const base = grid?.dataset.immichBase?.trim().replace(/\/$/, "");
+        const slug = grid?.dataset.immichSlug?.trim();
+
+        const assetIds: string[] = [];
+        const slideEls: HTMLImageElement[] = [];
+        let currentIndex = -1;
+
+        function thumbUrl(id: string, size: "thumbnail" | "preview") {
+            return `${base}/api/assets/${id}/thumbnail?slug=${encodeURIComponent(slug ?? "")}&size=${size}`;
+        }
+
+        // Build the track once, with one slide per photo. Each slide's
+        // <img> is lazy — src is only set when the slide is current or
+        // adjacent to current, so we're not loading the whole album at once.
+        function buildTrack() {
+            if (!track) return;
+            track.innerHTML = "";
+            track.style.width = `${assetIds.length * 100}vw`;
+
+            assetIds.forEach(() => {
+                const slide = document.createElement("div");
+                slide.className = "lightbox-slide";
+                const img = document.createElement("img");
+                img.alt = "Shared photo";
+                slide.appendChild(img);
+                track.appendChild(slide);
+                slideEls.push(img);
+            });
+        }
+
+        // Ensure the image for `index` (and its immediate neighbors) is loaded.
+        function ensureLoaded(index: number) {
+            for (const i of [index - 1, index, index + 1]) {
+                if (i < 0 || i >= assetIds.length) continue;
+                const img = slideEls[i];
+                if (img && !img.src) {
+                    img.src = thumbUrl(assetIds[i], "preview");
+                }
+            }
+        }
+
+        // Position the track so slide `index` fills the viewport, optionally animated.
+        function goToIndex(index: number, animate: boolean) {
+            if (!track || !assetIds.length) return;
+            currentIndex = (index + assetIds.length) % assetIds.length;
+            ensureLoaded(currentIndex);
+
+            const offsetPx = currentIndex * lightbox!.clientWidth;
+            track.classList.toggle("snap", animate);
+            track.style.transform = `translateX(${-offsetPx}px)`;
+        }
+
+        function openLightbox(index: number) {
+            if (!lightbox) return;
+            lightbox.classList.add("open");
+            lightbox.setAttribute("aria-hidden", "false");
+            goToIndex(index, false);
+        }
+
+        function closeLightbox() {
+            if (!lightbox) return;
+            lightbox.classList.remove("open");
+            lightbox.setAttribute("aria-hidden", "true");
+        }
+
+        function navigate(direction: 1 | -1) {
+            goToIndex(currentIndex + direction, true);
+        }
+
+        lightboxClose?.addEventListener("click", closeLightbox);
+        lightboxPrev?.addEventListener("click", () => navigate(-1));
+        lightboxNext?.addEventListener("click", () => navigate(1));
+        lightbox?.addEventListener("click", (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (!lightbox?.classList.contains("open")) return;
+            if (e.key === "Escape") closeLightbox();
+            if (e.key === "ArrowLeft") navigate(-1);
+            if (e.key === "ArrowRight") navigate(1);
+        });
+
+        // ── Drag-tracking swipe ──
+        // The track follows the finger 1:1. On release, either snap to
+        // the next/prev photo (past distance/velocity threshold) or
+        // spring back to the current photo.
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let baseOffsetPx = 0;
+        let currentDeltaX = 0;
+        let isDragging = false;
+        let isHorizontal: boolean | null = null;
+
+        const SWIPE_DISTANCE_THRESHOLD = 0.18; // fraction of viewport width
+        const SWIPE_VELOCITY_THRESHOLD = 0.5; // px/ms
+
+        lightbox?.addEventListener(
+            "touchstart",
+            (e: TouchEvent) => {
+                if (e.touches.length !== 1 || !track) return;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                touchStartTime = performance.now();
+                baseOffsetPx = currentIndex * lightbox.clientWidth;
+                currentDeltaX = 0;
+                isDragging = false;
+                isHorizontal = null;
+
+                // Preload neighbors before the drag starts revealing them
+                ensureLoaded(currentIndex);
+            },
+            { passive: true },
+        );
+
+        lightbox?.addEventListener(
+            "touchmove",
+            (e: TouchEvent) => {
+                if (e.touches.length !== 1 || !track) return;
+                const dx = e.touches[0].clientX - touchStartX;
+                const dy = e.touches[0].clientY - touchStartY;
+
+                if (isHorizontal === null) {
+                    if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+                    isHorizontal = Math.abs(dx) > Math.abs(dy);
+                }
+                if (!isHorizontal) return;
+
+                isDragging = true;
+                currentDeltaX = dx;
+
+                track.classList.remove("snap");
+                track.style.transform = `translateX(${-(baseOffsetPx - dx)}px)`;
+            },
+            { passive: true },
+        );
+
+        lightbox?.addEventListener("touchend", () => {
+            if (!track || !lightbox) return;
+            if (!isDragging) {
+                isHorizontal = null;
                 return;
             }
 
-            const buckets = monthBuckets(startDate, endDate);
-            let total = 0;
+            const elapsed = performance.now() - touchStartTime;
+            const velocity = Math.abs(currentDeltaX) / Math.max(elapsed, 1);
+            const distanceFraction =
+                Math.abs(currentDeltaX) / lightbox.clientWidth;
 
-            for (const timeBucket of buckets) {
-                const url =
-                    `${base}/api/timeline/bucket?albumId=${encodeURIComponent(albumId)}` +
-                    `&order=desc&slug=${encodeURIComponent(slug)}` +
-                    `&timeBucket=${encodeURIComponent(timeBucket)}`;
-                const res = await fetch(url);
-                if (!res.ok) continue;
-                const data = await res.json();
-                const ids: string[] = data?.id ?? [];
+            const shouldAdvance =
+                distanceFraction > SWIPE_DISTANCE_THRESHOLD ||
+                velocity > SWIPE_VELOCITY_THRESHOLD;
 
-                for (const id of ids) {
-                    const index = assetIds.length;
-                    assetIds.push(id);
-
-                    const img = document.createElement("img");
-                    img.src = thumbUrl(id, "thumbnail");
-                    img.alt = "Shared photo";
-                    img.loading = "lazy";
-                    img.addEventListener("click", () => openLightbox(index));
-                    grid.appendChild(img);
-                    total++;
-                }
+            let targetIndex = currentIndex;
+            if (shouldAdvance) {
+                targetIndex =
+                    currentDeltaX < 0 ? currentIndex + 1 : currentIndex - 1;
+                // Clamp at ends — no wraparound mid-drag
+                targetIndex = Math.max(
+                    0,
+                    Math.min(assetIds.length - 1, targetIndex),
+                );
             }
 
-            if (status) {
-                status.textContent =
-                    total > 0 ? "" : "No photos shared yet — be the first!";
-                if (total === 0) status.style.display = "block";
-                else status.style.display = "none";
+            goToIndex(targetIndex, true);
+
+            isDragging = false;
+            isHorizontal = null;
+            currentDeltaX = 0;
+        });
+
+        // Re-clamp slide position on resize/orientation change
+        window.addEventListener("resize", () => {
+            if (lightbox?.classList.contains("open"))
+                goToIndex(currentIndex, false);
+        });
+
+        function monthBuckets(start: string, end: string): string[] {
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            const buckets: string[] = [];
+            const cursor = new Date(
+                startDate.getFullYear(),
+                startDate.getMonth(),
+                1,
+            );
+            const last = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+            while (cursor <= last) {
+                const y = cursor.getFullYear();
+                const m = String(cursor.getMonth() + 1).padStart(2, "0");
+                buckets.push(`${y}-${m}-01T00:00:00.0`);
+                cursor.setMonth(cursor.getMonth() + 1);
             }
-        } catch (err) {
-            console.error("Failed to load album:", err);
-            if (status)
-                status.textContent =
-                    "Couldn't load the album right now — please try again later.";
+            return buckets;
         }
-    }
 
-    loadAlbum();
+        async function loadAlbum() {
+            if (!base || !slug || !grid) {
+                if (status) status.textContent = "Album isn't set up yet.";
+                return;
+            }
+            try {
+                const infoRes = await fetch(
+                    `${base}/api/shared-links/me?slug=${encodeURIComponent(slug)}`,
+                );
+                if (!infoRes.ok)
+                    throw new Error(`Album lookup failed: ${infoRes.status}`);
+                const info = await infoRes.json();
+
+                const albumId = info?.album?.id;
+                const startDate = info?.album?.startDate;
+                const endDate = info?.album?.endDate;
+                const assetCount = info?.album?.assetCount ?? 0;
+
+                if (!albumId || !startDate || !endDate) {
+                    throw new Error("Album info missing expected fields");
+                }
+                if (assetCount === 0) {
+                    if (status)
+                        status.textContent =
+                            "No photos shared yet — be the first!";
+                    return;
+                }
+
+                const buckets = monthBuckets(startDate, endDate);
+                let total = 0;
+
+                for (const timeBucket of buckets) {
+                    const url =
+                        `${base}/api/timeline/bucket?albumId=${encodeURIComponent(albumId)}` +
+                        `&order=desc&slug=${encodeURIComponent(slug)}` +
+                        `&timeBucket=${encodeURIComponent(timeBucket)}`;
+                    const res = await fetch(url);
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    const ids: string[] = data?.id ?? [];
+
+                    for (const id of ids) {
+                        const index = assetIds.length;
+                        assetIds.push(id);
+                        const img = document.createElement("img");
+                        img.src = thumbUrl(id, "thumbnail");
+                        img.alt = "Shared photo";
+                        img.loading = "lazy";
+                        img.addEventListener("click", () =>
+                            openLightbox(index),
+                        );
+                        grid.appendChild(img);
+                        total++;
+                    }
+                }
+
+                if (status) {
+                    status.textContent =
+                        total > 0 ? "" : "No photos shared yet — be the first!";
+                    status.style.display = total === 0 ? "block" : "none";
+                }
+
+                buildTrack();
+            } catch (err) {
+                console.error("Failed to load album:", err);
+                if (status)
+                    status.textContent =
+                        "Couldn't load the album right now — please try again later.";
+            }
+        }
+
+        loadAlbum();
+    }
 </script>

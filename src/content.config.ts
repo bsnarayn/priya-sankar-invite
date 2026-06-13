@@ -48,6 +48,9 @@ const site = defineCollection({
         immich_base_url: z.string().optional(),
         immich_share_slug: z.string().optional(),
         camera_max_shots: z.number().optional(),
+        album_available_after: z.string().optional(),
+        album_notify_webhook_url: z.string().optional(),
+        camera_max_uploads: z.number().optional(),
     }),
 });
 
