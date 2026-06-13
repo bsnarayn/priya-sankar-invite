@@ -1,0 +1,305 @@
+---
+import { getEntry } from "astro:content";
+import Base from "../layouts/Base.astro";
+
+const siteEntry = await getEntry("site", "site");
+if (!siteEntry) throw new Error("Missing site content entry");
+const site = siteEntry.data;
+---
+
+<Base title="Our Shared Album — Sankar & Priya">
+    <section id="album">
+        <div class="inner">
+            <span class="eyebrow">Photos</span>
+            <h2 class="sec-heading">Our shared</h2>
+            <span class="sec-script">album</span>
+            <p class="sec-sub">
+                Every photo our guests have shared so far — tap any photo to see
+                it larger.
+            </p>
+
+            <div
+                id="album-grid"
+                data-immich-base={site.immich_base_url ?? ""}
+                data-immich-slug={site.immich_share_slug ?? ""}
+                class="album-grid"
+            >
+            </div>
+
+            <p id="album-status" class="album-status">Loading photos…</p>
+        </div>
+    </section>
+
+    <div id="lightbox" class="lightbox" aria-hidden="true">
+        <button id="lightbox-close" class="lightbox-close" aria-label="Close"
+            >&times;</button
+        >
+        <button
+            id="lightbox-prev"
+            class="lightbox-nav lightbox-prev"
+            aria-label="Previous photo">&#8249;</button
+        >
+        <img id="lightbox-img" src="" alt="" />
+        <button
+            id="lightbox-next"
+            class="lightbox-nav lightbox-next"
+            aria-label="Next photo">&#8250;</button
+        >
+    </div>
+</Base>
+
+<style is:global>
+    #album {
+        padding: 64px 24px;
+        min-height: 100vh;
+        background: #fffbf6;
+    }
+
+    .album-status {
+        font-family: "Cormorant Garant", serif;
+        font-style: italic;
+        font-size: 14px;
+        color: #7a6a5e;
+        margin-top: 24px;
+    }
+
+    .album-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 32px;
+    }
+
+    @media (min-width: 640px) {
+        .album-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+    }
+
+    .album-grid img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #ede4d8;
+        display: block;
+    }
+
+    .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(58, 46, 40, 0.92);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+
+    .lightbox.open {
+        display: flex;
+    }
+
+    .lightbox img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 4px;
+        object-fit: contain;
+    }
+
+    .lightbox-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: transparent;
+        border: none;
+        color: #fffbf6;
+        font-size: 32px;
+        line-height: 1;
+        cursor: pointer;
+        font-family: "Jost", sans-serif;
+    }
+
+    .lightbox-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 251, 246, 0.12);
+        border: none;
+        color: #fffbf6;
+        font-size: 36px;
+        line-height: 1;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .lightbox-nav:hover {
+        background: rgba(255, 251, 246, 0.22);
+    }
+
+    .lightbox-prev {
+        left: 12px;
+    }
+
+    .lightbox-next {
+        right: 12px;
+    }
+</style>
+
+<script>
+    const grid = document.getElementById("album-grid") as HTMLElement | null;
+    const status = document.getElementById("album-status");
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById(
+        "lightbox-img",
+    ) as HTMLImageElement | null;
+    const lightboxClose = document.getElementById("lightbox-close");
+    const lightboxPrev = document.getElementById("lightbox-prev");
+    const lightboxNext = document.getElementById("lightbox-next");
+
+    const base = grid?.dataset.immichBase?.trim().replace(/\/$/, "");
+    const slug = grid?.dataset.immichSlug?.trim();
+
+    const assetIds: string[] = [];
+    let currentIndex = -1;
+
+    function thumbUrl(id: string, size: "thumbnail" | "preview") {
+        return `${base}/api/assets/${id}/thumbnail?slug=${encodeURIComponent(slug ?? "")}&size=${size}`;
+    }
+
+    function showAtIndex(index: number) {
+        if (!lightboxImg || !assetIds.length) return;
+        currentIndex = (index + assetIds.length) % assetIds.length;
+        lightboxImg.src = thumbUrl(assetIds[currentIndex], "preview");
+    }
+
+    function openLightbox(index: number) {
+        if (!lightbox) return;
+        showAtIndex(index);
+        lightbox.classList.add("open");
+        lightbox.setAttribute("aria-hidden", "false");
+    }
+
+    function closeLightbox() {
+        if (!lightbox || !lightboxImg) return;
+        lightbox.classList.remove("open");
+        lightbox.setAttribute("aria-hidden", "true");
+        lightboxImg.src = "";
+        currentIndex = -1;
+    }
+
+    lightboxClose?.addEventListener("click", closeLightbox);
+    lightboxPrev?.addEventListener("click", () =>
+        showAtIndex(currentIndex - 1),
+    );
+    lightboxNext?.addEventListener("click", () =>
+        showAtIndex(currentIndex + 1),
+    );
+    lightbox?.addEventListener("click", (e) => {
+        if (e.target === lightbox) closeLightbox();
+    });
+    document.addEventListener("keydown", (e) => {
+        if (!lightbox?.classList.contains("open")) return;
+        if (e.key === "Escape") closeLightbox();
+        if (e.key === "ArrowLeft") showAtIndex(currentIndex - 1);
+        if (e.key === "ArrowRight") showAtIndex(currentIndex + 1);
+    });
+
+    function monthBuckets(start: string, end: string): string[] {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        const buckets: string[] = [];
+        const cursor = new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            1,
+        );
+        const last = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+        while (cursor <= last) {
+            const y = cursor.getFullYear();
+            const m = String(cursor.getMonth() + 1).padStart(2, "0");
+            buckets.push(`${y}-${m}-01T00:00:00.0`);
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+        return buckets;
+    }
+
+    async function loadAlbum() {
+        if (!base || !slug || !grid) {
+            if (status) status.textContent = "Album isn't set up yet.";
+            return;
+        }
+
+        try {
+            const infoRes = await fetch(
+                `${base}/api/shared-links/me?slug=${encodeURIComponent(slug)}`,
+            );
+            if (!infoRes.ok)
+                throw new Error(`Album lookup failed: ${infoRes.status}`);
+            const info = await infoRes.json();
+
+            const albumId = info?.album?.id;
+            const startDate = info?.album?.startDate;
+            const endDate = info?.album?.endDate;
+            const assetCount = info?.album?.assetCount ?? 0;
+
+            if (!albumId || !startDate || !endDate) {
+                throw new Error("Album info missing expected fields");
+            }
+
+            if (assetCount === 0) {
+                if (status)
+                    status.textContent = "No photos shared yet — be the first!";
+                return;
+            }
+
+            const buckets = monthBuckets(startDate, endDate);
+            let total = 0;
+
+            for (const timeBucket of buckets) {
+                const url =
+                    `${base}/api/timeline/bucket?albumId=${encodeURIComponent(albumId)}` +
+                    `&order=desc&slug=${encodeURIComponent(slug)}` +
+                    `&timeBucket=${encodeURIComponent(timeBucket)}`;
+                const res = await fetch(url);
+                if (!res.ok) continue;
+                const data = await res.json();
+                const ids: string[] = data?.id ?? [];
+
+                for (const id of ids) {
+                    const index = assetIds.length;
+                    assetIds.push(id);
+
+                    const img = document.createElement("img");
+                    img.src = thumbUrl(id, "thumbnail");
+                    img.alt = "Shared photo";
+                    img.loading = "lazy";
+                    img.addEventListener("click", () => openLightbox(index));
+                    grid.appendChild(img);
+                    total++;
+                }
+            }
+
+            if (status) {
+                status.textContent =
+                    total > 0 ? "" : "No photos shared yet — be the first!";
+                if (total === 0) status.style.display = "block";
+                else status.style.display = "none";
+            }
+        } catch (err) {
+            console.error("Failed to load album:", err);
+            if (status)
+                status.textContent =
+                    "Couldn't load the album right now — please try again later.";
+        }
+    }
+
+    loadAlbum();
+</script>

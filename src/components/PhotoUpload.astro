@@ -1,9 +1,9 @@
 ---
 interface Props {
     site: {
-        upload_url?: string;
         photo_qr_url?: string;
-        upload_parent_dir?: string;
+        immich_base_url?: string;
+        immich_share_slug?: string;
     };
 }
 const { site } = Astro.props;
@@ -11,8 +11,8 @@ const { site } = Astro.props;
 
 <section
     id="photos"
-    data-upload-url={site.upload_url ?? ""}
-    data-upload-parent-dir={site.upload_parent_dir ?? "/"}
+    data-immich-base={site.immich_base_url ?? ""}
+    data-immich-slug={site.immich_share_slug ?? ""}
 >
     <div class="inner">
         <span class="eyebrow">Photos</span>
@@ -24,6 +24,7 @@ const { site } = Astro.props;
         </p>
 
         <div class="photo-grid">
+            <!-- Left: drag-and-drop / file picker -->
             <div class="upload-zone" id="upload-zone">
                 <svg
                     width="32"
@@ -60,71 +61,84 @@ const { site } = Astro.props;
                 </p>
             </div>
 
+            <!-- Right: QR to /camera page -->
+            <!-- Right: QR to /camera page -->
             <div class="qr-card">
-                <p class="qr-label">Scan to upload</p>
+                <p class="qr-label">Scan to use our camera</p>
                 <div class="qr-box">
-                    {
-                        site.photo_qr_url ? (
-                            <img
-                                src={site.photo_qr_url}
-                                alt="Upload QR"
-                                style="width:100%;padding:8px;"
-                            />
-                        ) : (
-                            "QR code"
-                        )
-                    }
+                    <img
+                        id="camera-qr"
+                        alt="Scan to open camera"
+                        style="width:100%;padding:8px;"
+                    />
                 </div>
-                <p class="qr-note">Point your camera here at the venue</p>
+                <p class="qr-note">
+                    Opens our disposable camera — 36 shots, uploads straight to
+                    the album
+                </p>
+                <a id="camera-link" href="/camera" class="qr-link">
+                    Open on this device →
+                </a>
             </div>
         </div>
     </div>
 </section>
 
+<style>
+    .qr-link {
+        display: block;
+        margin-top: 10px;
+        font-family: "Jost", sans-serif;
+        font-size: 12px;
+        color: #146b72;
+        text-align: center;
+        text-decoration: none;
+    }
+    .qr-link:hover {
+        text-decoration: underline;
+    }
+</style>
+
 <script>
+    import { uploadFiles } from "@lib/immich-upload";
+
+    const cameraUrl = `${window.location.origin}/camera`;
+    const qrImg = document.getElementById(
+        "camera-qr",
+    ) as HTMLImageElement | null;
+    if (qrImg) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(cameraUrl)}`;
+    }
     const section = document.getElementById("photos") as HTMLElement | null;
-    const shareUrl = section?.dataset.uploadUrl?.trim();
-    const parentDir = section?.dataset.uploadParentDir?.trim() || "/";
+    const immichBase =
+        section?.dataset.immichBase?.trim().replace(/\/$/, "") ?? "";
+    const immichSlug = section?.dataset.immichSlug?.trim() ?? "";
 
     const uploadBtn = document.getElementById("upload-btn");
     const fileInput = document.getElementById(
         "file-input",
     ) as HTMLInputElement | null;
     const uploadZone = document.getElementById("upload-zone");
-    const status = document.getElementById("upload-status");
+    const statusEl = document.getElementById("upload-status");
 
     uploadBtn?.addEventListener("click", (e) => {
         e.stopPropagation();
         fileInput?.click();
     });
     uploadZone?.addEventListener("click", () => fileInput?.click());
-
-    uploadZone?.addEventListener("dragover", (e) => {
-        e.preventDefault();
-    });
+    uploadZone?.addEventListener("dragover", (e) => e.preventDefault());
     uploadZone?.addEventListener("drop", (e: DragEvent) => {
         e.preventDefault();
         if (e.dataTransfer?.files) handleFiles(e.dataTransfer.files);
     });
     fileInput?.addEventListener("change", () => {
-        if (fileInput.files) handleFiles(fileInput.files);
+        if (fileInput?.files) handleFiles(fileInput.files);
     });
 
     function showStatus(msg: string) {
-        if (!status) return;
-        status.textContent = msg;
-        status.style.display = "block";
-    }
-
-    // https://drive.sankaranarayan.in/u/d/<token>/
-    //   -> https://drive.sankaranarayan.in/api/v2.1/upload-links/<token>/upload/
-    function uploadLinkEndpoint(): string | null {
-        if (!shareUrl) return null;
-        const match = shareUrl.match(/\/u\/d\/([^/]+)/);
-        if (!match) return null;
-        const token = match[1];
-        const origin = new URL(shareUrl).origin;
-        return `${origin}/api/v2.1/upload-links/${token}/upload/`;
+        if (!statusEl) return;
+        statusEl.textContent = msg;
+        statusEl.style.display = "block";
     }
 
     async function handleFiles(files: FileList) {
@@ -137,49 +151,29 @@ const { site } = Astro.props;
             showStatus("Files exceed 5MB limit.");
             return;
         }
-
-        const endpoint = uploadLinkEndpoint();
-        if (!endpoint) {
-            showStatus(
-                "Upload isn't set up yet — please use the QR code at the venue.",
-            );
+        if (!immichBase || !immichSlug) {
+            showStatus("Upload isn't set up yet — please scan the QR code.");
             return;
         }
 
-        showStatus(`Uploading ${valid.length} photo(s)...`);
+        const config = { base: immichBase, slug: immichSlug, deviceId: "WEB" };
 
-        try {
-            const linkRes = await fetch(endpoint);
-            if (!linkRes.ok) {
-                throw new Error(`Could not get upload link: ${linkRes.status}`);
-            }
-            const { upload_link } = await linkRes.json();
-            if (!upload_link) {
-                throw new Error("No upload_link in response");
-            }
+        const uploaded = await uploadFiles(valid, config, (done, total) => {
+            showStatus(`Uploading ${done} of ${total}…`);
+        });
 
-            const formData = new FormData();
-            formData.append("parent_dir", parentDir);
-            formData.append("replace", "0");
-            valid.forEach((f) => formData.append("file", f));
-
-            const uploadRes = await fetch(`${upload_link}?ret-json=1`, {
-                method: "POST",
-                body: formData,
-            });
-            if (!uploadRes.ok) {
-                throw new Error(`Upload failed: ${uploadRes.status}`);
-            }
-
-            let msg = `${valid.length} photo(s) uploaded — thank you!`;
+        if (uploaded === valid.length) {
+            let msg = `${uploaded} photo(s) uploaded — thank you!`;
             if (skipped > 0) msg += ` (${skipped} skipped — over 5MB)`;
             showStatus(msg);
-            if (fileInput) fileInput.value = "";
-        } catch (err) {
-            console.error("Photo upload failed:", err);
+        } else if (uploaded > 0) {
             showStatus(
-                "Upload failed — please try the QR code at the venue, or try again.",
+                `${uploaded} of ${valid.length} uploaded — please try the rest again.`,
             );
+        } else {
+            showStatus("Upload failed — please scan the QR code to try again.");
         }
+
+        if (fileInput) fileInput.value = "";
     }
 </script>

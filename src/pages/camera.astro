@@ -1,0 +1,615 @@
+---
+import { getCollection } from "astro:content";
+
+const [siteEntry] = await getCollection("site");
+const site = siteEntry.data;
+
+const immichBase = site.immich_base_url ?? "";
+const immichSlug = site.immich_share_slug ?? "";
+const MAX_SHOTS = 36;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="theme-color" content="#111111" />
+        <title>Share your photos</title>
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            html,
+            body {
+                height: 100%;
+                background: #111;
+                color: #fff;
+                font-family: "Jost", sans-serif;
+                overscroll-behavior: none;
+            }
+            #app {
+                display: flex;
+                flex-direction: column;
+                min-height: 100dvh;
+                max-width: 480px;
+                margin: 0 auto;
+            }
+
+            /* ── Header ── */
+            #header {
+                padding: 20px 24px 0;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            #header-title {
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(255, 255, 255, 0.5);
+            }
+            #album-btn {
+                background: rgba(255, 255, 255, 0.1);
+                border: none;
+                border-radius: 20px;
+                padding: 7px 14px;
+                font-size: 12px;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.7);
+                cursor: pointer;
+                font-family: "Jost", sans-serif;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                text-decoration: none;
+            }
+            #album-btn:active {
+                transform: scale(0.97);
+            }
+
+            /* ── Film strip counter ── */
+            #film-strip {
+                padding: 24px 24px 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+            #shot-counter {
+                font-size: 64px;
+                font-weight: 700;
+                line-height: 1;
+                color: #fff;
+                letter-spacing: -2px;
+                font-variant-numeric: tabular-nums;
+            }
+            #shot-counter.low {
+                color: #e8b14a;
+            }
+            #shot-counter.empty {
+                color: rgba(255, 255, 255, 0.25);
+            }
+            #shot-label {
+                font-size: 13px;
+                color: rgba(255, 255, 255, 0.4);
+                letter-spacing: 0.05em;
+            }
+
+            /* film frame dots */
+            #film-frames {
+                display: flex;
+                gap: 4px;
+                flex-wrap: wrap;
+                justify-content: center;
+                padding: 0 8px;
+                max-width: 340px;
+            }
+            .frame-dot {
+                width: 7px;
+                height: 10px;
+                border-radius: 1px;
+                background: rgba(255, 255, 255, 0.15);
+                transition: background 0.2s;
+            }
+            .frame-dot.used {
+                background: #fff;
+            }
+            .frame-dot.used.low {
+                background: #e8b14a;
+            }
+
+            /* ── Preview area ── */
+            #preview-area {
+                flex: 1;
+                position: relative;
+                margin: 24px;
+                border-radius: 12px;
+                background: #1a1a1a;
+                overflow: hidden;
+                min-height: 240px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            #preview-img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: none;
+                border-radius: 12px;
+            }
+            #idle-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                color: rgba(255, 255, 255, 0.25);
+                text-align: center;
+                padding: 32px;
+            }
+            #idle-state p {
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            /* upload progress — slim bar at bottom of preview frame */
+            #upload-overlay {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(0, 0, 0, 0.72);
+                display: none;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 14px 20px;
+                border-radius: 0 0 12px 12px;
+            }
+            #upload-overlay p {
+                font-size: 14px;
+                color: rgba(255, 255, 255, 0.85);
+            }
+            .spinner {
+                width: 18px;
+                height: 18px;
+                border: 2px solid rgba(255, 255, 255, 0.25);
+                border-top-color: #fff;
+                border-radius: 50%;
+                flex-shrink: 0;
+                animation: spin 0.8s linear infinite;
+            }
+            .spinner.done {
+                animation: none;
+                border-color: transparent;
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* ── Controls ── */
+            #controls {
+                padding: 0 24px 40px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            #status-text {
+                font-size: 13px;
+                color: rgba(255, 255, 255, 0.45);
+                min-height: 18px;
+                text-align: center;
+            }
+
+            /* confirm row — gallery only */
+            #confirm-row {
+                display: none;
+                align-items: center;
+                justify-content: center;
+                gap: 32px;
+            }
+            .confirm-btn {
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                border: none;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 22px;
+                transition: transform 0.1s;
+            }
+            .confirm-btn:active {
+                transform: scale(0.92);
+            }
+            #discard-btn {
+                background: rgba(255, 255, 255, 0.12);
+                color: #fff;
+            }
+            #confirm-btn {
+                background: #fff;
+                color: #111;
+                width: 72px;
+                height: 72px;
+                font-size: 26px;
+            }
+
+            /* main action row (idle) */
+            #action-row {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 16px;
+            }
+            .action-btn {
+                flex: 1;
+                padding: 14px;
+                border-radius: 32px;
+                border: none;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                font-family: "Jost", sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                transition:
+                    transform 0.1s,
+                    opacity 0.2s;
+            }
+            .action-btn:active {
+                transform: scale(0.97);
+            }
+            #camera-btn {
+                background: #fff;
+                color: #111;
+            }
+            #camera-btn:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
+                transform: none;
+            }
+            #gallery-btn {
+                background: rgba(255, 255, 255, 0.1);
+                color: rgba(255, 255, 255, 0.8);
+            }
+
+            input[type="file"] {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <!-- Header -->
+            <div id="header">
+                <span id="header-title">Disposable</span>
+                <a href="/album" id="album-btn">
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    >
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <path d="M3 9h18M9 21V9"></path>
+                    </svg>
+                    View album
+                </a>
+            </div>
+
+            <!-- Film counter -->
+            <div id="film-strip">
+                <div id="shot-counter">36</div>
+                <div id="shot-label">shots remaining</div>
+                <div id="film-frames"></div>
+            </div>
+
+            <!-- Preview -->
+            <div id="preview-area">
+                <img id="preview-img" alt="Preview" />
+                <div id="idle-state">
+                    <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1"
+                        stroke-linecap="round"
+                    >
+                        <path
+                            d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+                        ></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <p>Your photo will<br />appear here for review</p>
+                </div>
+                <!-- Upload progress bar -->
+                <div id="upload-overlay">
+                    <div class="spinner" id="upload-spinner"></div>
+                    <p id="overlay-text">Uploading…</p>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div id="controls">
+                <div id="status-text"></div>
+
+                <!-- confirm row — gallery uploads only -->
+                <div id="confirm-row">
+                    <button
+                        class="confirm-btn"
+                        id="discard-btn"
+                        aria-label="Discard">✕</button
+                    >
+                    <button
+                        class="confirm-btn"
+                        id="confirm-btn"
+                        aria-label="Upload">✓</button
+                    >
+                </div>
+
+                <!-- idle: camera + gallery -->
+                <div id="action-row">
+                    <button class="action-btn" id="camera-btn">
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <path
+                                d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+                            ></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        Take photo
+                    </button>
+                    <button class="action-btn" id="gallery-btn">
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <rect x="3" y="3" width="18" height="18" rx="2"
+                            ></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <path d="M21 15l-5-5L5 21"></path>
+                        </svg>
+                        Gallery
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <input
+            type="file"
+            id="cam-input"
+            accept="image/*"
+            capture="environment"
+        />
+        <input type="file" id="gallery-input" accept="image/*" multiple />
+
+        <script>
+            import { uploadToImmich, uploadFiles } from "@lib/immich-upload";
+        </script>
+
+        <script define:vars={{ immichBase, immichSlug, MAX_SHOTS }}>
+            /* ── Persistent identity & shot count ── */
+            function getOrCreateUserId() {
+                let id = localStorage.getItem("cam_user_id");
+                if (!id) {
+                    id =
+                        "u_" +
+                        Math.random().toString(36).slice(2) +
+                        Date.now().toString(36);
+                    localStorage.setItem("cam_user_id", id);
+                }
+                return id;
+            }
+            const userId = getOrCreateUserId();
+            const countKey = "cam_shots_used_" + userId;
+            let shotsUsed = Math.min(
+                parseInt(localStorage.getItem(countKey) ?? "0", 10),
+                MAX_SHOTS,
+            );
+
+            const config = {
+                base: immichBase,
+                slug: immichSlug,
+                deviceId: "WEB-CAM",
+                userId,
+            };
+
+            /* ── DOM refs ── */
+            const shotCounter = document.getElementById("shot-counter");
+            const shotLabel = document.getElementById("shot-label");
+            const filmFrames = document.getElementById("film-frames");
+            const previewImg = document.getElementById("preview-img");
+            const idleState = document.getElementById("idle-state");
+            const overlay = document.getElementById("upload-overlay");
+            const overlayText = document.getElementById("overlay-text");
+            const spinner = document.getElementById("upload-spinner");
+            const statusEl = document.getElementById("status-text");
+            const confirmRow = document.getElementById("confirm-row");
+            const actionRow = document.getElementById("action-row");
+            const cameraBtn = document.getElementById("camera-btn");
+            const galleryBtn = document.getElementById("gallery-btn");
+            const discardBtn = document.getElementById("discard-btn");
+            const confirmBtn = document.getElementById("confirm-btn");
+            const camInput = document.getElementById("cam-input");
+            const galleryInput = document.getElementById("gallery-input");
+
+            let pendingGallery = null;
+
+            /* ── Film strip ── */
+            function renderFilmStrip() {
+                const remaining = MAX_SHOTS - shotsUsed;
+                const isLow = remaining <= 6;
+                const isEmpty = remaining === 0;
+
+                shotCounter.textContent = remaining;
+                shotCounter.className = isEmpty ? "empty" : isLow ? "low" : "";
+                shotLabel.textContent = isEmpty
+                    ? "no shots left"
+                    : "shots remaining";
+                cameraBtn.disabled = isEmpty;
+
+                if (isEmpty) {
+                    setStatus(
+                        "You've used all 36 shots — but you can still upload from gallery!",
+                    );
+                }
+
+                filmFrames.innerHTML = "";
+                for (let i = 0; i < MAX_SHOTS; i++) {
+                    const dot = document.createElement("div");
+                    dot.className =
+                        "frame-dot" +
+                        (i < shotsUsed ? (isLow ? " used low" : " used") : "");
+                    filmFrames.appendChild(dot);
+                }
+            }
+
+            function useShots(count) {
+                shotsUsed = Math.min(shotsUsed + count, MAX_SHOTS);
+                localStorage.setItem(countKey, shotsUsed);
+                renderFilmStrip();
+            }
+
+            /* ── Camera: native app, auto-upload on return ── */
+            cameraBtn.addEventListener("click", () => camInput.click());
+
+            camInput.addEventListener("change", async () => {
+                const file = camInput.files?.[0];
+                if (!file) return;
+                camInput.value = "";
+
+                showPreviewImg(file);
+                actionRow.style.display = "none";
+                showProgress("Uploading…", false);
+
+                const ok = await uploadToImmich(file, config);
+                if (ok) useShots(1);
+
+                showProgress(
+                    ok ? "Uploaded ✓" : "Upload failed — try again",
+                    true,
+                );
+                setTimeout(() => {
+                    reset();
+                    setStatus(
+                        ok
+                            ? "Tap to take another."
+                            : "Upload failed — please retry.",
+                    );
+                }, 1400);
+            });
+
+            /* ── Gallery: preview + confirm ── */
+            galleryBtn.addEventListener("click", () => galleryInput.click());
+
+            galleryInput.addEventListener("change", () => {
+                const files = Array.from(galleryInput.files ?? []);
+                galleryInput.value = "";
+                if (!files.length) return;
+
+                pendingGallery = files;
+                showPreviewImg(files[0]);
+                actionRow.style.display = "none";
+                confirmRow.style.display = "flex";
+                setStatus(
+                    files.length > 1 ? `${files.length} photos selected` : "",
+                );
+            });
+
+            discardBtn.addEventListener("click", reset);
+
+            confirmBtn.addEventListener("click", async () => {
+                if (!pendingGallery) return;
+                const files = pendingGallery;
+                confirmRow.style.display = "none";
+
+                const uploaded = await uploadFiles(
+                    files,
+                    config,
+                    (done, total) => {
+                        showProgress(`Uploading ${done} of ${total}…`, false);
+                    },
+                );
+
+                showProgress(
+                    uploaded === files.length
+                        ? `${uploaded === 1 ? "Photo" : `${uploaded} photos`} uploaded ✓`
+                        : `${uploaded} of ${files.length} uploaded`,
+                    true,
+                );
+                setTimeout(() => {
+                    reset();
+                    setStatus(
+                        uploaded > 0
+                            ? "Thank you! Tap to share another."
+                            : "Upload failed — please try again.",
+                    );
+                }, 1400);
+            });
+
+            /* ── Helpers ── */
+            function showPreviewImg(file) {
+                if (previewImg.src) URL.revokeObjectURL(previewImg.src);
+                previewImg.src = URL.createObjectURL(file);
+                previewImg.style.display = "block";
+                idleState.style.display = "none";
+            }
+
+            function showProgress(msg, done) {
+                overlay.style.display = "flex";
+                overlayText.textContent = msg;
+                spinner.classList.toggle("done", done);
+            }
+
+            function reset() {
+                if (previewImg.src) URL.revokeObjectURL(previewImg.src);
+                pendingGallery = null;
+                previewImg.src = "";
+                previewImg.style.display = "none";
+                idleState.style.display = "flex";
+                confirmRow.style.display = "none";
+                actionRow.style.display = "flex";
+                overlay.style.display = "none";
+                spinner.classList.remove("done");
+                if (shotsUsed < MAX_SHOTS) setStatus("");
+            }
+
+            function setStatus(msg) {
+                statusEl.textContent = msg;
+            }
+
+            /* ── Init ── */
+            renderFilmStrip();
+        </script>
+    </body>
+</html>
