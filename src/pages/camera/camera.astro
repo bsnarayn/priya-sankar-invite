@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
 
 const [siteEntry] = await getCollection("site");
 const site = siteEntry.data;
@@ -10,625 +11,561 @@ const MAX_SHOTS = site.camera_max_shots ?? 0; // 0 = unlimited
 const MAX_UPLOADS = site.camera_max_uploads ?? 0; // 0 = unlimited
 ---
 
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="theme-color" content="#FFFBF6" />
-        <title>Our Camera — {site.groom_name} &amp; {site.bride_name}</title>
+<Base title={`Our Camera — ${site.groom_name} & ${site.bride_name}`}>
+    <div id="app">
+        <div class="cam-logo-wrap">
+            <img
+                src="/images/logo-monogram.webp"
+                alt="Priya & Sankar"
+                class="cam-logo"
+            />
+        </div>
 
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garant:ital,wght@0,300;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&family=Catamaran:wght@300;400&display=swap"
-            rel="stylesheet"
-        />
+        <div id="shots-badge">
+            <div id="shots-count" class="shots-count">0</div>
+            <div id="shots-label" class="shots-label">photos remaining</div>
+            <div id="shots-bar" class="shots-bar"></div>
+        </div>
 
-        <style>
-            *,
-            *::before,
-            *::after {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-            }
-            html,
-            body {
-                height: 100%;
-                background: #fffbf6;
-                color: #3a2e28;
-                font-family: "Jost", sans-serif;
-                font-weight: 300;
-                overscroll-behavior: none;
-            }
-            #app {
-                display: flex;
-                flex-direction: column;
-                min-height: 100dvh;
-                max-width: 480px;
-                margin: 0 auto;
-                padding: 24px 24px 36px;
-                gap: 16px;
-            }
-
-            /* ── Logo ── */
-            .cam-logo-wrap {
-                display: flex;
-                justify-content: flex-start;
-                flex-shrink: 0;
-            }
-            .cam-logo {
-                width: 48px;
-                height: 48px;
-                object-fit: contain;
-                display: block;
-            }
-
-            /* ── Shots badge (hidden when unlimited) ── */
-            #shots-badge {
-                text-align: center;
-                display: none;
-            }
-            #shots-badge.visible {
-                display: block;
-            }
-            .shots-count {
-                font-family: "Italiana", serif;
-                font-size: 40px;
-                line-height: 1;
-                color: #3a2e28;
-            }
-            .shots-count.low {
-                color: #c4622d;
-            }
-            .shots-count.empty {
-                color: #b0998a;
-            }
-            .shots-label {
-                font-family: "Jost", sans-serif;
-                font-size: 11px;
-                letter-spacing: 0.2em;
-                text-transform: uppercase;
-                color: #7a6a5e;
-                margin-top: 4px;
-            }
-
-            /* Segmented shots-remaining bar */
-            .shots-bar {
-                display: flex;
-                gap: 4px;
-                justify-content: center;
-                margin-top: 10px;
-            }
-            .shots-bar-seg {
-                width: 22px;
-                height: 5px;
-                border-radius: 3px;
-                background: #ede4d8;
-                transition: background-color 0.25s;
-            }
-            .shots-bar-seg.filled {
-                background: #146b72;
-            }
-            .shots-bar-seg.filled.low {
-                background: #c4622d;
-            }
-            .shots-bar-seg.filled.empty {
-                background: #b0998a;
-            }
-
-            /* ── Camera card ── */
-            #cam-card {
-                flex: 1;
-                background: #fdf6ee;
-                border: 0.5px solid #ede4d8;
-                border-radius: 16px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 14px;
-                padding: 40px 24px;
-                cursor: pointer;
-                text-align: center;
-                transition:
-                    border-color 0.2s,
-                    opacity 0.2s;
-                min-height: 240px;
-                -webkit-tap-highlight-color: transparent;
-            }
-            #cam-card:active:not(.disabled) {
-                border-color: #146b72;
-            }
-            #cam-card.disabled {
-                opacity: 0.45;
-                cursor: not-allowed;
-            }
-            .cam-icon {
-                width: 60px;
-                height: 60px;
-                border-radius: 50%;
-                background: #146b72;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-            }
-            .cam-title {
-                font-family: "Italiana", serif;
-                font-size: 28px;
-                color: #3a2e28;
-            }
-            .cam-sub {
-                font-family: "Cormorant Garant", serif;
-                font-style: italic;
-                font-weight: 300;
-                font-size: 15px;
-                color: #7a6a5e;
-                line-height: 1.7;
-                max-width: 240px;
-            }
-
-            /* ── Status + progress ── */
-            #status-wrap {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-            }
-            #status-text {
-                text-align: center;
-                font-family: "Jost", sans-serif;
-                font-size: 12px;
-                color: #7a6a5e;
-                min-height: 18px;
-                letter-spacing: 0.03em;
-            }
-            #progress-track {
-                width: 100%;
-                height: 4px;
-                background: #ede4d8;
-                border-radius: 2px;
-                overflow: hidden;
-                display: none;
-            }
-            #progress-track.visible {
-                display: block;
-            }
-            #progress-fill {
-                height: 100%;
-                width: 0%;
-                background: #146b72;
-                border-radius: 2px;
-                transition: width 0.2s ease;
-            }
-
-            /* ── Bottom buttons ── */
-            .cam-actions {
-                display: flex;
-                gap: 12px;
-                align-items: flex-start;
-            }
-            .cam-action-col {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-            }
-            .btn-ghost {
-                width: 100%;
-                padding: 14px 16px;
-                background: transparent;
-                color: #3a2e28;
-                border: 0.5px solid #c8baa8;
-                border-radius: 8px;
-                font-family: "Jost", sans-serif;
-                font-size: 11px;
-                letter-spacing: 0.15em;
-                text-transform: uppercase;
-                font-weight: 500;
-                cursor: pointer;
-                text-decoration: none;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                -webkit-tap-highlight-color: transparent;
-                box-sizing: border-box;
-            }
-            .btn-ghost:disabled,
-            .btn-ghost.disabled {
-                opacity: 0.45;
-                cursor: not-allowed;
-            }
-
-            .upload-hint {
-                text-align: center;
-                font-family: "Jost", sans-serif;
-                font-size: 10px;
-                letter-spacing: 0.06em;
-                color: #b0998a;
-                line-height: 1.4;
-            }
-
-            input[type="file"] {
-                display: none;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="app">
-            <div class="cam-logo-wrap">
-                <img
-                    src="/images/logo-monogram.webp"
-                    alt="Priya & Sankar"
-                    class="cam-logo"
-                />
-            </div>
-
-            <div id="shots-badge">
-                <div id="shots-count" class="shots-count">0</div>
-                <div id="shots-label" class="shots-label">photos remaining</div>
-                <div id="shots-bar" class="shots-bar"></div>
-            </div>
-
-            <div id="cam-card">
-                <div class="cam-icon">
-                    <svg
-                        width="28"
-                        height="28"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#FFFBF6"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                    >
-                        <path
-                            d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
-                        ></path>
-                        <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                </div>
-                <p class="cam-title">Open Camera</p>
-                <p class="cam-sub">Tap to take a photo for the album</p>
-            </div>
-
-            <div id="status-wrap">
-                <div id="progress-track">
-                    <div id="progress-fill"></div>
-                </div>
-                <p id="status-text"></p>
-            </div>
-
-            <div class="cam-actions">
-                <div
-                    class="cam-action-col"
-                    style="flex-direction: column; gap: 6px;"
+        <div id="cam-card">
+            <div class="cam-icon">
+                <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#FFFBF6"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
                 >
-                    <p
-                        id="upload-hint"
-                        class="upload-hint"
-                        style="display:none;"
-                    >
-                    </p>
-                    <div style="display: flex; gap: 12px; width: 100%;">
-                        <button
-                            id="gallery-btn"
-                            class="btn-ghost"
-                            style="flex: 1;"
+                    <path
+                        d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+                    ></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+            </div>
+            <p class="cam-title">Open Camera</p>
+            <p class="cam-sub">Tap to take a photo for the album</p>
+        </div>
+
+        <div id="status-wrap">
+            <div id="progress-track">
+                <div id="progress-fill"></div>
+            </div>
+            <p id="status-text"></p>
+        </div>
+
+        <div class="cam-actions">
+            <div
+                class="cam-action-col"
+                style="flex-direction: column; gap: 6px;"
+            >
+                <p id="upload-hint" class="upload-hint" style="display:none;">
+                </p>
+                <div style="display: flex; gap: 12px; width: 100%;">
+                    <button id="gallery-btn" class="btn-ghost" style="flex: 1;">
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
                         >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                            >
-                                <path
-                                    d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
-                                ></path>
-                            </svg>
-                            Upload
-                        </button>
-                        <a href="/album" class="btn-ghost" style="flex: 1;">
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                            >
-                                <rect x="3" y="3" width="18" height="18" rx="2"
-                                ></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <path d="M21 15l-5-5L5 21"></path>
-                            </svg>
-                            Album
-                        </a>
-                    </div>
+                            <path
+                                d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                            ></path>
+                        </svg>
+                        Upload
+                    </button>
+                    <a href="/album" class="btn-ghost" style="flex: 1;">
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <rect x="3" y="3" width="18" height="18" rx="2"
+                            ></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <path d="M21 15l-5-5L5 21"></path>
+                        </svg>
+                        Album
+                    </a>
                 </div>
             </div>
         </div>
+    </div>
 
-        <input
-            type="file"
-            id="cam-input"
-            accept="image/*"
-            capture="environment"
-        />
-        <input type="file" id="gallery-input" accept="image/*" multiple />
+    <input type="file" id="cam-input" accept="image/*" capture="environment" />
+    <input type="file" id="gallery-input" accept="image/*" multiple />
 
-        <!-- Script 1: pass server-side values to window -->
-        <script define:vars={{ immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS }}
-        >
-            window.__CAM__ = { immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS };
-        </script>
-        <!-- Script 2: module script — can now import shared utilities -->
-        <script>
-            import {
-                uploadToImmich,
-                uploadFiles,
-                compressImage,
-            } from "@lib/immich-upload";
+    <!-- Script 1: pass server-side values to window -->
+    <script define:vars={{ immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS }}>
+        window.__CAM__ = { immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS };
+    </script>
+    <!-- Script 2: module script — can now import shared utilities -->
+    <script>
+        import {
+            uploadToImmich,
+            uploadFiles,
+            compressImage,
+        } from "@lib/immich-upload";
 
-            const { immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS } =
-                window.__CAM__;
+        const { immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS } =
+            window.__CAM__;
 
-            /* ── Persistent identity & shot/upload counts ── */
-            function getOrCreateUserId() {
-                let id = localStorage.getItem("cam_user_id");
-                if (!id) {
-                    id =
-                        "u_" +
-                        Math.random().toString(36).slice(2) +
-                        Date.now().toString(36);
-                    localStorage.setItem("cam_user_id", id);
-                }
-                return id;
+        /* ── Persistent identity & shot/upload counts ── */
+        function getOrCreateUserId() {
+            let id = localStorage.getItem("cam_user_id");
+            if (!id) {
+                id =
+                    "u_" +
+                    Math.random().toString(36).slice(2) +
+                    Date.now().toString(36);
+                localStorage.setItem("cam_user_id", id);
             }
+            return id;
+        }
 
-            const userId = getOrCreateUserId();
-            const shotsCountKey = "cam_shots_used_" + userId;
-            const uploadsCountKey = "cam_uploads_used_" + userId;
+        const userId = getOrCreateUserId();
+        const shotsCountKey = "cam_shots_used_" + userId;
+        const uploadsCountKey = "cam_uploads_used_" + userId;
 
-            const shotsCapped = MAX_SHOTS > 0;
-            const uploadsCapped = MAX_UPLOADS > 0;
+        const shotsCapped = MAX_SHOTS > 0;
+        const uploadsCapped = MAX_UPLOADS > 0;
 
-            let shotsUsed = parseInt(
-                localStorage.getItem(shotsCountKey) ?? "0",
-                10,
-            );
+        let shotsUsed = parseInt(
+            localStorage.getItem(shotsCountKey) ?? "0",
+            10,
+        );
+        if (shotsCapped) shotsUsed = Math.min(shotsUsed, MAX_SHOTS);
+
+        let uploadsUsed = parseInt(
+            localStorage.getItem(uploadsCountKey) ?? "0",
+            10,
+        );
+        if (uploadsCapped) uploadsUsed = Math.min(uploadsUsed, MAX_UPLOADS);
+
+        const config = {
+            base: immichBase,
+            slug: immichSlug,
+            deviceId: "WEB-CAM",
+            userId,
+        };
+
+        /* ── DOM refs ── */
+        const shotsBadge = document.getElementById("shots-badge")!;
+        const shotsCountEl = document.getElementById("shots-count")!;
+        const shotsLabel = document.getElementById("shots-label")!;
+        const shotsBar = document.getElementById("shots-bar")!;
+        const camCard = document.getElementById("cam-card")!;
+        const statusEl = document.getElementById("status-text")!;
+        const progressTrack = document.getElementById("progress-track")!;
+        const progressFill = document.getElementById("progress-fill")!;
+        const galleryBtn = document.getElementById(
+            "gallery-btn",
+        ) as HTMLButtonElement;
+        const camInput = document.getElementById(
+            "cam-input",
+        ) as HTMLInputElement;
+        const galleryInput = document.getElementById(
+            "gallery-input",
+        ) as HTMLInputElement;
+        const uploadHint = document.getElementById("upload-hint")!;
+
+        const SHOTS_BAR_SEGMENTS = 5;
+
+        console.log("[camera] init", {
+            MAX_SHOTS,
+            MAX_UPLOADS,
+            shotsCapped,
+            uploadsCapped,
+            shotsUsed,
+            uploadsUsed,
+        });
+
+        /* ── Shots badge + segmented bar ── */
+        function renderBadge() {
+            if (!shotsCapped) return;
+            shotsBadge.classList.add("visible");
+            const remaining = Math.max(MAX_SHOTS - shotsUsed, 0);
+            const level =
+                remaining === 0 ? "empty" : remaining <= 6 ? "low" : "";
+
+            shotsCountEl.textContent = String(remaining);
+            shotsCountEl.className = "shots-count" + (level ? ` ${level}` : "");
+            shotsLabel.textContent =
+                remaining === 0 ? "no shots left" : "photos remaining";
+            camCard.classList.toggle("disabled", remaining === 0);
+
+            const fraction = MAX_SHOTS > 0 ? remaining / MAX_SHOTS : 0;
+            const filledSegments = Math.ceil(fraction * SHOTS_BAR_SEGMENTS);
+
+            shotsBar.innerHTML = "";
+            for (let i = 0; i < SHOTS_BAR_SEGMENTS; i++) {
+                const seg = document.createElement("div");
+                seg.style.width = "22px";
+                seg.style.height = "5px";
+                seg.style.borderRadius = "3px";
+                seg.style.flexShrink = "0";
+                seg.style.transition = "background-color 0.25s";
+                seg.style.background =
+                    i < filledSegments
+                        ? level === "empty"
+                            ? "#b0998a"
+                            : level === "low"
+                              ? "#c4622d"
+                              : "#146b72"
+                        : "#ede4d8";
+                shotsBar.appendChild(seg);
+            }
+        }
+
+        function useShots(n: number) {
+            shotsUsed += n;
             if (shotsCapped) shotsUsed = Math.min(shotsUsed, MAX_SHOTS);
+            localStorage.setItem(shotsCountKey, String(shotsUsed));
+            renderBadge();
+        }
 
-            let uploadsUsed = parseInt(
-                localStorage.getItem(uploadsCountKey) ?? "0",
-                10,
-            );
+        /* ── Upload cap ── */
+        function remainingUploads() {
+            return uploadsCapped
+                ? Math.max(MAX_UPLOADS - uploadsUsed, 0)
+                : Infinity;
+        }
+
+        function renderUploadButton() {
+            if (!uploadsCapped) {
+                uploadHint.style.display = "none";
+                return;
+            }
+            const remaining = remainingUploads();
+            galleryBtn.classList.toggle("disabled", remaining <= 0);
+            uploadHint.style.display = "block";
+            uploadHint.textContent =
+                remaining > 0
+                    ? `Up to ${MAX_UPLOADS} photo${MAX_UPLOADS === 1 ? "" : "s"} from your gallery`
+                    : "Gallery upload limit reached";
+        }
+
+        function useUploads(n: number) {
+            uploadsUsed += n;
             if (uploadsCapped) uploadsUsed = Math.min(uploadsUsed, MAX_UPLOADS);
+            localStorage.setItem(uploadsCountKey, String(uploadsUsed));
+            renderUploadButton();
+        }
 
-            const config = {
-                base: immichBase,
-                slug: immichSlug,
-                deviceId: "WEB-CAM",
-                userId,
-            };
+        function setStatus(msg: string) {
+            statusEl.textContent = msg;
+        }
 
-            /* ── DOM refs ── */
-            const shotsBadge = document.getElementById("shots-badge")!;
-            const shotsCountEl = document.getElementById("shots-count")!;
-            const shotsLabel = document.getElementById("shots-label")!;
-            const shotsBar = document.getElementById("shots-bar")!;
-            const camCard = document.getElementById("cam-card")!;
-            const statusEl = document.getElementById("status-text")!;
-            const progressTrack = document.getElementById("progress-track")!;
-            const progressFill = document.getElementById("progress-fill")!;
-            const galleryBtn = document.getElementById(
-                "gallery-btn",
-            ) as HTMLButtonElement;
-            const camInput = document.getElementById(
-                "cam-input",
-            ) as HTMLInputElement;
-            const galleryInput = document.getElementById(
-                "gallery-input",
-            ) as HTMLInputElement;
-            const uploadHint = document.getElementById("upload-hint")!;
+        /* ── Progress bar ── */
+        function showProgress(fraction: number) {
+            progressTrack.classList.add("visible");
+            progressFill.style.width = `${Math.round(fraction * 100)}%`;
+        }
 
-            const SHOTS_BAR_SEGMENTS = 5;
+        function hideProgress() {
+            progressTrack.classList.remove("visible");
+            progressFill.style.width = "0%";
+        }
 
-            console.log("[camera] init", {
-                MAX_SHOTS,
-                MAX_UPLOADS,
-                shotsCapped,
-                uploadsCapped,
-                shotsUsed,
-                uploadsUsed,
-            });
-
-            /* ── Shots badge + segmented bar ── */
-            function renderBadge() {
-                if (!shotsCapped) return;
-                shotsBadge.classList.add("visible");
-                const remaining = Math.max(MAX_SHOTS - shotsUsed, 0);
-                const level =
-                    remaining === 0 ? "empty" : remaining <= 6 ? "low" : "";
-
-                shotsCountEl.textContent = String(remaining);
-                shotsCountEl.className =
-                    "shots-count" + (level ? ` ${level}` : "");
-                shotsLabel.textContent =
-                    remaining === 0 ? "no shots left" : "photos remaining";
-                camCard.classList.toggle("disabled", remaining === 0);
-
-                const fraction = MAX_SHOTS > 0 ? remaining / MAX_SHOTS : 0;
-                const filledSegments = Math.ceil(fraction * SHOTS_BAR_SEGMENTS);
-
-                shotsBar.innerHTML = "";
-                for (let i = 0; i < SHOTS_BAR_SEGMENTS; i++) {
-                    const seg = document.createElement("div");
-                    seg.style.width = "22px";
-                    seg.style.height = "5px";
-                    seg.style.borderRadius = "3px";
-                    seg.style.flexShrink = "0";
-                    seg.style.transition = "background-color 0.25s";
-                    seg.style.background =
-                        i < filledSegments
-                            ? level === "empty"
-                                ? "#b0998a"
-                                : level === "low"
-                                  ? "#c4622d"
-                                  : "#146b72"
-                            : "#ede4d8";
-                    shotsBar.appendChild(seg);
-                }
+        /* ── Camera capture ── */
+        camCard.addEventListener("click", () => {
+            if (shotsCapped && MAX_SHOTS - shotsUsed <= 0) {
+                setStatus("No shots left — upload from your gallery instead.");
+                return;
             }
+            camInput.click();
+        });
 
-            function useShots(n: number) {
-                shotsUsed += n;
-                if (shotsCapped) shotsUsed = Math.min(shotsUsed, MAX_SHOTS);
-                localStorage.setItem(shotsCountKey, String(shotsUsed));
-                renderBadge();
+        camInput.addEventListener("change", async () => {
+            const raw = camInput.files?.[0];
+            camInput.value = "";
+            if (!raw) return;
+
+            setStatus("Compressing…");
+            showProgress(0);
+            const file = await compressImage(raw);
+
+            setStatus("Uploading…");
+            const ok = await uploadToImmich(file, config);
+            showProgress(1);
+            if (ok) useShots(1);
+            setStatus(
+                ok
+                    ? "Uploaded ✓  Tap to take another."
+                    : "Upload failed — please try again.",
+            );
+            setTimeout(hideProgress, 600);
+        });
+
+        /* ── Gallery upload ── */
+        galleryBtn.addEventListener("click", () => {
+            if (uploadsCapped && remainingUploads() <= 0) {
+                setStatus("You've reached the upload limit for this device.");
+                return;
             }
+            galleryInput.click();
+        });
 
-            /* ── Upload cap ── */
-            function remainingUploads() {
-                return uploadsCapped
-                    ? Math.max(MAX_UPLOADS - uploadsUsed, 0)
-                    : Infinity;
-            }
+        galleryInput.addEventListener("change", async () => {
+            let rawFiles = Array.from(galleryInput.files ?? []);
+            galleryInput.value = "";
+            if (!rawFiles.length) return;
 
-            function renderUploadButton() {
-                if (!uploadsCapped) {
-                    uploadHint.style.display = "none";
-                    return;
-                }
+            let skipped = 0;
+            if (uploadsCapped) {
                 const remaining = remainingUploads();
-                galleryBtn.classList.toggle("disabled", remaining <= 0);
-                uploadHint.style.display = "block";
-                uploadHint.textContent =
-                    remaining > 0
-                        ? `Up to ${MAX_UPLOADS} photo${MAX_UPLOADS === 1 ? "" : "s"} from your gallery`
-                        : "Gallery upload limit reached";
-            }
-
-            function useUploads(n: number) {
-                uploadsUsed += n;
-                if (uploadsCapped)
-                    uploadsUsed = Math.min(uploadsUsed, MAX_UPLOADS);
-                localStorage.setItem(uploadsCountKey, String(uploadsUsed));
-                renderUploadButton();
-            }
-
-            function setStatus(msg: string) {
-                statusEl.textContent = msg;
-            }
-
-            /* ── Progress bar ── */
-            function showProgress(fraction: number) {
-                progressTrack.classList.add("visible");
-                progressFill.style.width = `${Math.round(fraction * 100)}%`;
-            }
-
-            function hideProgress() {
-                progressTrack.classList.remove("visible");
-                progressFill.style.width = "0%";
-            }
-
-            /* ── Camera capture ── */
-            camCard.addEventListener("click", () => {
-                if (shotsCapped && MAX_SHOTS - shotsUsed <= 0) {
-                    setStatus(
-                        "No shots left — upload from your gallery instead.",
-                    );
-                    return;
+                if (rawFiles.length > remaining) {
+                    skipped = rawFiles.length - remaining;
+                    rawFiles = rawFiles.slice(0, remaining);
                 }
-                camInput.click();
-            });
-
-            camInput.addEventListener("change", async () => {
-                const raw = camInput.files?.[0];
-                camInput.value = "";
-                if (!raw) return;
-
-                setStatus("Compressing…");
-                showProgress(0);
-                const file = await compressImage(raw);
-
-                setStatus("Uploading…");
-                const ok = await uploadToImmich(file, config);
-                showProgress(1);
-                if (ok) useShots(1);
-                setStatus(
-                    ok
-                        ? "Uploaded ✓  Tap to take another."
-                        : "Upload failed — please try again.",
-                );
-                setTimeout(hideProgress, 600);
-            });
-
-            /* ── Gallery upload ── */
-            galleryBtn.addEventListener("click", () => {
-                if (uploadsCapped && remainingUploads() <= 0) {
+                if (rawFiles.length === 0) {
                     setStatus(
                         "You've reached the upload limit for this device.",
                     );
                     return;
                 }
-                galleryInput.click();
+            }
+
+            setStatus("Compressing…");
+            showProgress(0);
+            const files = await Promise.all(
+                rawFiles.map((f) => compressImage(f)),
+            );
+
+            const uploaded = await uploadFiles(files, config, (done, total) => {
+                setStatus(`Uploading ${done} of ${total}…`);
+                showProgress(done / total);
             });
+            if (uploaded > 0) useUploads(uploaded);
 
-            galleryInput.addEventListener("change", async () => {
-                let rawFiles = Array.from(galleryInput.files ?? []);
-                galleryInput.value = "";
-                if (!rawFiles.length) return;
+            let msg =
+                uploaded === files.length
+                    ? `${uploaded === 1 ? "Photo" : `${uploaded} photos`} uploaded ✓`
+                    : `${uploaded} of ${files.length} uploaded — please try again.`;
+            if (skipped > 0)
+                msg += ` (${skipped} skipped — upload limit reached)`;
+            setStatus(msg);
+            setTimeout(hideProgress, 600);
+        });
 
-                let skipped = 0;
-                if (uploadsCapped) {
-                    const remaining = remainingUploads();
-                    if (rawFiles.length > remaining) {
-                        skipped = rawFiles.length - remaining;
-                        rawFiles = rawFiles.slice(0, remaining);
-                    }
-                    if (rawFiles.length === 0) {
-                        setStatus(
-                            "You've reached the upload limit for this device.",
-                        );
-                        return;
-                    }
-                }
+        /* ── Init ── */
+        renderBadge();
+        renderUploadButton();
+    </script>
+</Base>
 
-                setStatus("Compressing…");
-                showProgress(0);
-                const files = await Promise.all(
-                    rawFiles.map((f) => compressImage(f)),
-                );
+<style is:global>
+    html,
+    body {
+        overscroll-behavior: none;
+    }
+</style>
 
-                const uploaded = await uploadFiles(
-                    files,
-                    config,
-                    (done, total) => {
-                        setStatus(`Uploading ${done} of ${total}…`);
-                        showProgress(done / total);
-                    },
-                );
-                if (uploaded > 0) useUploads(uploaded);
+<style>
+    #app {
+        display: flex;
+        flex-direction: column;
+        min-height: 100dvh;
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 24px 24px 36px;
+        gap: 16px;
+    }
 
-                let msg =
-                    uploaded === files.length
-                        ? `${uploaded === 1 ? "Photo" : `${uploaded} photos`} uploaded ✓`
-                        : `${uploaded} of ${files.length} uploaded — please try again.`;
-                if (skipped > 0)
-                    msg += ` (${skipped} skipped — upload limit reached)`;
-                setStatus(msg);
-                setTimeout(hideProgress, 600);
-            });
+    /* ── Logo ── */
+    .cam-logo-wrap {
+        display: flex;
+        justify-content: flex-start;
+        flex-shrink: 0;
+    }
+    .cam-logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        display: block;
+    }
 
-            /* ── Init ── */
-            renderBadge();
-            renderUploadButton();
-        </script>
-    </body>
-</html>
+    /* ── Shots badge ── */
+    #shots-badge {
+        text-align: center;
+        display: none;
+    }
+    #shots-badge.visible {
+        display: block;
+    }
+    .shots-count {
+        font-family: "Italiana", serif;
+        font-size: 40px;
+        line-height: 1;
+        color: #3a2e28;
+        font-weight: 400;
+    }
+    .shots-count.low {
+        color: #c4622d;
+    }
+    .shots-count.empty {
+        color: #b0998a;
+    }
+    .shots-label {
+        font-family: "Jost", sans-serif;
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #7a6a5e;
+        margin-top: 4px;
+    }
+
+    /* Segmented bar */
+    .shots-bar {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+    /* ── Camera card ── */
+    #cam-card {
+        flex: 1;
+        background: #fdf6ee;
+        border: 0.5px solid #ede4d8;
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 40px 24px;
+        cursor: pointer;
+        text-align: center;
+        transition:
+            border-color 0.2s,
+            opacity 0.2s;
+        min-height: 240px;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    }
+    #cam-card:active:not(.disabled) {
+        border-color: #146b72;
+    }
+    #cam-card.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+    .cam-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #146b72;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .cam-title {
+        font-family: "Italiana", serif;
+        font-size: 28px;
+        color: #3a2e28;
+        font-weight: 400;
+    }
+    .cam-sub {
+        font-family: "Cormorant Garant", serif;
+        font-style: italic;
+        font-weight: 300;
+        font-size: 15px;
+        color: #7a6a5e;
+        line-height: 1.7;
+        max-width: 240px;
+    }
+
+    /* ── Status + progress ── */
+    #status-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    #status-text {
+        text-align: center;
+        font-family: "Jost", sans-serif;
+        font-size: 12px;
+        color: #7a6a5e;
+        min-height: 18px;
+        letter-spacing: 0.03em;
+    }
+    #progress-track {
+        width: 100%;
+        height: 4px;
+        background: #ede4d8;
+        border-radius: 2px;
+        overflow: hidden;
+        display: none;
+    }
+    #progress-track.visible {
+        display: block;
+    }
+    #progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #146b72;
+        border-radius: 2px;
+        transition: width 0.2s ease;
+    }
+
+    /* ── Bottom buttons ── */
+    .cam-actions {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    .cam-action-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .btn-ghost {
+        width: 100%;
+        padding: 14px 16px;
+        background: transparent;
+        color: #3a2e28;
+        border: 0.5px solid #c8baa8;
+        border-radius: 8px;
+        font-family: "Jost", sans-serif;
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        -webkit-tap-highlight-color: transparent;
+        box-sizing: border-box;
+    }
+    .btn-ghost:disabled,
+    .btn-ghost.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+    .upload-hint {
+        text-align: center;
+        font-family: "Jost", sans-serif;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        color: #b0998a;
+        line-height: 1.4;
+    }
+    input[type="file"] {
+        display: none;
+    }
+</style>
