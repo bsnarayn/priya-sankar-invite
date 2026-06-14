@@ -39,7 +39,8 @@
 }
 
 #people {
-    background: #FDF6EE;
+    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
+    position: relative;
 }
 
 #event {
@@ -68,6 +69,11 @@
 }
 
 #story>.inner {
+    position: relative;
+    z-index: 2;
+}
+
+#people>.inner {
     position: relative;
     z-index: 2;
 }
@@ -317,16 +323,59 @@
 .profile-card {
     background: #FFFBF6;
     border-radius: 12px;
-    padding: 28px 24px;
+    overflow: hidden;
     border: 0.5px solid #EDE4D8;
+    position: relative;
+    min-height: 460px;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    display: flex;
+    flex-direction: column;
 }
 
 .profile-card--groom {
-    border-left: 2.5px solid #C9A227;
+    border-top: 2.5px solid #C9A227;
 }
 
 .profile-card--bride {
-    border-left: 2.5px solid #146B72;
+    border-top: 2.5px solid #146B72;
+}
+
+.profile-photo {
+    width: 100%;
+    height: 260px;
+    background: #EDE4D8;
+    overflow: hidden;
+}
+
+.profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #EDE4D8;
+    display: block;
+}
+
+.profile-photo--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.profile-photo--placeholder span {
+    color: #8C7060;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.5;
+}
+
+.profile-content {
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .profile-initial {
@@ -343,16 +392,16 @@
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: #7A6A5E;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
 }
 
 .profile-bio {
     font-family: "Cormorant Garant", serif;
     font-style: italic;
-    font-weight: 300;
-    font-size: 15px;
-    color: #5C4D43;
-    line-height: 1.8;
+    font-weight: 400;
+    font-size: 17px;
+    color: #3A2E28;
+    line-height: 1.85;
 }
 
 /* Event details */

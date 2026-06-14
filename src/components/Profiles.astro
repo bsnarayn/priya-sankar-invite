@@ -1,26 +1,58 @@
 ---
 import { getCollection } from "astro:content";
+import profileImages from "../content/couple/images.json";
+
 const couple = await getCollection("couple");
 const groom = couple.find((p) => p.id === "groom");
 const bride = couple.find((p) => p.id === "bride");
 if (!groom || !bride) throw new Error("Missing couple content");
+
+const images = profileImages as Record<string, string>;
 ---
 
 <section id="people">
   <div class="inner">
-    <span class="eyebrow">The people</span>
     <h2 class="sec-heading">Behind the</h2>
     <span class="sec-script">celebration</span>
 
     <div class="profile-grid">
       {
-        [groom, bride].map((person) => (
-          <div class="profile-card">
-            <div class={`profile-card profile-card--${person.id}`} />
-            <p class="profile-role">{person.data.role}</p>
-            <p class="profile-bio">"{person.data.bio}"</p>
-          </div>
-        ))
+        [groom, bride].map((person) => {
+          const filename = images[person.id];
+          const photoSrc = filename
+            ? `/images/profiles/${filename}`
+            : undefined;
+          return (
+            <div class={`profile-card profile-card--${person.id}`}>
+              {photoSrc ? (
+                <div class="profile-photo">
+                  <img src={photoSrc} alt={person.data.name} />
+                </div>
+              ) : (
+                <div class="profile-photo profile-photo--placeholder">
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#C4622D"
+                    stroke-width="1"
+                    stroke-linecap="round"
+                  >
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                  </svg>
+                  <span>Your photo here</span>
+                </div>
+              )}
+              <div class="profile-content">
+                <p class="profile-initial">{person.data.name}</p>
+                <p class="profile-role">{person.data.role}</p>
+                <p class="profile-bio">"{person.data.bio}"</p>
+              </div>
+            </div>
+          );
+        })
       }
     </div>
   </div>
