@@ -1,19 +1,33 @@
 ---
-import { getEntry, render } from "astro:content";
+import { getEntry, render, getCollection } from "astro:content";
+import sliderImagesData from "../content/story/sliderimages.json";
+
 const story = await getEntry("story", "story");
 if (!story) throw new Error("Missing story content");
 const { Content } = await render(story);
+
+const [siteEntry] = await getCollection("site");
+const site = siteEntry.data;
+
+// sliderimages.json is a plain array of filenames living in
+// public/images/story/. site.story_images optionally caps how many
+// of those are shown (0 or unset = no cap).
+const allFilenames: string[] = Array.isArray(sliderImagesData)
+    ? sliderImagesData
+    : [];
+const cap =
+    site.story_images && site.story_images > 0 ? site.story_images : undefined;
+const filenames = cap ? allFilenames.slice(0, cap) : allFilenames;
+const storyImages = filenames.map((name) => `/images/story/${name}`);
+const hasImages = storyImages.length > 0;
 ---
 
 <section id="story">
     <div class="inner">
-        <span class="eyebrow">The story</span>
         <h2 class="sec-heading">How we got</h2>
         <span class="sec-script">here</span>
-
         <div class="story-card">
             <div class="story-text">
-                <p class="story-period">{story.data.period}</p>
                 <h3 class="story-title">{story.data.title}</h3>
                 <div class="story-body">
                     <Content />
@@ -21,12 +35,28 @@ const { Content } = await render(story);
             </div>
             <div class="story-img">
                 {
-                    story.data.photo ? (
-                        <img
-                            src={story.data.photo}
-                            alt="Our story"
-                            style="width:100%;height:100%;object-fit:cover;"
-                        />
+                    hasImages ? (
+                        <div class="story-carousel">
+                            <div
+                                class="story-carousel-track"
+                                style={`--story-set-width:${storyImages.length * 320}px; --story-marquee-duration:${storyImages.length * 8}s;`}
+                            >
+                                {storyImages.map((src) => (
+                                    <div class="story-carousel-slide">
+                                        <img src={src} alt="Our story" />
+                                    </div>
+                                ))}
+                                {/* Duplicate set for seamless marquee loop */}
+                                {storyImages.map((src) => (
+                                    <div
+                                        class="story-carousel-slide"
+                                        aria-hidden="true"
+                                    >
+                                        <img src={src} alt="" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     ) : (
                         <>
                             <svg

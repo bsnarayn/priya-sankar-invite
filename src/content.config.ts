@@ -51,6 +51,7 @@ const site = defineCollection({
         album_available_after: z.string().optional(),
         album_notify_webhook_url: z.string().optional(),
         camera_max_uploads: z.number().optional(),
+        story_images: z.number().optional(),
     }),
 });
 
