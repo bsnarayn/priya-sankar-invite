@@ -39,7 +39,7 @@
 }
 
 #people {
-    background: #FDF6EE;
+    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
     position: relative;
 }
 
@@ -49,7 +49,7 @@
 }
 
 #rsvp {
-    background: #FDF6EE;
+    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
     position: relative;
 }
 
@@ -76,8 +76,7 @@
 }
 
 #photos {
-    background: #F5EAD8;
-    position: relative;
+    background: #FFFBF6;
 }
 
 /* Inner max-width containers */
@@ -92,8 +91,6 @@
     margin-left: auto;
     margin-right: auto;
     width: 100%;
-    position: relative;
-    z-index: 2;
 }
 
 #story>.inner {
@@ -440,16 +437,6 @@
 /* Event details */
 .event-list {
     border-top: 0.5px solid #EDE4D8;
-}
-
-.event-card {
-    background: #FDF6EE;
-    border-radius: 12px;
-    border: 0.5px solid #EDE4D8;
-    padding: 36px 32px;
-    position: relative;
-    z-index: 2;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
 }
 
 .event-row {
@@ -849,8 +836,6 @@
     align-items: center;
     justify-content: center;
     z-index: 2;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
-    position: relative;
 }
 
 .upload-zone:hover {
@@ -891,8 +876,6 @@
     align-items: center;
     justify-content: center;
     z-index: 2;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
-    position: relative;
 }
 
 .qr-label {
@@ -935,7 +918,7 @@
 
 /* Footer */
 #footer {
-    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
+    background: #F5EAD8;
     text-align: center;
     border-top: 0.5px solid #EDE4D8;
 }
@@ -1059,6 +1042,83 @@
     display: block;
 }
 
+/* ── Album page ── */
+#gate {
+    min-height: 100vh;
+    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 144px;
+}
+
+.gate-inner {
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.gate-form {
+    background: #FDF6EE;
+    border-radius: 12px;
+    border: 0.5px solid #EDE4D8;
+    padding: 32px 28px;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    display: grid;
+    gap: 14px;
+    text-align: left;
+    margin-top: 8px;
+}
+
+.gate-success {
+    font-family: "Cormorant Garant", serif;
+    font-style: italic;
+    font-size: 15px;
+    color: #146B72;
+    text-align: center;
+    margin-top: 4px;
+}
+
+.gate-error {
+    font-family: "Jost", sans-serif;
+    font-size: 12px;
+    color: #C4622D;
+    text-align: center;
+    margin-top: 4px;
+}
+
+#album-content {
+    padding: 144px;
+    min-height: 100vh;
+    background: #FDF6EE;
+}
+
+.album-status {
+    font-family: "Cormorant Garant", serif;
+    font-style: italic;
+    font-size: 14px;
+    color: #7A6A5E;
+    margin-top: 24px;
+}
+
+.album-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 32px;
+}
+
+.album-grid img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #EDE4D8;
+    display: block;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
     .story-card {
@@ -1079,5 +1139,12 @@
 
     .photo-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 640px) {
+    .album-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
     }
 }
