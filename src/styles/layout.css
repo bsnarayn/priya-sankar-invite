@@ -39,7 +39,7 @@
 }
 
 #people {
-    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
+    background: #FDF6EE;
     position: relative;
 }
 
@@ -49,18 +49,18 @@
 }
 
 #rsvp {
-    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
+    background: #FDF6EE;
     position: relative;
 }
 
 .rsvp-form-section {
-    background: #F5EAD8;
+    background: #FDF6EE;
     padding: 64px 24px;
     position: relative;
 }
 
 .rsvp-form-card {
-    background: #FDF6EE;
+    background: #F5EAD8;
     border-radius: 12px;
     border: 0.5px solid #EDE4D8;
     padding: 36px 32px;
@@ -76,7 +76,8 @@
 }
 
 #photos {
-    background: #FFFBF6;
+    background: #F5EAD8;
+    position: relative;
 }
 
 /* Inner max-width containers */
@@ -87,6 +88,8 @@
 #rsvp>.inner,
 .rsvp-form-section>.inner,
 #photos>.inner {
+    position: relative;
+    z-index: 2;
     max-width: 720px;
     margin-left: auto;
     margin-right: auto;
@@ -104,6 +107,11 @@
 }
 
 #event>.inner {
+    position: relative;
+    z-index: 2;
+}
+
+#photos>.inner {
     position: relative;
     z-index: 2;
 }
@@ -435,6 +443,16 @@
 }
 
 /* Event details */
+.event-card {
+    background: #FDF6EE;
+    border-radius: 12px;
+    border: 0.5px solid #EDE4D8;
+    padding: 36px 32px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+}
+
 .event-list {
     border-top: 0.5px solid #EDE4D8;
 }
@@ -538,7 +556,7 @@
 /* Choice toggle buttons */
 /* Toggle card wrapper */
 .rsvp-toggle-card {
-    background: #FDF6EE;
+    background: #F5EAD8;
     border-radius: 12px;
     border: 0.5px solid #EDE4D8;
     padding: 36px 40px;
@@ -836,6 +854,8 @@
     align-items: center;
     justify-content: center;
     z-index: 2;
+    position: relative;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
 }
 
 .upload-zone:hover {
@@ -876,6 +896,8 @@
     align-items: center;
     justify-content: center;
     z-index: 2;
+    position: relative;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
 }
 
 .qr-label {
@@ -918,7 +940,7 @@
 
 /* Footer */
 #footer {
-    background: #F5EAD8;
+    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
     text-align: center;
     border-top: 0.5px solid #EDE4D8;
 }
@@ -1049,7 +1071,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 144px;
+    padding: 140px 24px 64px;
 }
 
 .gate-inner {
@@ -1089,9 +1111,22 @@
 }
 
 #album-content {
-    padding: 144px;
+    padding: 140px 24px 64px;
     min-height: 100vh;
     background: #FDF6EE;
+}
+
+.album-header {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+}
+
+.album-logo {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 .album-status {
