@@ -1,0 +1,214 @@
+---
+// HeartsSection — a section-scoped variant of Hearts.astro.
+//
+// Unlike Hearts.astro (full-viewport, tied to the entry overlay and a
+// single global window.__startHearts/__stopHearts), this renders an
+// absolutely-positioned layer that fills its nearest positioned
+// ancestor. Hearts spawn at random positions within that layer's
+// bounds and the spawn loop starts/stops automatically based on the
+// section's scroll visibility (IntersectionObserver) — no global
+// functions, no manual start/stop wiring needed.
+//
+// Usage: place <HeartsSection /> as a direct child of a section that
+// has position:relative, BEFORE .inner (e.g. #people), so the layer
+// spans the full section width/height and renders behind .inner's
+// content (z-index:0 vs .inner's z-index:2).
+---
+
+<div class="hearts-section-layer" aria-hidden="true"></div>
+
+<script>
+    import { gsap } from "gsap";
+
+    const HEART_COLORS = ["#C0392B", "#D9534F", "#B33A52"];
+    const MAX_CONCURRENT = 3;
+    const SPAWN_INTERVAL_MIN = 900; // ms
+    const SPAWN_INTERVAL_MAX = 2200; // ms
+
+    function heartSVG(color: string, size: number) {
+        return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+            <path d="M12 21s-7.5-4.7-10-9.3C0.3 8.6 2 5 5.5 5 8 5 10 6.5 12 9c2-2.5 4-4 6.5-4C22 5 23.7 8.6 22 11.7 19.5 16.3 12 21 12 21z" fill="${color}"/>
+        </svg>`;
+    }
+
+    function initHeartsLayer(layer: HTMLElement) {
+        let activeCount = 0;
+        let spawnTimeoutId: number | null = null;
+        let running = false;
+
+        function spawnHeart() {
+            const rect = layer.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+            if (width === 0 || height === 0) return;
+
+            const section = layer.closest("section");
+            const inner = section?.querySelector<HTMLElement>(".inner");
+            const innerRect = inner?.getBoundingClientRect();
+
+            // Bounds of .inner relative to the layer's own top-left —
+            // this is the area covered by section content (heading,
+            // cards) that hearts should avoid since they'd be hidden
+            // behind it anyway.
+            const innerBox = innerRect
+                ? {
+                      left: innerRect.left - rect.left,
+                      top: innerRect.top - rect.top,
+                      right: innerRect.right - rect.left,
+                      bottom: innerRect.bottom - rect.top,
+                  }
+                : null;
+
+            const size = 10 + Math.random() * 12; // 10–22px
+
+            // Pick a random point within the layer, resampling if it
+            // falls inside .inner's box (the cards/content area).
+            // Bounded attempts to avoid an infinite loop on tiny
+            // layers where .inner fills almost everything.
+            let x = 0;
+            let y = 0;
+            let attempts = 0;
+            do {
+                x = Math.random() * width;
+                y = Math.random() * height;
+                attempts++;
+            } while (
+                innerBox &&
+                attempts < 12 &&
+                x > innerBox.left &&
+                x < innerBox.right &&
+                y > innerBox.top &&
+                y < innerBox.bottom
+            );
+
+            // If we couldn't find a margin spot after several
+            // attempts (e.g. .inner fills the whole layer), skip this
+            // spawn rather than place a heart that'll be hidden.
+            if (
+                innerBox &&
+                attempts >= 12 &&
+                x > innerBox.left &&
+                x < innerBox.right &&
+                y > innerBox.top &&
+                y < innerBox.bottom
+            ) {
+                return;
+            }
+
+            const color =
+                HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)];
+
+            const el = document.createElement("div");
+            el.style.position = "absolute";
+            el.style.left = `${x - size / 2}px`;
+            el.style.top = `${y - size / 2}px`;
+            el.innerHTML = heartSVG(color, size);
+            layer.appendChild(el);
+
+            activeCount++;
+            gsap.set(el, { scale: 0.3, opacity: 0 });
+
+            gsap.timeline({
+                onComplete: () => {
+                    el.remove();
+                    activeCount--;
+                },
+            })
+                // Pop in
+                .to(el, {
+                    opacity: 1,
+                    scale: 1,
+                    duration: 0.35,
+                    ease: "back.out(2)",
+                })
+                // Heartbeat double-pulse ("lub-dub")
+                .to(el, { scale: 1.25, duration: 0.18, ease: "power1.out" })
+                .to(el, { scale: 1, duration: 0.18, ease: "power1.in" })
+                .to(
+                    el,
+                    { scale: 1.15, duration: 0.16, ease: "power1.out" },
+                    "+=0.05",
+                )
+                .to(el, { scale: 1, duration: 0.16, ease: "power1.in" })
+                // Fade out
+                .to(
+                    el,
+                    {
+                        opacity: 0,
+                        scale: 0.85,
+                        duration: 0.5,
+                        ease: "power1.in",
+                    },
+                    "+=0.3",
+                );
+        }
+
+        function tick() {
+            if (!running) return;
+
+            if (activeCount < MAX_CONCURRENT) {
+                spawnHeart();
+            }
+
+            const delay =
+                SPAWN_INTERVAL_MIN +
+                Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
+            spawnTimeoutId = window.setTimeout(tick, delay);
+        }
+
+        function start() {
+            if (running) return;
+            running = true;
+            tick();
+        }
+
+        function stop() {
+            running = false;
+            if (spawnTimeoutId !== null) {
+                clearTimeout(spawnTimeoutId);
+                spawnTimeoutId = null;
+            }
+            gsap.killTweensOf(layer.querySelectorAll("*"));
+            layer.innerHTML = "";
+            activeCount = 0;
+        }
+
+        return { start, stop };
+    }
+
+    // Each .hearts-section-layer gets its own independent spawn loop,
+    // gated by an IntersectionObserver on its parent section.
+    document
+        .querySelectorAll<HTMLElement>(".hearts-section-layer")
+        .forEach((layer) => {
+            const section = layer.closest("section");
+            if (!section) return;
+
+            const controls = initHeartsLayer(layer);
+
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            controls.start();
+                        } else {
+                            controls.stop();
+                        }
+                    });
+                },
+                { threshold: 0.2 },
+            );
+
+            observer.observe(section);
+        });
+</script>
+
+<style>
+    .hearts-section-layer {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+    }
+</style>

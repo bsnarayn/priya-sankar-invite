@@ -1,16 +1,15 @@
 ---
 import { getCollection } from "astro:content";
-import profileImages from "../content/couple/images.json";
+import HeartsSection from "./HeartsSection.astro";
 
 const couple = await getCollection("couple");
 const groom = couple.find((p) => p.id === "groom");
 const bride = couple.find((p) => p.id === "bride");
 if (!groom || !bride) throw new Error("Missing couple content");
-
-const images = profileImages as Record<string, string>;
 ---
 
 <section id="people">
+  <HeartsSection />
   <div class="inner">
     <h2 class="sec-heading">Behind the</h2>
     <span class="sec-script">celebration</span>
@@ -18,18 +17,16 @@ const images = profileImages as Record<string, string>;
     <div class="profile-grid">
       {
         [groom, bride].map((person) => {
-          const filename = images[person.id];
-          const photoSrc = filename
-            ? `/images/profiles/${filename}`
-            : undefined;
+          const photoSrc = `/images/profiles/${person.id}.webp`;
           return (
             <div class={`profile-card profile-card--${person.id}`}>
-              {photoSrc ? (
-                <div class="profile-photo">
-                  <img src={photoSrc} alt={person.data.name} />
-                </div>
-              ) : (
-                <div class="profile-photo profile-photo--placeholder">
+              <div class="profile-photo">
+                <img
+                  src={photoSrc}
+                  alt={person.data.name}
+                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                />
+                <div class="profile-photo--placeholder" style="display:none;">
                   <svg
                     width="32"
                     height="32"
@@ -44,7 +41,7 @@ const images = profileImages as Record<string, string>;
                   </svg>
                   <span>Your photo here</span>
                 </div>
-              )}
+              </div>
               <div class="profile-content">
                 <p class="profile-initial">{person.data.name}</p>
                 <p class="profile-role">{person.data.role}</p>
