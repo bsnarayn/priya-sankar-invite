@@ -14,8 +14,25 @@ import Hearts from "./Hearts.astro";
     style="position:fixed;inset:0;z-index:50;display:flex;cursor:pointer;user-select:none;overflow:hidden;"
     aria-label="Tap to open"
 >
-    <div id="door-left" style="width:50%;height:100%;background:#F2E8D5;"></div>
-    <div id="door-right" style="width:50%;height:100%;background:#e7d8c3;">
+    <div
+        id="door-left"
+        style="
+        width:50%;
+        height:100%;
+        background: linear-gradient(to right, #BF9060 0%, #D4AA7D 25%, #EDD9B8 60%, #F5EAD8 100%);
+        box-shadow: inset -20px 0 40px rgba(80,50,20,0.22);
+    "
+    >
+    </div>
+    <div
+        id="door-right"
+        style="
+        width:50%;
+        height:100%;
+        background: linear-gradient(to left, #BF9060 0%, #D4AA7D 25%, #EDD9B8 60%, #F5EAD8 100%);
+        box-shadow: inset 20px 0 40px rgba(80,50,20,0.22);
+    "
+    >
     </div>
 </div>
 
@@ -56,6 +73,11 @@ import Hearts from "./Hearts.astro";
         Tap to Celebrate
     </p>
 </div>
+
+<canvas
+    id="confetti-canvas"
+    style="position:fixed;inset:0;z-index:53;pointer-events:none;width:100vw;height:100vh;"
+    aria-hidden="true"></canvas>
 
 <script>
     import { gsap } from "gsap";
@@ -100,10 +122,114 @@ import Hearts from "./Hearts.astro";
         } catch (_) {}
     }
 
+    /* ── Confetti burst ── */
+    function burstConfetti() {
+        const canvas = document.getElementById(
+            "confetti-canvas",
+        ) as HTMLCanvasElement;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const COLORS = [
+            "#C9A227",
+            "#E8A0A8",
+            "#9FC9C9",
+            "#7D1A6B",
+            "#FFFBF6",
+            "#C0535A",
+        ];
+        const PARTICLE_COUNT = 120;
+        const originX = canvas.width / 2;
+        const originY = canvas.height / 2;
+
+        type Particle = {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            color: string;
+            size: number;
+            rotation: number;
+            rotationSpeed: number;
+            opacity: number;
+            shape: "rect" | "circle";
+        };
+
+        const particles: Particle[] = [];
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 4 + Math.random() * 10;
+            particles.push({
+                x: originX,
+                y: originY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 4,
+                color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                size: 5 + Math.random() * 7,
+                rotation: Math.random() * 360,
+                rotationSpeed: (Math.random() - 0.5) * 8,
+                opacity: 1,
+                shape: Math.random() > 0.4 ? "rect" : "circle",
+            });
+        }
+
+        let elapsed = 0;
+        const GRAVITY = 0.25;
+        const DRAG = 0.97;
+
+        function draw() {
+            ctx!.clearRect(0, 0, canvas.width, canvas.height);
+            let alive = false;
+
+            for (const p of particles) {
+                if (p.opacity <= 0) continue;
+                alive = true;
+
+                p.vy += GRAVITY;
+                p.vx *= DRAG;
+                p.vy *= DRAG;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rotation += p.rotationSpeed;
+                if (elapsed > 40) p.opacity -= 0.018;
+
+                ctx!.save();
+                ctx!.globalAlpha = Math.max(p.opacity, 0);
+                ctx!.fillStyle = p.color;
+                ctx!.translate(p.x, p.y);
+                ctx!.rotate((p.rotation * Math.PI) / 180);
+
+                if (p.shape === "rect") {
+                    ctx!.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+                } else {
+                    ctx!.beginPath();
+                    ctx!.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                    ctx!.fill();
+                }
+                ctx!.restore();
+            }
+
+            elapsed++;
+            if (alive) {
+                requestAnimationFrame(draw);
+            } else {
+                ctx!.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        draw();
+    }
+
     function launch() {
         if (triggered) return;
         triggered = true;
         playWhoosh();
+        burstConfetti();
 
         const tl = gsap.timeline();
 
