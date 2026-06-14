@@ -34,7 +34,8 @@
 }
 
 #story {
-    background: #FFFBF6;
+    background: #F5EAD8;
+    position: relative;
 }
 
 #people {
@@ -66,6 +67,11 @@
     width: 100%;
 }
 
+#story>.inner {
+    position: relative;
+    z-index: 2;
+}
+
 /* Eyebrow label */
 .eyebrow {
     font-family: "Jost", sans-serif;
@@ -78,6 +84,23 @@
 }
 
 /* Section headings */
+.sec-heading-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25em;
+    margin-bottom: 8px;
+}
+
+.sec-heading-row .sec-heading {
+    margin-bottom: 0;
+}
+
+.sec-heading-row .sec-script {
+    display: inline;
+    margin-bottom: 0;
+}
+
 .sec-heading {
     font-family: "Italiana", serif;
     font-size: clamp(36px, 6vw, 52px);
@@ -174,6 +197,10 @@
     border-radius: 12px;
     overflow: hidden;
     border: 0.5px solid #EDE4D8;
+    position: relative;
+    z-index: 2;
+    min-height: 460px;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
 }
 
 .story-text {
@@ -181,32 +208,33 @@
     padding: 36px 32px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-}
-
-.story-period {
-    font-family: "Jost", sans-serif;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #146B72;
-    margin-bottom: 14px;
+    justify-content: flex-start;
 }
 
 .story-title {
     font-family: "Italiana", serif;
-    font-size: 24px;
+    font-size: 30px;
+    font-weight: 400;
     color: #3A2E28;
     line-height: 1.25;
-    margin-bottom: 14px;
+    margin-bottom: 28px;
 }
 
 .story-body {
-    font-family: "Jost", sans-serif;
-    font-weight: 300;
-    font-size: 13px;
-    color: #5C4D43;
+    font-family: "Cormorant Garant", serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 17px;
+    color: #3A2E28;
     line-height: 1.85;
+}
+
+.story-body>p {
+    margin-bottom: 14px;
+}
+
+.story-body>p:last-child {
+    margin-bottom: 0;
 }
 
 .story-img {
@@ -217,11 +245,66 @@
     justify-content: center;
     flex-direction: column;
     gap: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.story-img>svg,
+.story-img>span {
     color: #8C7060;
     font-size: 10px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     opacity: 0.5;
+}
+
+/* Story image carousel — continuous marquee, slides scroll
+   horizontally without discrete steps. The track contains the image
+   set twice (duplicated in markup) so the loop is seamless. */
+.story-carousel {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.story-carousel-track {
+    display: flex;
+    height: 100%;
+    width: max-content;
+    animation: story-marquee var(--story-marquee-duration, 40s) linear infinite;
+}
+
+.story-carousel-slide {
+    flex: 0 0 auto;
+    height: 100%;
+    width: 320px;
+}
+
+.story-carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #EDE4D8;
+    display: block;
+}
+
+@keyframes story-marquee {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        /* Shift left by exactly one full (non-duplicated) set width.
+           --story-set-width is set inline per-instance based on the
+           number of images and slide width. */
+        transform: translateX(calc(-1 * var(--story-set-width, 320px)));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .story-carousel-track {
+        animation: none;
+    }
 }
 
 /* Profile cards */
