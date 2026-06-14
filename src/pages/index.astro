@@ -38,3 +38,16 @@ const event = eventEntry.data;
 	</main>
 	<PlaneNav />
 </Base>
+
+<script>
+	// Petals fade in a short while after the entry doors finish opening.
+	// Listens for the `invite:opened` event dispatched by Entry.astro —
+	// fires on every open, including reopens after the footer close loop.
+	const PETAL_FADE_IN_DELAY = 800; // ms
+
+	window.addEventListener("invite:opened", () => {
+		setTimeout(() => {
+			(window as any).__startPetals?.();
+		}, PETAL_FADE_IN_DELAY);
+	});
+</script>

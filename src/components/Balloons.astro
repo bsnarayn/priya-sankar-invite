@@ -1,7 +1,8 @@
 ---
 // Balloons — joyful rising balloons, bottom to top
 // Self-contained: renders its own full-viewport layer and starts
-// animating on load. Call (window as any).__stopBalloons() to halt.
+// animating on load. Call (window as any).__stopBalloons() to fade out
+// and halt.
 ---
 
 <div
@@ -21,6 +22,7 @@
     const BALLOON_COUNT = 5;
 
     let balloonTweens: gsap.core.Tween[] = [];
+    let layerFadeTween: gsap.core.Tween | null = null;
 
     function balloonSVG(color: string, width: number) {
         const height = width * 1.2;
@@ -113,13 +115,40 @@
         }
     }
 
-    function stopBalloons() {
-        balloonTweens.forEach((t) => t.kill());
-        if (balloonLayer) balloonLayer.innerHTML = "";
-        balloonTweens = [];
+    // Spawn (if not already present) and ensure the layer is visible.
+    function startBalloons() {
+        if (!balloonLayer) return;
+        if (layerFadeTween) layerFadeTween.kill();
+
+        if (balloonLayer.children.length === 0) {
+            spawnBalloons();
+        }
+
+        layerFadeTween = gsap.to(balloonLayer, {
+            opacity: 1,
+            duration: 0.6,
+            ease: "power1.out",
+        });
     }
 
-    (window as any).__startBalloons = spawnBalloons;
+    // Fade the layer out, then stop tweens and clear once invisible.
+    function stopBalloons() {
+        if (!balloonLayer) return;
+        if (layerFadeTween) layerFadeTween.kill();
+
+        layerFadeTween = gsap.to(balloonLayer, {
+            opacity: 0,
+            duration: 0.6,
+            ease: "power1.in",
+            onComplete: () => {
+                balloonTweens.forEach((t) => t.kill());
+                balloonLayer!.innerHTML = "";
+                balloonTweens = [];
+            },
+        });
+    }
+
+    (window as any).__startBalloons = startBalloons;
     (window as any).__stopBalloons = stopBalloons;
 
     spawnBalloons();

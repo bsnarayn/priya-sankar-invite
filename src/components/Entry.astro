@@ -142,7 +142,7 @@ import Hearts from "./Hearts.astro";
             .set([screen, monogramWrap], { display: "none" })
             .then(() => {
                 document.body.classList.remove("no-scroll");
-                (window as any).__startPetals?.();
+                window.dispatchEvent(new CustomEvent("invite:opened"));
                 (window as any).__stopBalloons?.();
                 (window as any).__stopHearts?.();
             });

@@ -1,12 +1,13 @@
 ---
 // Petals — "shower of blessings" ambient animation
-// Self-contained: renders its own full-viewport layer and starts
-// animating on load. Call (window as any).__stopPetals() to halt.
+// Self-contained: renders its own full-viewport layer.
+// Does NOT auto-start — call (window as any).__startPetals() to spawn
+// and fade in, and (window as any).__stopPetals() to fade out and clear.
 ---
 
 <div
     id="petal-layer"
-    style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:52;pointer-events:none;"
+    style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:52;pointer-events:none;opacity:0;"
     aria-hidden="true"
 >
 </div>
@@ -32,6 +33,7 @@
     const PETAL_COUNT = 20;
 
     let petalTweens: gsap.core.Tween[] = [];
+    let layerFadeTween: gsap.core.Tween | null = null;
 
     function petalSVG(color: string, size: number) {
         // Simple oval petal — slightly elongated, like the reference
@@ -115,14 +117,42 @@
         }
     }
 
-    function stopPetals() {
-        petalTweens.forEach((t) => t.kill());
-        if (petalLayer) petalLayer.innerHTML = "";
-        petalTweens = [];
+    // Spawn petals (if not already present) and fade the layer in.
+    function startPetals() {
+        if (!petalLayer) return;
+        if (layerFadeTween) layerFadeTween.kill();
+
+        if (petalLayer.children.length === 0) {
+            spawnPetals();
+        }
+
+        layerFadeTween = gsap.to(petalLayer, {
+            opacity: 1,
+            duration: 1.2,
+            ease: "power1.out",
+        });
     }
 
-    (window as any).__startPetals = spawnPetals;
+    // Fade the layer out, then stop tweens and clear once invisible.
+    function stopPetals() {
+        if (!petalLayer) return;
+        if (layerFadeTween) layerFadeTween.kill();
+
+        layerFadeTween = gsap.to(petalLayer, {
+            opacity: 0,
+            duration: 0.8,
+            ease: "power1.in",
+            onComplete: () => {
+                petalTweens.forEach((t) => t.kill());
+                petalLayer!.innerHTML = "";
+                petalTweens = [];
+            },
+        });
+    }
+
+    (window as any).__startPetals = startPetals;
     (window as any).__stopPetals = stopPetals;
 
-    spawnPetals();
+    // Does NOT auto-start — petals remain hidden until __startPetals()
+    // is called (e.g. after the entry doors open).
 </script>
