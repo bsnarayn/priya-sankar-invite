@@ -1,5 +1,8 @@
 ---
-// Sticky logo header — sits outside main, always visible after entry
+interface Props {
+    showImmediately?: boolean;
+}
+const { showImmediately = false } = Astro.props;
 ---
 
 <header id="site-header">
@@ -18,9 +21,6 @@
         align-items: center;
         padding: 16px 0;
         background: var(--color-base);
-        transition:
-            padding 0.4s ease,
-            box-shadow 0.4s ease;
         opacity: 0;
         pointer-events: none;
         transition:
@@ -53,28 +53,38 @@
     }
 </style>
 
-<script>
-    const header = document.getElementById("site-header");
-    const invite = document.getElementById("invite");
+<script define:vars={{ showImmediately }}>
+    document.addEventListener("DOMContentLoaded", () => {
+        const header = document.getElementById("site-header");
 
-    // Show header when entry animation reveals #invite
-    const observer = new MutationObserver(() => {
-        if (parseFloat(getComputedStyle(invite!).opacity) > 0.5) {
+        if (showImmediately) {
             header?.classList.add("visible");
-            observer.disconnect();
-        }
-    });
-    observer.observe(invite!, { attributes: true, attributeFilter: ["style"] });
-
-    window.addEventListener(
-        "scroll",
-        () => {
-            if (window.scrollY > 60) {
-                header?.classList.add("scrolled");
-            } else {
-                header?.classList.remove("scrolled");
+        } else {
+            const invite = document.getElementById("invite");
+            if (invite) {
+                const observer = new MutationObserver(() => {
+                    if (parseFloat(getComputedStyle(invite).opacity) > 0.5) {
+                        header?.classList.add("visible");
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(invite, {
+                    attributes: true,
+                    attributeFilter: ["style"],
+                });
             }
-        },
-        { passive: true },
-    );
+        }
+
+        window.addEventListener(
+            "scroll",
+            () => {
+                if (window.scrollY > 60) {
+                    header?.classList.add("scrolled");
+                } else {
+                    header?.classList.remove("scrolled");
+                }
+            },
+            { passive: true },
+        );
+    });
 </script>
