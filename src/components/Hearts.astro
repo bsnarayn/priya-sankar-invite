@@ -1,0 +1,133 @@
+---
+// Hearts — random hearts appear around the monogram, pulse once
+// (heartbeat) then fade out. Continuous random spawning, not a fixed
+// pattern or sequence.
+// Self-contained: renders its own full-viewport layer and starts
+// spawning on load. Call (window as any).__stopHearts() to halt.
+---
+
+<div
+    id="heart-layer"
+    style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:52;pointer-events:none;"
+    aria-hidden="true"
+>
+</div>
+
+<script>
+    import { gsap } from "gsap";
+
+    const heartLayer = document.getElementById("heart-layer");
+
+    const HEART_COLORS = ["#C0392B", "#D9534F", "#B33A52"];
+    const MAX_CONCURRENT = 4;
+    const SPAWN_INTERVAL_MIN = 700; // ms
+    const SPAWN_INTERVAL_MAX = 1800; // ms
+
+    let activeCount = 0;
+    let spawnTimeoutId: number | null = null;
+    let running = false;
+
+    function heartSVG(color: string, size: number) {
+        return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+            <path d="M12 21s-7.5-4.7-10-9.3C0.3 8.6 2 5 5.5 5 8 5 10 6.5 12 9c2-2.5 4-4 6.5-4C22 5 23.7 8.6 22 11.7 19.5 16.3 12 21 12 21z" fill="${color}"/>
+        </svg>`;
+    }
+
+    function spawnHeart() {
+        if (!heartLayer) return;
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Place hearts in a ring-ish region around the screen center
+        // (where the monogram sits), with generous random spread so
+        // positions feel scattered rather than patterned.
+        const centerX = vw / 2;
+        const centerY = vh / 2;
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.min(vw, vh) * (0.15 + Math.random() * 0.35); // 15%–50% of min dimension
+
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius * 0.8; // slight vertical compression
+
+        const size = 14 + Math.random() * 16; // 14–30px
+        const color =
+            HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)];
+
+        const el = document.createElement("div");
+        el.style.position = "absolute";
+        el.style.left = `${x - size / 2}px`;
+        el.style.top = `${y - size / 2}px`;
+        el.innerHTML = heartSVG(color, size);
+        heartLayer.appendChild(el);
+
+        activeCount++;
+        gsap.set(el, { scale: 0.3, opacity: 0 });
+
+        gsap.timeline({
+            onComplete: () => {
+                el.remove();
+                activeCount--;
+            },
+        })
+            // Pop in
+            .to(el, {
+                opacity: 1,
+                scale: 1,
+                duration: 0.35,
+                ease: "back.out(2)",
+            })
+            // Heartbeat double-pulse ("lub-dub")
+            .to(el, { scale: 1.25, duration: 0.18, ease: "power1.out" })
+            .to(el, { scale: 1, duration: 0.18, ease: "power1.in" })
+            .to(
+                el,
+                { scale: 1.15, duration: 0.16, ease: "power1.out" },
+                "+=0.05",
+            )
+            .to(el, { scale: 1, duration: 0.16, ease: "power1.in" })
+            // Fade out
+            .to(
+                el,
+                { opacity: 0, scale: 0.85, duration: 0.5, ease: "power1.in" },
+                "+=0.3",
+            );
+    }
+
+    function tick() {
+        if (!running) return;
+
+        if (activeCount < MAX_CONCURRENT) {
+            spawnHeart();
+        }
+
+        const delay =
+            SPAWN_INTERVAL_MIN +
+            Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
+        spawnTimeoutId = window.setTimeout(tick, delay);
+    }
+
+    function startHearts() {
+        if (running) return;
+        running = true;
+        tick();
+    }
+
+    function stopHearts() {
+        running = false;
+        if (spawnTimeoutId !== null) {
+            clearTimeout(spawnTimeoutId);
+            spawnTimeoutId = null;
+        }
+        if (heartLayer) {
+            gsap.killTweensOf(heartLayer.querySelectorAll("*"));
+            heartLayer.innerHTML = "";
+        }
+        activeCount = 0;
+    }
+
+    (window as any).__startHearts = startHearts;
+    (window as any).__stopHearts = stopHearts;
+
+    startHearts();
+</script>

@@ -1,14 +1,21 @@
 ---
 // Entry screen — split monogram reveal
+import Petals from "./Petals.astro";
+import Balloons from "./Balloons.astro";
+import Hearts from "./Hearts.astro";
 ---
+
+<Petals />
+<Balloons />
+<Hearts />
 
 <div
     id="entry-screen"
     style="position:fixed;inset:0;z-index:50;display:flex;cursor:pointer;user-select:none;overflow:hidden;"
     aria-label="Tap to open"
 >
-    <div id="door-left" style="width:50%;height:100%;background:#FDF6EE;"></div>
-    <div id="door-right" style="width:50%;height:100%;background:#FDF6EE;">
+    <div id="door-left" style="width:50%;height:100%;background:#e7d8c3;"></div>
+    <div id="door-right" style="width:50%;height:100%;background:#F2E8D5;">
     </div>
 </div>
 
@@ -37,9 +44,16 @@
     </svg>
     <p
         class="tap-prompt"
-        style="margin:16px 0 0;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:#3A2E28;opacity:0.4;white-space:nowrap;"
+        style="margin:16px 0 0;
+           font-family:var(--font-family-sans);
+           font-size:14px;
+           letter-spacing:0.3em;
+           text-transform:uppercase;
+           color:var(--color-text-primary);
+           opacity:0.6;
+           white-space:nowrap;"
     >
-        Tap to open
+        Tap to Celebrate
     </p>
 </div>
 
@@ -128,6 +142,9 @@
             .set([screen, monogramWrap], { display: "none" })
             .then(() => {
                 document.body.classList.remove("no-scroll");
+                (window as any).__stopPetals?.();
+                (window as any).__stopBalloons?.();
+                (window as any).__stopHearts?.();
             });
     }
 
@@ -147,6 +164,9 @@
         gsap.set(pGroup, { x: 0 });
         gsap.set(sGroup, { x: 0 });
         gsap.set(tapPrompt, { opacity: 0.4 });
+        (window as any).__startPetals?.();
+        (window as any).__startBalloons?.();
+        (window as any).__startHearts?.();
     };
 
     (window as any).__resetEntry();
