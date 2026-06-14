@@ -1,6 +1,5 @@
 ---
 import { getEntry, render, getCollection } from "astro:content";
-import sliderImagesData from "../content/story/sliderimages.json";
 
 const story = await getEntry("story", "story");
 if (!story) throw new Error("Missing story content");
@@ -9,16 +8,30 @@ const { Content } = await render(story);
 const [siteEntry] = await getCollection("site");
 const site = siteEntry.data;
 
-// sliderimages.json is a plain array of filenames living in
-// public/images/story/. site.story_images optionally caps how many
-// of those are shown (0 or unset = no cap).
-const allFilenames: string[] = Array.isArray(sliderImagesData)
-    ? sliderImagesData
-    : [];
+// Auto-discover every image in src/images/story/, regardless of
+// extension. import.meta.glob runs at build time (Vite), so it works
+// with the Cloudflare adapter — unlike fs.readdirSync, which requires
+// Node filesystem access not available in the Workers runtime.
+// Each match resolves to a processed, served asset URL (string).
+const storyImageModules = import.meta.glob<string>(
+    "/src/images/story/*.{jpg,jpeg,png,webp,gif,avif,JPG,JPEG,PNG,WEBP,GIF,AVIF}",
+    { eager: true, query: "?url", import: "default" },
+);
+
+let allUrls = Object.values(storyImageModules);
+
+// Shuffle (Fisher-Yates) for variety between builds — fine for a
+// continuously-looping carousel.
+for (let i = allUrls.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allUrls[i], allUrls[j]] = [allUrls[j], allUrls[i]];
+}
+
+// site.story_images optionally caps how many images are shown
+// (0 or unset = no cap).
 const cap =
     site.story_images && site.story_images > 0 ? site.story_images : undefined;
-const filenames = cap ? allFilenames.slice(0, cap) : allFilenames;
-const storyImages = filenames.map((name) => `/images/story/${name}`);
+const storyImages = cap ? allUrls.slice(0, cap) : allUrls;
 const hasImages = storyImages.length > 0;
 ---
 

@@ -17,8 +17,9 @@
 
     const balloonLayer = document.getElementById("balloon-layer");
 
-    // Soft, palette-adjacent balloon tones
-    const BALLOON_COLORS = ["#E8A0A8", "#C9A227", "#9FC9C9", "#FDF6EE"];
+    // Palette tuned for contrast against the warm amber/cream entry
+    // doors — blush, teal, magenta, gold (echoing the P/S monogram).
+    const BALLOON_COLORS = ["#E8A0A8", "#146B72", "#7D1A6B", "#C9A227"];
     const BALLOON_COUNT = 5;
 
     let balloonTweens: gsap.core.Tween[] = [];

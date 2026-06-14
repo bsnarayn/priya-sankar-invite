@@ -42,7 +42,7 @@ const { Content: RightColumn } = rightEntry
 >
 </div>
 
-<footer id="footer">
+<footer id="footer" data-close-delay-ms={closeDelayMs}>
     <div class="footer-rule"></div>
     <span class="footer-tamil">{site.tamil_thanks}</span>
     <span class="footer-script">with love &amp; gratitude</span>
@@ -81,7 +81,7 @@ const { Content: RightColumn } = rightEntry
     </div>
 </footer>
 
-<script define:vars={{ closeDelayMs }}>
+<script>
     import { gsap } from "gsap";
 
     const footer = document.getElementById("footer");
@@ -89,6 +89,7 @@ const { Content: RightColumn } = rightEntry
     const curtainR = document.getElementById("curtain-right");
     const entryScreen = document.getElementById("entry-screen");
     const invite = document.getElementById("invite");
+    const closeDelayMs = Number(footer?.dataset.closeDelayMs ?? 5000);
     let closed = false;
 
     function closeDoors() {
@@ -103,8 +104,8 @@ const { Content: RightColumn } = rightEntry
                 if (entryScreen) {
                     gsap.set(entryScreen, { display: "flex", opacity: 1 });
                 }
-                if (typeof window.__resetEntry === "function") {
-                    window.__resetEntry();
+                if (typeof (window as any).__resetEntry === "function") {
+                    (window as any).__resetEntry();
                 }
                 setTimeout(() => {
                     gsap.set(curtainL, { x: "-100%" });
@@ -115,7 +116,7 @@ const { Content: RightColumn } = rightEntry
         });
     }
 
-    let closeTimer = null;
+    let closeTimer: ReturnType<typeof setTimeout> | null = null;
 
     const observer = new IntersectionObserver(
         (entries) => {
