@@ -20,7 +20,17 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    background: #FFFBF6;
+    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #story {
@@ -44,7 +54,7 @@
 }
 
 /* Inner max-width containers */
-#hero>*,
+#hero>.hero-content,
 #story>.inner,
 #people>.inner,
 #event>.inner,
@@ -98,20 +108,22 @@
 /* Hero specific */
 .hero-tamil {
     font-family: "Catamaran", sans-serif;
-    font-weight: 300;
-    font-size: 15px;
-    letter-spacing: 0.25em;
+    font-weight: 400;
+    font-size: clamp(20px, 3.5vw, 28px);
+    letter-spacing: 0.3em;
     color: #146B72;
-    opacity: 0.75;
+    opacity: 0.9;
     margin-bottom: 28px;
 }
 
 .hero-pre {
     font-family: "Jost", sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.25em;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.35em;
     text-transform: uppercase;
-    color: #7A6A5E;
+    color: #146B72;
+    margin-top: 24px;
     margin-bottom: 24px;
 }
 
@@ -148,12 +160,11 @@
 }
 
 .hero-date {
-    font-family: "Jost", sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #7A6A5E;
-    font-weight: 300;
+    font-family: "Italiana", serif;
+    font-size: clamp(18px, 3vw, 24px);
+    letter-spacing: 0.08em;
+    color: #7D1A6B;
+    font-weight: 400;
 }
 
 /* Story 2-col card */
@@ -572,7 +583,33 @@
 }
 
 .scroll-hint {
+    position: relative;
+    z-index: 2;
+    margin-top: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.4;
     animation: bounce 2s infinite;
+    transition: opacity 0.6s ease;
+}
+
+.scroll-hint--hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.scroll-hint-label {
+    font-family: "Jost", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #7A6A5E;
+}
+
+.scroll-hint-icon {
+    display: block;
 }
 
 /* Responsive */
