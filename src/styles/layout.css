@@ -39,7 +39,7 @@
 }
 
 #people {
-    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
+    background: #FDF6EE;
     position: relative;
 }
 
@@ -50,10 +50,34 @@
 
 #rsvp {
     background: #FDF6EE;
+    position: relative;
+}
+
+.rsvp-form-section {
+    background: #F5EAD8;
+    padding: 64px 24px;
+    position: relative;
+}
+
+.rsvp-form-card {
+    background: #FDF6EE;
+    border-radius: 12px;
+    border: 0.5px solid #EDE4D8;
+    padding: 36px 32px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+}
+
+#rsvp>.inner,
+.rsvp-form-section>.inner {
+    position: relative;
+    z-index: 2;
 }
 
 #photos {
-    background: #FFFBF6;
+    background: #F5EAD8;
+    position: relative;
 }
 
 /* Inner max-width containers */
@@ -62,11 +86,14 @@
 #people>.inner,
 #event>.inner,
 #rsvp>.inner,
+.rsvp-form-section>.inner,
 #photos>.inner {
     max-width: 720px;
     margin-left: auto;
     margin-right: auto;
     width: 100%;
+    position: relative;
+    z-index: 2;
 }
 
 #story>.inner {
@@ -415,6 +442,16 @@
     border-top: 0.5px solid #EDE4D8;
 }
 
+.event-card {
+    background: #FDF6EE;
+    border-radius: 12px;
+    border: 0.5px solid #EDE4D8;
+    padding: 36px 32px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+}
+
 .event-row {
     display: grid;
     grid-template-columns: 24px 1fr;
@@ -510,6 +547,79 @@
 }
 
 /* RSVP form */
+
+/* Choice toggle buttons */
+/* Toggle card wrapper */
+.rsvp-toggle-card {
+    background: #FDF6EE;
+    border-radius: 12px;
+    border: 0.5px solid #EDE4D8;
+    padding: 36px 40px;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    position: relative;
+    z-index: 2;
+}
+
+/* Override the old flex layout */
+.rsvp-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-top: 0;
+}
+
+.rsvp-toggle .rsvp-toggle-btn {
+    flex: 1;
+    text-align: center;
+}
+
+.rsvp-toggle-divider {
+    width: 0.5px;
+    height: 40px;
+    background: #DDD0C2;
+    flex-shrink: 0;
+    margin: 0 4px;
+}
+
+.rsvp-toggle-btn {
+    padding: 16px 32px;
+    background: #FFFBF6;
+    color: #3A2E28;
+    border: 1px solid #DDD0C2;
+    border-radius: 10px;
+    font-family: "Jost", sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.rsvp-toggle-btn:hover {
+    border-color: #146B72;
+}
+
+.rsvp-toggle-btn.active {
+    background: #146B72;
+    color: #FFFBF6;
+    border-color: #146B72;
+}
+
+/* Revealed form section — fades in/out on toggle switch */
+.rsvp-form-section {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    z-index: 2;
+}
+
+.rsvp-form-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .rsvp-grid {
     display: grid;
     gap: 14px;
@@ -520,6 +630,146 @@
     grid-template-columns: 1fr 1fr;
     gap: 14px;
 }
+
+#email-optional-tag {
+    text-transform: none;
+    letter-spacing: normal;
+    opacity: 0.6;
+}
+
+.field-textarea {
+    resize: vertical;
+    min-height: 90px;
+    font-family: "Jost", sans-serif;
+    line-height: 1.6;
+}
+
+/* Reactions */
+.rsvp-reactions {
+    margin-top: 4px;
+}
+
+.reaction-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.reaction-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 8px;
+    background: #FFFBF6;
+    border: 1px solid #DDD0C2;
+    border-radius: 10px;
+    color: #7A6A5E;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.reaction-btn:hover {
+    border-color: #146B72;
+    color: #146B72;
+}
+
+.reaction-btn.active {
+    background: #146B72;
+    border-color: #146B72;
+    color: #FFFBF6;
+}
+
+/* Per-reaction color theming */
+.reaction-btn[data-reaction="celebration"] {
+    color: #C9A227;
+    border-color: #F0DFA0;
+}
+
+.reaction-btn[data-reaction="celebration"]:hover,
+.reaction-btn[data-reaction="celebration"].active {
+    background: #FDF8E7;
+    border-color: #C9A227;
+    color: #A07C10;
+}
+
+.reaction-btn[data-reaction="celebration"].active {
+    background: #C9A227;
+    color: #FFFBF6;
+    border-color: #C9A227;
+}
+
+.reaction-btn[data-reaction="happy"] {
+    color: #C0535A;
+    border-color: #F2C4C7;
+}
+
+.reaction-btn[data-reaction="happy"]:hover,
+.reaction-btn[data-reaction="happy"].active {
+    background: #FDF0F1;
+    border-color: #C0535A;
+    color: #943D43;
+}
+
+.reaction-btn[data-reaction="happy"].active {
+    background: #C0535A;
+    color: #FFFBF6;
+    border-color: #C0535A;
+}
+
+.reaction-btn[data-reaction="toast"] {
+    color: #146B72;
+    border-color: #A8D8DC;
+}
+
+.reaction-btn[data-reaction="toast"]:hover,
+.reaction-btn[data-reaction="toast"].active {
+    background: #EAF5F6;
+    border-color: #146B72;
+    color: #0D4D52;
+}
+
+.reaction-btn[data-reaction="toast"].active {
+    background: #146B72;
+    color: #FFFBF6;
+    border-color: #146B72;
+}
+
+.reaction-btn[data-reaction="blessing"] {
+    color: #7D1A6B;
+    border-color: #E8B8E2;
+}
+
+.reaction-btn[data-reaction="blessing"]:hover,
+.reaction-btn[data-reaction="blessing"].active {
+    background: #F9EDF7;
+    border-color: #7D1A6B;
+    color: #5C1250;
+}
+
+.reaction-btn[data-reaction="blessing"].active {
+    background: #7D1A6B;
+    color: #FFFBF6;
+    border-color: #7D1A6B;
+}
+
+.reaction-btn span {
+    font-family: "Jost", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.rsvp-success {
+    font-family: "Cormorant Garant", serif;
+    font-style: italic;
+    font-size: 14px;
+    color: #146B72;
+}
+
+
 
 .field-label {
     font-family: "Jost", sans-serif;
@@ -598,6 +848,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    z-index: 2;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    position: relative;
 }
 
 .upload-zone:hover {
@@ -637,6 +890,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    z-index: 2;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    position: relative;
 }
 
 .qr-label {
@@ -679,7 +935,7 @@
 
 /* Footer */
 #footer {
-    background: #F5EAD8;
+    background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
     text-align: center;
     border-top: 0.5px solid #EDE4D8;
 }
@@ -815,6 +1071,10 @@
 
     .rsvp-2col {
         grid-template-columns: 1fr;
+    }
+
+    .reaction-row {
+        grid-template-columns: 1fr 1fr;
     }
 
     .photo-grid {

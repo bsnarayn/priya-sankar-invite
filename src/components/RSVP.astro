@@ -1,33 +1,78 @@
 ---
 interface Props {
-    site: { rsvp_webhook_url?: string };
+    site: {
+        rsvp_webhook_url?: string;
+    };
 }
 const { site } = Astro.props;
 ---
 
-<section id="rsvp" data-webhook-url={site.rsvp_webhook_url ?? ""}>
+<section id="rsvp">
     <div class="inner">
-        <span class="eyebrow">RSVP</span>
         <h2 class="sec-heading">Will you</h2>
         <span class="sec-script">join us?</span>
         <p class="sec-sub">
-            Let us know you're coming. Drop your email and we'll remind you
-            before the day.
+            Let us know if you'll be celebrating with us — either way, we'd love
+            to hear from you.
         </p>
 
-        <div class="rsvp-grid">
-            <div class="rsvp-2col">
-                <div>
-                    <label class="field-label">Your name</label>
-                    <input
-                        id="rsvp-name"
-                        type="text"
-                        placeholder="Full name"
-                        class="field-input"
-                    />
+        <div class="rsvp-toggle-card">
+            <div class="rsvp-toggle">
+                <button
+                    id="toggle-join"
+                    class="rsvp-toggle-btn"
+                    type="button"
+                    aria-pressed="false"
+                >
+                    Joyfully Join
+                </button>
+                <div class="rsvp-toggle-divider" aria-hidden="true"></div>
+                <button
+                    id="toggle-decline"
+                    class="rsvp-toggle-btn"
+                    type="button"
+                    aria-pressed="false"
+                >
+                    Can't Make It
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="rsvp-form-section" class="rsvp-form-section" hidden>
+    <div class="inner">
+        <div class="rsvp-form-card">
+            <div class="rsvp-grid">
+                <div class="rsvp-2col" id="rsvp-name-email">
+                    <div>
+                        <label class="field-label" for="rsvp-name"
+                            >Your name</label
+                        >
+                        <input
+                            id="rsvp-name"
+                            type="text"
+                            placeholder="Full name"
+                            class="field-input"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label class="field-label" for="rsvp-email">
+                            Email <span id="email-optional-tag">— optional</span
+                            >
+                        </label>
+                        <input
+                            id="rsvp-email"
+                            type="email"
+                            placeholder="We'll use this to reach you"
+                            class="field-input"
+                        />
+                    </div>
                 </div>
-                <div>
-                    <label class="field-label">Guests</label>
+
+                <div id="rsvp-guests-row">
+                    <label class="field-label" for="rsvp-guests">Guests</label>
                     <input
                         id="rsvp-guests"
                         type="number"
@@ -37,174 +82,312 @@ const { site } = Astro.props;
                         class="field-input"
                     />
                 </div>
-            </div>
-            <div>
-                <label class="field-label"
-                    >Email for reminder <span
-                        style="text-transform:none;letter-spacing:normal;opacity:0.6;"
-                        >— optional</span
-                    ></label
-                >
-                <input
-                    id="rsvp-email"
-                    type="email"
-                    placeholder="We'll remind you a few days before"
-                    class="field-input"
-                />
-            </div>
-            <div
-                style="position:absolute;left:-9999px;top:-9999px;"
-                aria-hidden="true"
-            >
-                <label for="rsvp-website">Leave this field empty</label>
-                <input
-                    id="rsvp-website"
-                    name="website"
-                    type="text"
-                    tabindex="-1"
-                    autocomplete="off"
-                />
-            </div>
-            <div class="btn-row">
-                <button id="rsvp-submit" class="btn-primary"
-                    >Confirm attendance</button
-                >
-                <button id="cal-btn" class="btn-ghost">
-                    <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        ><rect x="3" y="4" width="18" height="18" rx="2"
-                        ></rect><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"
-                        ></path></svg
+
+                <div class="rsvp-reactions">
+                    <label class="field-label"
+                        >A little something for the couple</label
                     >
-                    Add to calendar
-                </button>
+                    <div
+                        class="reaction-row"
+                        id="reaction-row"
+                        role="radiogroup"
+                    >
+                        <button
+                            type="button"
+                            class="reaction-btn"
+                            data-reaction="celebration"
+                            role="radio"
+                            aria-checked="false"
+                            aria-label="So excited!"
+                        >
+                            <svg
+                                width="26"
+                                height="26"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.3"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M4 21l2.5-7L12 9l5.5 5L20 21"></path>
+                                <path d="M12 9V3M8 5l1.5 2M16 5l-1.5 2"></path>
+                            </svg>
+                            <span>So excited!</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="reaction-btn"
+                            data-reaction="happy"
+                            role="radio"
+                            aria-checked="false"
+                            aria-label="So happy for you"
+                        >
+                            <svg
+                                width="26"
+                                height="26"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.3"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M12 20s-7-4.4-7-9.5C5 7 7 5 9.5 5c1.4 0 2.7.7 3.5 2 .8-1.3 2.1-2 3.5-2C19 5 21 7 21 10.5 21 16 12 20 12 20z"
+                                ></path>
+                            </svg>
+                            <span>So happy for you</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="reaction-btn"
+                            data-reaction="toast"
+                            role="radio"
+                            aria-checked="false"
+                            aria-label="Can't wait to celebrate"
+                        >
+                            <svg
+                                width="26"
+                                height="26"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.3"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M6 3l1 7a3 3 0 003 3v8M18 3l-1 7a3 3 0 01-3 3"
+                                ></path>
+                                <path d="M4 3h4M16 3h4"></path>
+                            </svg>
+                            <span>Can't wait to celebrate</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="reaction-btn"
+                            data-reaction="blessing"
+                            role="radio"
+                            aria-checked="false"
+                            aria-label="Wishing you both joy"
+                        >
+                            <svg
+                                width="26"
+                                height="26"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.3"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M12 3v6M8 6l4 3 4-3"></path>
+                                <path d="M5 21c0-3 3-5 7-5s7 2 7 5"></path>
+                            </svg>
+                            <span>Wishing you both joy</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="field-label" for="rsvp-note"
+                        >Leave Us a Note</label
+                    >
+                    <textarea
+                        id="rsvp-note"
+                        class="field-input field-textarea"
+                        rows="4"
+                        placeholder="Share us your wish or memory. Leave us an advice for this joyful beginning."
+                    ></textarea>
+                </div>
+
+                <div class="btn-row">
+                    <button id="rsvp-submit" class="btn-primary" type="button">
+                        Joining You
+                    </button>
+                </div>
+                <p id="rsvp-success" class="rsvp-success" style="display:none;">
+                    Thank you — we'll see you there.
+                </p>
             </div>
-            <p
-                id="rsvp-success"
-                style="display:none; font-family:'Cormorant Garant',serif; font-style:italic; font-size:14px; color:#146B72;"
-            >
-                Thank you — we'll see you there.
-            </p>
-            <p
-                id="rsvp-error"
-                style="display:none; font-family:'Jost',sans-serif; font-size:12px; color:#B33E66;"
-            >
-            </p>
         </div>
     </div>
 </section>
 
-<script>
-    const section = document.getElementById("rsvp") as HTMLElement | null;
-    const webhookUrl = section?.dataset.webhookUrl?.trim();
-
-    const submitBtn = document.getElementById(
-        "rsvp-submit",
-    ) as HTMLButtonElement | null;
-    const calBtn = document.getElementById("cal-btn");
+<script define:vars={{ webhookUrl: site.rsvp_webhook_url ?? "" }}>
+    const toggleJoin = document.getElementById("toggle-join");
+    const toggleDecline = document.getElementById("toggle-decline");
+    const formSection = document.getElementById("rsvp-form-section");
+    const guestsRow = document.getElementById("rsvp-guests-row");
+    const emailOptionalTag = document.getElementById("email-optional-tag");
+    const emailInput = document.getElementById("rsvp-email");
+    const submitBtn = document.getElementById("rsvp-submit");
     const success = document.getElementById("rsvp-success");
-    const error = document.getElementById("rsvp-error");
+    const reactionRow = document.getElementById("reaction-row");
+    const reactionBtns = reactionRow.querySelectorAll(".reaction-btn");
 
-    const originalLabel = submitBtn?.textContent ?? "Confirm attendance";
+    let currentMode = null; // "join" | "decline"
+    let guestsValue = ""; // persisted in memory while hidden
+    let selectedReaction = null;
 
-    submitBtn?.addEventListener("click", async () => {
-        const name = (
-            document.getElementById("rsvp-name") as HTMLInputElement
-        )?.value.trim();
-        const guestsRaw = (
-            document.getElementById("rsvp-guests") as HTMLInputElement
-        )?.value.trim();
-        const email = (
-            document.getElementById("rsvp-email") as HTMLInputElement
-        )?.value.trim();
+    function setReaction(value) {
+        selectedReaction = value;
+        reactionBtns.forEach((btn) => {
+            const isActive = btn.dataset.reaction === value;
+            btn.classList.toggle("active", isActive);
+            btn.setAttribute("aria-checked", String(isActive));
+        });
+    }
 
-        if (error) error.style.display = "none";
+    reactionBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            setReaction(btn.dataset.reaction);
+        });
+    });
 
-        const honeypot = (
-            document.getElementById("rsvp-website") as HTMLInputElement
-        )?.value;
+    function applyMode(mode) {
+        const switching = currentMode !== null && currentMode !== mode;
 
-        if (honeypot) {
-            // Bot filled the hidden field — pretend success, do nothing else
-            submitBtn.textContent = "Confirmed ✓";
-            submitBtn.disabled = true;
-            if (success) success.style.display = "block";
-            return;
+        // Persist Guests value before switching away
+        if (switching && currentMode === "join") {
+            guestsValue =
+                document.getElementById("rsvp-guests")?.value ?? guestsValue;
         }
+
+        currentMode = mode;
+
+        toggleJoin.setAttribute("aria-pressed", String(mode === "join"));
+        toggleJoin.classList.toggle("active", mode === "join");
+        toggleDecline.setAttribute("aria-pressed", String(mode === "decline"));
+        toggleDecline.classList.toggle("active", mode === "decline");
+
+        const reveal = () => {
+            if (mode === "join") {
+                guestsRow.style.display = "";
+                const guestsInput = document.getElementById("rsvp-guests");
+                if (guestsInput) guestsInput.value = guestsValue;
+                emailOptionalTag.style.display = "";
+                emailInput.removeAttribute("required");
+                submitBtn.textContent = "Joining You";
+            } else {
+                guestsRow.style.display = "none";
+                emailOptionalTag.style.display = "none";
+                emailInput.setAttribute("required", "required");
+                submitBtn.textContent = "Sorry, Can't Make It";
+            }
+
+            formSection.hidden = false;
+            requestAnimationFrame(() => {
+                formSection.classList.add("visible");
+            });
+        };
+
+        if (formSection.hidden || !formSection.classList.contains("visible")) {
+            reveal();
+        } else if (switching) {
+            // Fade out, then swap content and fade back in
+            formSection.classList.remove("visible");
+            setTimeout(reveal, 350);
+        }
+    }
+
+    toggleJoin.addEventListener("click", () => applyMode("join"));
+    toggleDecline.addEventListener("click", () => applyMode("decline"));
+
+    submitBtn.addEventListener("click", async () => {
+        const name = document.getElementById("rsvp-name")?.value.trim();
+        const email = emailInput?.value.trim();
+        const guests =
+            currentMode === "join"
+                ? document.getElementById("rsvp-guests")?.value
+                : undefined;
+        const note = document.getElementById("rsvp-note")?.value.trim();
 
         if (!name) {
             alert("Please enter your name.");
             return;
         }
-
-        const guests = guestsRaw ? parseInt(guestsRaw, 10) : 1;
-
-        if (!webhookUrl) {
-            console.warn("RSVP webhook URL not configured in site.json.");
-            if (error) {
-                error.textContent =
-                    "RSVP submission isn't set up yet — please message the couple directly for now.";
-                error.style.display = "block";
-            }
+        if (currentMode === "decline" && !email) {
+            alert("Please enter your email.");
             return;
         }
 
+        const payload = {
+            response: currentMode === "join" ? "Yes" : "No",
+            name,
+            email: email || "",
+            guests: guests || "",
+            reaction: selectedReaction || "",
+            note: note || "",
+            timestamp:
+                new Date()
+                    .toLocaleString("sv-SE", { timeZone: "Asia/Kolkata" })
+                    .replace(" ", "T") + "+05:30",
+        };
+
         submitBtn.disabled = true;
-        submitBtn.textContent = "Sending...";
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = "Sending…";
 
         try {
-            const res = await fetch(webhookUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name,
-                    guests,
-                    email,
-                    timestamp: new Date().toISOString(),
-                }),
-            });
-
-            if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-
-            submitBtn.textContent = "Confirmed ✓";
-            if (success) success.style.display = "block";
-        } catch (err) {
-            console.error("RSVP submission failed:", err);
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalLabel;
-            if (error) {
-                error.textContent =
-                    "Something went wrong sending your RSVP — please try again, or message us directly.";
-                error.style.display = "block";
+            if (webhookUrl) {
+                await fetch(webhookUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+            } else {
+                console.log("RSVP payload:", payload);
             }
-        }
-    });
 
-    calBtn?.addEventListener("click", () => {
-        const ics = [
-            "BEGIN:VCALENDAR",
-            "VERSION:2.0",
-            "BEGIN:VEVENT",
-            "DTSTART:20251231T180000Z",
-            "DTEND:20251231T230000Z",
-            "SUMMARY:Sankar & Priya — Reception & Celebration",
-            "DESCRIPTION:Some love stories begin with a flight.",
-            "LOCATION:To be announced",
-            "END:VEVENT",
-            "END:VCALENDAR",
-        ].join("\r\n");
-        const blob = new Blob([ics], { type: "text/calendar" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "sankar-priya.ics";
-        a.click();
-        URL.revokeObjectURL(url);
+            submitBtn.textContent =
+                currentMode === "join" ? "Joining You ✓" : "We'll Miss You ✓";
+            if (success) success.style.display = "block";
+
+            // Reset after 2.5s
+            setTimeout(() => {
+                // Clear fields
+                document.getElementById("rsvp-name").value = "";
+                document.getElementById("rsvp-email").value = "";
+                document.getElementById("rsvp-guests").value = "";
+                document.getElementById("rsvp-note").value = "";
+
+                // Clear reaction selection
+                selectedReaction = null;
+                guestsValue = "";
+                reactionBtns.forEach((btn) => {
+                    btn.classList.remove("active");
+                    btn.setAttribute("aria-checked", "false");
+                });
+
+                // Hide success message
+                if (success) success.style.display = "none";
+
+                // Re-enable submit button with original label
+                submitBtn.disabled = false;
+                submitBtn.textContent =
+                    currentMode === "join"
+                        ? "Joining You"
+                        : "Sorry, Can't Make It";
+
+                // Fade out and hide the form section
+                formSection.classList.remove("visible");
+                setTimeout(() => {
+                    formSection.hidden = true;
+                }, 500);
+
+                // Reset the toggle buttons
+                currentMode = null;
+                toggleJoin.classList.remove("active");
+                toggleJoin.setAttribute("aria-pressed", "false");
+                toggleDecline.classList.remove("active");
+                toggleDecline.setAttribute("aria-pressed", "false");
+            }, 2500);
+        } catch (err) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            alert("Something went wrong — please try again.");
+        }
     });
 </script>
