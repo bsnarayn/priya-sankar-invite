@@ -20,6 +20,19 @@ const story = defineCollection({
     }),
 });
 
+const footer = defineCollection({
+    loader: glob({ pattern: "**/*.md", base: "./src/content/footer" }),
+    schema: z.object({}),
+});
+
+const footnote = defineCollection({
+    loader: file("./src/content/footer/footnote.json"),
+    schema: z.object({
+        left: z.string(),
+        right: z.string(),
+    }),
+});
+
 const event = defineCollection({
     loader: file("./src/content/event/event.json"),
     schema: z.object({
@@ -53,7 +66,8 @@ const site = defineCollection({
         album_notify_webhook_url: z.string().optional(),
         camera_max_uploads: z.number().optional(),
         story_images: z.number().optional(),
+        footer_close_delay_seconds: z.number().optional(),
     }),
 });
 
-export const collections = { couple, story, event, site };
+export const collections = { couple, story, footer, footnote, event, site };

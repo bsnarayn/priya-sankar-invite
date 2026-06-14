@@ -994,6 +994,72 @@
     margin-top: 8px;
 }
 
+/* "With Best Compliments from" — larger Great Vibes script, same
+   family as .footer-script (with love & gratitude) but bigger to
+   anchor the compliments block below. */
+.footer-compliments {
+    font-family: "Great Vibes", cursive;
+    font-size: clamp(32px, 6vw, 44px);
+    color: #7D1A6B;
+    margin-top: 48px;
+    margin-bottom: 28px;
+}
+
+/* Two name-list cards — stays 2-column even on mobile, card treatment
+   matches the RSVP/story/profile card pattern. */
+.footer-compliments-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 560px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.footer-compliments-card {
+    background: #FDF6EE;
+    border-radius: 12px;
+    border: 0.5px solid #EDE4D8;
+    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    padding: 24px 20px;
+}
+
+.footer-compliments-card ul {
+    list-style: none;
+}
+
+.footer-compliments-card li,
+.footer-compliments-card p {
+    font-family: "Italiana", serif;
+    font-size: clamp(18px, 5vw, 28px);
+    line-height: 1.3;
+    color: #3A2E28;
+    margin-bottom: 10px;
+}
+
+.footer-compliments-card li:last-child,
+.footer-compliments-card p:last-child {
+    margin-bottom: 0;
+}
+
+.footer-footnote {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    max-width: 560px;
+    margin: 24px auto 0;
+    font-family: "Jost", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: #B0998A;
+    text-align: left;
+}
+
+.footer-footnote-right {
+    text-align: right;
+}
+
 /* Plane nav */
 #plane-nav {
     position: fixed;
