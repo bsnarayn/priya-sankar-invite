@@ -17,8 +17,19 @@
     const petalLayer = document.getElementById("petal-layer");
 
     // Soft, warm petal tones — small ovals, varied size/opacity/blur
-    const PETAL_COLORS = ["#C9A227", "#D98E5C", "#E8A0A8", "#7D1A6B"];
-    const PETAL_COUNT = 14;
+    const PETAL_COLORS = [
+        "#FF6B6B", // coral red
+        "#FF9F43", // marigold orange
+        "#FFDD59", // turmeric yellow
+        "#FF78C4", // hot pink
+        "#A29BFE", // lavender
+        "#FFA8A8", // soft rose
+        "#FF4757", // bright red
+        "#FFC312", // deep yellow
+        "#C44569", // magenta
+        "#F8A5C2", // blush pink
+    ];
+    const PETAL_COUNT = 20;
 
     let petalTweens: gsap.core.Tween[] = [];
 

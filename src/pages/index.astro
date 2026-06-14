@@ -10,6 +10,8 @@ import RSVP from "../components/RSVP.astro";
 import PhotoUpload from "../components/PhotoUpload.astro";
 import Footer from "../components/Footer.astro";
 import PlaneNav from "../components/PlaneNav.astro";
+import Petals from "../components/Petals.astro";
+import Header from "../components/Header.astro";
 
 const siteEntry = await getEntry("site", "site");
 const eventEntry = await getEntry("event", "event");
@@ -21,7 +23,10 @@ const event = eventEntry.data;
 ---
 
 <Base>
+	<Petals />
 	<Entry />
+	<Header />
+
 	<main id="invite" style="opacity:0;transform:translateY(16px);">
 		<Hero site={site} event={event} />
 		<Story />
