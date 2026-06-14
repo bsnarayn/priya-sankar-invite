@@ -29,6 +29,7 @@ const event = defineCollection({
         address: z.string(),
         maps_url: z.string().optional(),
         dress: z.string(),
+        venue_image: z.string().optional(),
     }),
 });
 

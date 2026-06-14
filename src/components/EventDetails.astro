@@ -7,14 +7,18 @@ interface Props {
         address: string;
         maps_url?: string;
         dress: string;
+        venue_image?: string;
     };
 }
 const { event } = Astro.props;
+
+const venueImageSrc = event.venue_image
+    ? `/images/venue/${event.venue_image}`
+    : undefined;
 ---
 
 <section id="event">
     <div class="inner">
-        <span class="eyebrow">The event</span>
         <h2 class="sec-heading">Reception &amp;</h2>
         <span class="sec-script">Celebration</span>
 
@@ -93,11 +97,28 @@ const { event } = Astro.props;
             </div>
         </div>
 
+        {event.address && <p class="event-address">{event.address}</p>}
+
         {
-            event.address && (
-                <p style="font-family:'Jost',sans-serif;font-size:13px;color:#7A6A5E;margin-top:16px;line-height:1.6;">
-                    {event.address}
-                </p>
+            venueImageSrc ? (
+                <div class="venue-image">
+                    <img src={venueImageSrc} alt={event.venue} />
+                </div>
+            ) : (
+                <div class="venue-image venue-image--placeholder">
+                    <svg
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#C4622D"
+                        stroke-width="1"
+                        stroke-linecap="round"
+                    >
+                        <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+                    </svg>
+                    <span>Venue photo here</span>
+                </div>
             )
         }
 
@@ -112,7 +133,20 @@ const { event } = Astro.props;
                         loading="lazy"
                     />
                 ) : (
-                    "Map · Directions"
+                    <div class="map-placeholder-content">
+                        <svg
+                            width="28"
+                            height="28"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#146B72"
+                            stroke-width="1.2"
+                            stroke-linecap="round"
+                        >
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+                        </svg>
+                        <span>Map &amp; directions coming soon</span>
+                    </div>
                 )
             }
         </div>
