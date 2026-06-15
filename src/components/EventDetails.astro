@@ -8,6 +8,8 @@ interface Props {
         maps_url?: string;
         dress: string;
         venue_image?: string;
+        start_datetime?: string | null;
+        end_datetime?: string | null;
     };
 }
 const { event } = Astro.props;
@@ -15,6 +17,15 @@ const { event } = Astro.props;
 const venueImageSrc = event.venue_image
     ? `/images/venue/${event.venue_image}`
     : undefined;
+
+// Pass datetime data to the client via a JSON island
+const calData = {
+    startDatetime: event.start_datetime ?? null,
+    endDatetime: event.end_datetime ?? null,
+    venue: event.venue,
+    address: event.address,
+    mapsUrl: event.maps_url,
+};
 ---
 
 <section id="event">
@@ -101,28 +112,38 @@ const venueImageSrc = event.venue_image
             {event.address && <p class="event-address">{event.address}</p>}
 
             <div class="btn-row">
-                <button id="cal-btn" class="btn-ghost" type="button">
-                    <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        ><rect x="3" y="4" width="18" height="18" rx="2"
-                        ></rect><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"
-                        ></path></svg
-                    >
-                    Add to calendar
-                </button>
+                {
+                    calData.startDatetime && (
+                        <button id="cal-btn" class="btn-ghost" type="button">
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                            >
+                                <rect
+                                    x="3"
+                                    y="4"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                />
+                                <path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4" />
+                            </svg>
+                            Add to calendar
+                        </button>
+                    )
+                }
             </div>
         </div>
 
         {
             venueImageSrc ? (
                 <div class="venue-image">
-                    <img src={venueImageSrc} alt={event.venue} />
+                    <img src={venueImageSrc} alt={event.venue} loading="lazy" />
                 </div>
             ) : (
                 <div class="venue-image venue-image--placeholder">
@@ -172,29 +193,52 @@ const venueImageSrc = event.venue_image
         </div>
     </div>
 
+    <script
+        id="cal-data"
+        type="application/json"
+        is:inline
+        set:html={JSON.stringify(calData)}
+    />
     <script>
-        const calBtn = document.getElementById("cal-btn");
+        const raw = document.getElementById("cal-data")?.textContent ?? "{}";
+        const { startDatetime, endDatetime, venue, address, mapsUrl } =
+            JSON.parse(raw);
 
-        calBtn?.addEventListener("click", () => {
-            const ics = [
-                "BEGIN:VCALENDAR",
-                "VERSION:2.0",
-                "BEGIN:VEVENT",
-                "DTSTART:20251231T180000Z",
-                "DTEND:20251231T230000Z",
-                "SUMMARY:Sankar & Priya — Reception & Celebration",
-                "DESCRIPTION:Some love stories begin with a flight.",
-                "LOCATION:To be announced",
-                "END:VEVENT",
-                "END:VCALENDAR",
-            ].join("\r\n");
-            const blob = new Blob([ics], { type: "text/calendar" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "sankar-priya.ics";
-            a.click();
-            URL.revokeObjectURL(url);
-        });
+        if (startDatetime) {
+            const toICSDate = (iso: string) =>
+                iso.replace(/[-:]/g, "").replace(/\+\d{2}:\d{2}$/, "+0530");
+
+            document
+                .getElementById("cal-btn")
+                ?.addEventListener("click", () => {
+                    const ics = [
+                        "BEGIN:VCALENDAR",
+                        "VERSION:2.0",
+                        "BEGIN:VEVENT",
+                        `DTSTART;TZID=Asia/Kolkata:${toICSDate(startDatetime)}`,
+                        endDatetime
+                            ? `DTEND;TZID=Asia/Kolkata:${toICSDate(endDatetime)}`
+                            : "",
+                        "SUMMARY:Sankar & Priya — Reception & Celebration",
+                        "DESCRIPTION:Some love stories begin with a flight.",
+                        `LOCATION:${venue}${address ? ", " + address : ""}${mapsUrl ? " " + mapsUrl : ""}`,
+                        mapsUrl
+                            ? `X-APPLE-STRUCTURED-LOCATION;VALUE=URI:${mapsUrl}`
+                            : "",
+                        "END:VEVENT",
+                        "END:VCALENDAR",
+                    ]
+                        .filter(Boolean)
+                        .join("\r\n");
+
+                    const blob = new Blob([ics], { type: "text/calendar" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "sankar-priya.ics";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+        }
     </script>
 </section>

@@ -24,6 +24,7 @@ if (!groom || !bride) throw new Error("Missing couple content");
                 <img
                   src={photoSrc}
                   alt={person.data.name}
+                  loading="lazy"
                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
                 />
                 <div class="profile-photo--placeholder" style="display:none;">

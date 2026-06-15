@@ -56,7 +56,11 @@ const hasImages = storyImages.length > 0;
                             >
                                 {storyImages.map((src) => (
                                     <div class="story-carousel-slide">
-                                        <img src={src} alt="Our story" />
+                                        <img
+                                            src={src}
+                                            alt="Our story"
+                                            loading="lazy"
+                                        />
                                     </div>
                                 ))}
                                 {/* Duplicate set for seamless marquee loop */}
@@ -65,7 +69,7 @@ const hasImages = storyImages.length > 0;
                                         class="story-carousel-slide"
                                         aria-hidden="true"
                                     >
-                                        <img src={src} alt="" />
+                                        <img src={src} alt="" loading="lazy" />
                                     </div>
                                 ))}
                             </div>
