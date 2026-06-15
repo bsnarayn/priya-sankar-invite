@@ -17,31 +17,31 @@ if (!groom || !bride) throw new Error("Missing couple content");
     <div class="profile-grid">
       {
         [groom, bride].map((person) => {
-          const photoSrc = `/images/profiles/${person.id}.webp`;
+          const photoSrc = person.data.photo
+            ? `/images/profiles/${person.data.photo}`
+            : undefined;
           return (
             <div class={`profile-card profile-card--${person.id}`}>
               <div class="profile-photo">
-                <img
-                  src={photoSrc}
-                  alt={person.data.name}
-                  loading="lazy"
-                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-                />
-                <div class="profile-photo--placeholder" style="display:none;">
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#C4622D"
-                    stroke-width="1"
-                    stroke-linecap="round"
-                  >
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-                  </svg>
-                  <span>Your photo here</span>
-                </div>
+                {photoSrc ? (
+                  <img src={photoSrc} alt={person.data.name} loading="lazy" />
+                ) : (
+                  <div class="profile-photo--placeholder">
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#C4622D"
+                      stroke-width="1"
+                      stroke-linecap="round"
+                    >
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                    </svg>
+                    <span>Your photo here</span>
+                  </div>
+                )}
               </div>
               <div class="profile-content">
                 <p class="profile-initial">{person.data.name}</p>

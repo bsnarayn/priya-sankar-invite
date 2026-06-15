@@ -14,9 +14,7 @@ const couple = defineCollection({
 const story = defineCollection({
     loader: glob({ pattern: "**/*.md", base: "./src/content/story" }),
     schema: z.object({
-        period: z.string(),
         title: z.string(),
-        photo: z.string().optional(),
     }),
 });
 
@@ -43,6 +41,8 @@ const event = defineCollection({
         maps_url: z.string().optional(),
         dress: z.string(),
         venue_image: z.string().optional(),
+        start_datetime: z.string().nullable().optional(),
+        end_datetime: z.string().nullable().optional(),
     }),
 });
 
