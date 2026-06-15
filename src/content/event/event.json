@@ -7,6 +7,8 @@
         "address": "",
         "maps_url": "",
         "dress": "Festive",
-        "venue_image": ""
+        "venue_image": "",
+        "start_datetime": null,
+        "end_datetime": null
     }
 ]

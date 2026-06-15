@@ -49,6 +49,7 @@ const event = defineCollection({
 const site = defineCollection({
     loader: file("./src/content/site/site.json"),
     schema: z.object({
+        site_url: z.string(),
         groom_name: z.string(),
         bride_name: z.string(),
         tagline: z.string(),
