@@ -23,6 +23,10 @@
     background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
     position: relative;
     overflow: hidden;
+    /* Push content below the fixed header (logo 60px + padding 16px top/bottom = ~92px).
+       Extra headroom for the frame's top border not to clip behind the header. */
+    padding-top: 100px;
+    padding-bottom: 64px;
 }
 
 .hero-content {
@@ -268,16 +272,15 @@
 }
 
 /* ── Hero dual-border frame ──
-   Outer border → 8px gap → inner border → 20px padding → content.
-   Mirrors the physical invitation card treatment.
-   Tamil text floats above the frame as a pre-title header.
-   The frame fades in as part of the ScrollTrigger reveal in index.astro. */
+   Tamil text is now inside the frame at the top.
+   Outer border → 6px gap → inner border → content.
+   Mirrors the physical invitation card treatment. */
 .hero-frame {
     position: relative;
     display: inline-block;
     width: 100%;
     max-width: 480px;
-    margin: 20px auto 0;
+    margin: 0 auto;
     padding: 6px;
     border: 1px solid #C9A227;
     border-radius: 12px;
@@ -294,7 +297,41 @@
 }
 
 .hero-frame-inner {
-    padding: 32px 28px 28px;
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* Tamil — top of frame, one line gap below */
+.hero-frame-inner .hero-tamil {
+    margin-bottom: 1em;
+}
+
+/* Names — Sankar / & / Priya stacked, small gap below before hero-pre */
+.hero-frame-inner .hero-names {
+    margin-top: 0;
+    margin-bottom: 20px;
+    line-height: 0.95;
+}
+
+/* Together with their families — sits close below names */
+.hero-frame-inner .hero-pre {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Tagline — two line gaps above (in rem, relative to body font) */
+.hero-frame-inner .hero-tagline {
+    margin-top: 3.5rem;
+    margin-bottom: 0;
+}
+
+/* Date — small gap below tagline */
+.hero-frame-inner .hero-date {
+    margin-top: 20px;
+    margin-bottom: 0;
 }
 
 /* Story 2-col card */
@@ -464,7 +501,7 @@
     border-radius: 12px 12px 0 0;
     /* Start clipped — animation draws left→top on reveal */
     clip-path: inset(0 100% 0 0);
-    transition: clip-path 3.0s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: clip-path 6.0s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .profile-card--groom::before {
@@ -1096,7 +1133,7 @@
 
 .footer-script {
     font-family: "Great Vibes", cursive;
-    font-size: 28px;
+    font-size: 32px;
     color: #7D1A6B;
     display: block;
     margin-bottom: 18px;
@@ -1126,7 +1163,7 @@
 
 .footer-compliments {
     font-family: "Great Vibes", cursive;
-    font-size: clamp(12px, 6vw, 44px);
+    font-size: clamp(12px, 6vw, 26px);
     color: #7D1A6B;
     margin-top: 48px;
     margin-bottom: 28px;
@@ -1237,7 +1274,7 @@
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    opacity: 0.4;
+    opacity: 0.75;
     animation: bounce 2s infinite;
     transition: opacity 0.6s ease;
 }
