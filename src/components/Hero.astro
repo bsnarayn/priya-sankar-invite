@@ -18,19 +18,29 @@ const { site, event } = Astro.props;
 
 <section id="hero">
     <div class="hero-content">
+        <!-- Tamil pre-title sits above the bordered frame,
+             like a header line above the card stock. -->
         <span class="hero-tamil">{site.tamil_names}</span>
-        <h1 class="hero-names">
-            {site.groom_name}
-            <span class="hero-amp">&amp;</span>
-            {site.bride_name}
-        </h1>
-        <p class="hero-pre">{site.hero_pre}</p>
-        <!-- <div class="hero-rule"></div> -->
-        <p class="hero-tagline">{site.tagline}</p>
-        <p class="hero-date">
-            {event.date} &nbsp;·&nbsp; {event.venue}
-        </p>
+
+        <!-- Dual-border frame — outer border, gap, inner border,
+             content. Mirrors the physical invitation card treatment. -->
+        <div class="hero-frame">
+            <div class="hero-frame-inner">
+                <h1 class="hero-names">
+                    {site.groom_name}
+                    <span class="hero-amp">&amp;</span>
+                    {site.bride_name}
+                </h1>
+                <p class="hero-pre">{site.hero_pre}</p>
+                <div class="hero-rule"></div>
+                <p class="hero-tagline">{site.tagline}</p>
+                <p class="hero-date">
+                    {event.date}&nbsp;·&nbsp;{event.venue}
+                </p>
+            </div>
+        </div>
     </div>
+
     <div class="scroll-hint" id="scroll-hint">
         <span class="scroll-hint-label">scroll</span>
         <svg
@@ -51,7 +61,6 @@ const { site, event } = Astro.props;
 
 <script>
     const scrollHint = document.getElementById("scroll-hint");
-
     if (scrollHint) {
         const onFirstScroll = () => {
             scrollHint.classList.add("scroll-hint--hidden");
