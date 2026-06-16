@@ -55,3 +55,24 @@ if (!groom || !bride) throw new Error("Missing couple content");
     </div>
   </div>
 </section>
+
+<script>
+  // Light up the profile card accent strip (left edge + top edge of
+  // photo area) when the card enters the viewport. The CSS transition
+  // on ::before draws the border left→top via clip-path.
+  const cards = document.querySelectorAll<HTMLElement>(
+    ".profile-card--groom, .profile-card--bride",
+  );
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("strip-lit");
+          observer.unobserve(entry.target); // fire once only
+        }
+      });
+    },
+    { threshold: 0.3 },
+  );
+  cards.forEach((card) => observer.observe(card));
+</script>
