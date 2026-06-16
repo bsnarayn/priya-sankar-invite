@@ -18,7 +18,6 @@ const venueImageSrc = event.venue_image
     ? `/images/venue/${event.venue_image}`
     : undefined;
 
-// Pass datetime data to the client via a JSON island
 const calData = {
     startDatetime: event.start_datetime ?? null,
     endDatetime: event.end_datetime ?? null,
@@ -33,6 +32,7 @@ const calData = {
         <h2 class="sec-heading">Reception &amp;</h2>
         <span class="sec-script">Celebration</span>
 
+        <!-- Event details card — date/time/venue/dress/address/button -->
         <div class="event-card">
             <div class="event-list">
                 <div class="event-row">
@@ -44,13 +44,13 @@ const calData = {
                         stroke="#146B72"
                         stroke-width="1.2"
                         stroke-linecap="round"
-                        ><rect x="3" y="4" width="18" height="18" rx="2"
-                        ></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg
                     >
+                        <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                        <path d="M16 2v4M8 2v4M3 10h18"></path>
+                    </svg>
                     <div>
-                        <p class="event-lbl">Date</p><p class="event-val">
-                            {event.date}
-                        </p>
+                        <p class="event-lbl">Date</p>
+                        <p class="event-val">{event.date}</p>
                     </div>
                 </div>
                 <div class="event-row">
@@ -62,13 +62,13 @@ const calData = {
                         stroke="#146B72"
                         stroke-width="1.2"
                         stroke-linecap="round"
-                        ><circle cx="12" cy="12" r="9"></circle><path
-                            d="M12 7v5l3 3"></path></svg
                     >
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 7v5l3 3"></path>
+                    </svg>
                     <div>
-                        <p class="event-lbl">Time</p><p class="event-val">
-                            {event.time}
-                        </p>
+                        <p class="event-lbl">Time</p>
+                        <p class="event-val">{event.time}</p>
                     </div>
                 </div>
                 <div class="event-row">
@@ -80,14 +80,14 @@ const calData = {
                         stroke="#146B72"
                         stroke-width="1.2"
                         stroke-linecap="round"
-                        ><path
+                    >
+                        <path
                             d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"
-                        ></path></svg
-                    >
+                        ></path>
+                    </svg>
                     <div>
-                        <p class="event-lbl">Venue</p><p class="event-val">
-                            {event.venue}
-                        </p>
+                        <p class="event-lbl">Venue</p>
+                        <p class="event-val">{event.venue}</p>
                     </div>
                 </div>
                 <div class="event-row">
@@ -99,12 +99,12 @@ const calData = {
                         stroke="#146B72"
                         stroke-width="1.2"
                         stroke-linecap="round"
-                        ><path d="M3 6l4-4 5 4 5-4 4 4-2 14H5L3 6z"></path></svg
                     >
+                        <path d="M3 6l4-4 5 4 5-4 4 4-2 14H5L3 6z"></path>
+                    </svg>
                     <div>
-                        <p class="event-lbl">Dress</p><p class="event-val">
-                            {event.dress}
-                        </p>
+                        <p class="event-lbl">Dress</p>
+                        <p class="event-val">{event.dress}</p>
                     </div>
                 </div>
             </div>
@@ -140,56 +140,67 @@ const calData = {
             </div>
         </div>
 
-        {
-            venueImageSrc ? (
-                <div class="venue-image">
-                    <img src={venueImageSrc} alt={event.venue} loading="lazy" />
-                </div>
-            ) : (
-                <div class="venue-image venue-image--placeholder">
-                    <svg
-                        width="32"
-                        height="32"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#C4622D"
-                        stroke-width="1"
-                        stroke-linecap="round"
-                    >
-                        <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
-                    </svg>
-                    <span>Venue photo here</span>
-                </div>
-            )
-        }
+        <!-- Venue card — floats higher than the event-card via a stronger
+             shadow. Two sections: venue photo (top) and map (bottom),
+             separated by a hairline divider inside a single card. -->
+        <div class="venue-card">
+            <div class="venue-card-image">
+                {
+                    venueImageSrc ? (
+                        <img
+                            src={venueImageSrc}
+                            alt={event.venue}
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div class="venue-card-placeholder">
+                            <svg
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#C4622D"
+                                stroke-width="1"
+                                stroke-linecap="round"
+                            >
+                                <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+                            </svg>
+                            <span>Venue photo here</span>
+                        </div>
+                    )
+                }
+            </div>
 
-        <div class="map-placeholder">
-            {
-                event.maps_url ? (
-                    <iframe
-                        src={event.maps_url}
-                        width="100%"
-                        height="100%"
-                        style="border:0"
-                        loading="lazy"
-                    />
-                ) : (
-                    <div class="map-placeholder-content">
-                        <svg
-                            width="28"
-                            height="28"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#146B72"
-                            stroke-width="1.2"
-                            stroke-linecap="round"
-                        >
-                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
-                        </svg>
-                        <span>Map &amp; directions coming soon</span>
-                    </div>
-                )
-            }
+            <div class="venue-card-divider"></div>
+
+            <div class="venue-card-map">
+                {
+                    event.maps_url ? (
+                        <iframe
+                            src={event.maps_url}
+                            width="100%"
+                            height="100%"
+                            style="border:0;display:block;"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div class="venue-card-map-placeholder">
+                            <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#146B72"
+                                stroke-width="1.2"
+                                stroke-linecap="round"
+                            >
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+                            </svg>
+                            <span>Map &amp; directions coming soon</span>
+                        </div>
+                    )
+                }
+            </div>
         </div>
     </div>
 
@@ -223,7 +234,7 @@ const calData = {
                         "DESCRIPTION:Some love stories begin with a flight.",
                         `LOCATION:${venue}${address ? ", " + address : ""}${mapsUrl ? " " + mapsUrl : ""}`,
                         mapsUrl
-                            ? `X-APPLE-STRUCTURED-LOCATION;VALUE=URI:${mapsUrl}`
+                            ? `X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=${address};X-TITLE=${venue}:${mapsUrl}`
                             : "",
                         "END:VEVENT",
                         "END:VCALENDAR",

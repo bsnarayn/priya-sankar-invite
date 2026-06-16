@@ -34,27 +34,52 @@
 }
 
 #story {
-    background: radial-gradient(ellipse at 50% 40%, #FDF6EE 0%, #E8D5B4 100%);
+    background:
+        repeating-linear-gradient(to bottom,
+            #E8D5B4 0px,
+            #FDF6EE 120px,
+            #FDF6EE 260px,
+            #E8D5B4 380px);
     position: relative;
 }
 
 #people {
-    background: radial-gradient(ellipse at 50% 40%, #FFFBF6 0%, #EDD9B8 100%);
+    background:
+        repeating-linear-gradient(to bottom,
+            #EDD9B8 0px,
+            #FFFBF6 120px,
+            #FFFBF6 260px,
+            #EDD9B8 380px);
     position: relative;
 }
 
 #event {
-    background: radial-gradient(ellipse at 50% 40%, #FDF6EE 0%, #E8D5B4 100%);
+    background:
+        repeating-linear-gradient(to bottom,
+            #E8D5B4 0px,
+            #FDF6EE 120px,
+            #FDF6EE 260px,
+            #E8D5B4 380px);
     position: relative;
 }
 
 #rsvp {
-    background: radial-gradient(ellipse at 50% 40%, #FFFBF6 0%, #EDD9B8 100%);
+    background:
+        repeating-linear-gradient(to bottom,
+            #EDD9B8 0px,
+            #FFFBF6 120px,
+            #FFFBF6 260px,
+            #EDD9B8 380px);
     position: relative;
 }
 
 .rsvp-form-section {
-    background: radial-gradient(ellipse at 50% 40%, #FFFBF6 0%, #EDD9B8 100%);
+    background:
+        repeating-linear-gradient(to bottom,
+            #EDD9B8 0px,
+            #FFFBF6 120px,
+            #FFFBF6 260px,
+            #EDD9B8 380px);
     padding: 64px 24px;
     position: relative;
 }
@@ -79,7 +104,12 @@
 }
 
 #photos {
-    background: radial-gradient(ellipse at 50% 40%, #FDF6EE 0%, #E8D5B4 100%);
+    background:
+        repeating-linear-gradient(to bottom,
+            #E8D5B4 0px,
+            #FDF6EE 120px,
+            #FDF6EE 260px,
+            #E8D5B4 380px);
     position: relative;
 }
 
@@ -235,6 +265,36 @@
     letter-spacing: 0.08em;
     color: #7D1A6B;
     font-weight: 400;
+}
+
+/* ── Hero dual-border frame ──
+   Outer border → 8px gap → inner border → 20px padding → content.
+   Mirrors the physical invitation card treatment.
+   Tamil text floats above the frame as a pre-title header.
+   The frame fades in as part of the ScrollTrigger reveal in index.astro. */
+.hero-frame {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    max-width: 480px;
+    margin: 20px auto 0;
+    padding: 6px;
+    border: 1px solid #C9A227;
+    border-radius: 12px;
+}
+
+.hero-frame::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 0.5px solid #C9A227;
+    border-radius: 8px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.hero-frame-inner {
+    padding: 32px 28px 28px;
 }
 
 /* Story 2-col card */
@@ -541,32 +601,50 @@
     line-height: 1.6;
 }
 
-.venue-image {
-    margin-top: 24px;
-    border-radius: 8px;
+/* Venue card — sits below event-card, higher shadow projection
+   to create a sense of floating above the section background.
+   Two halves: venue photo (top) + map (bottom), divided by a
+   hairline, all within one card. */
+.venue-card {
+    margin-top: 16px;
+    border-radius: 12px;
     overflow: hidden;
     border: 0.5px solid #EDE4D8;
-    background: #EDE4D8;
-    min-height: 220px;
+    position: relative;
+    z-index: 2;
+    /* Stronger shadow than event-card — creates higher perceived elevation */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 8px 16px -4px rgba(58, 46, 40, 0.14),
+        0 28px 56px -8px rgba(58, 46, 40, 0.28),
+        0 2px 4px 0 rgba(58, 46, 40, 0.06);
 }
 
-.venue-image img {
+.venue-card-image {
+    width: 100%;
+    height: 220px;
+    background: #EDE4D8;
+    overflow: hidden;
+    position: relative;
+}
+
+.venue-card-image img {
     width: 100%;
     height: 100%;
-    min-height: 220px;
-    object-fit: contain;
+    object-fit: cover;
     display: block;
 }
 
-.venue-image--placeholder {
+.venue-card-placeholder {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    height: 100%;
 }
 
-.venue-image--placeholder span {
+.venue-card-placeholder span {
     color: #8C7060;
     font-size: 10px;
     letter-spacing: 0.1em;
@@ -574,27 +652,28 @@
     opacity: 0.5;
 }
 
-.map-placeholder {
-    margin-top: 24px;
-    height: 160px;
-    background: #F0E8DC;
-    border-radius: 8px;
-    border: 0.5px solid #EDE4D8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+.venue-card-divider {
+    height: 0.5px;
+    background: #EDE4D8;
 }
 
-.map-placeholder-content {
+.venue-card-map {
+    height: 200px;
+    background: #F0E8DC;
+    overflow: hidden;
+    position: relative;
+}
+
+.venue-card-map-placeholder {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    height: 100%;
 }
 
-.map-placeholder-content span {
+.venue-card-map-placeholder span {
     font-family: "Jost", sans-serif;
     font-size: 10px;
     letter-spacing: 0.15em;

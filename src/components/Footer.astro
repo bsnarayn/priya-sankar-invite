@@ -5,7 +5,6 @@ interface Props {
     site: {
         groom_name: string;
         bride_name: string;
-        tamil_thanks: string;
         footer_note: string;
         footer_close_delay_seconds?: number;
     };
@@ -44,7 +43,6 @@ const { Content: RightColumn } = rightEntry
 
 <footer id="footer" data-close-delay-ms={closeDelayMs}>
     <div class="footer-rule"></div>
-    <span class="footer-tamil">{site.tamil_thanks}</span>
     <span class="footer-script">with love &amp; gratitude</span>
     <p class="footer-names">
         {site.groom_name}

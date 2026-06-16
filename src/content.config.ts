@@ -55,7 +55,6 @@ const site = defineCollection({
         tagline: z.string(),
         hero_pre: z.string(),
         tamil_names: z.string(),
-        tamil_thanks: z.string(),
         footer_note: z.string(),
         upload_url: z.string().optional(),
         rsvp_webhook_url: z.string().optional(),
