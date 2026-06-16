@@ -34,27 +34,27 @@
 }
 
 #story {
-    background: #F5EAD8;
+    background: radial-gradient(ellipse at 50% 40%, #FDF6EE 0%, #E8D5B4 100%);
     position: relative;
 }
 
 #people {
-    background: #FDF6EE;
+    background: radial-gradient(ellipse at 50% 40%, #FFFBF6 0%, #EDD9B8 100%);
     position: relative;
 }
 
 #event {
-    background: #F5EAD8;
+    background: radial-gradient(ellipse at 50% 40%, #FDF6EE 0%, #E8D5B4 100%);
     position: relative;
 }
 
 #rsvp {
-    background: #FDF6EE;
+    background: radial-gradient(ellipse at 50% 40%, #FFFBF6 0%, #EDD9B8 100%);
     position: relative;
 }
 
 .rsvp-form-section {
-    background: #FDF6EE;
+    background: radial-gradient(ellipse at 50% 40%, #FFFBF6 0%, #EDD9B8 100%);
     padding: 64px 24px;
     position: relative;
 }
@@ -66,7 +66,10 @@
     padding: 36px 32px;
     position: relative;
     z-index: 2;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
 }
 
 #rsvp>.inner,
@@ -76,7 +79,7 @@
 }
 
 #photos {
-    background: #F5EAD8;
+    background: radial-gradient(ellipse at 50% 40%, #FDF6EE 0%, #E8D5B4 100%);
     position: relative;
 }
 
@@ -244,7 +247,10 @@
     position: relative;
     z-index: 2;
     min-height: 460px;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
 }
 
 .story-text {
@@ -302,9 +308,7 @@
     opacity: 0.5;
 }
 
-/* Story image carousel — continuous marquee, slides scroll
-   horizontally without discrete steps. The track contains the image
-   set twice (duplicated in markup) so the loop is seamless. */
+/* Story image carousel */
 .story-carousel {
     position: absolute;
     inset: 0;
@@ -338,9 +342,6 @@
     }
 
     to {
-        /* Shift left by exactly one full (non-duplicated) set width.
-           --story-set-width is set inline per-instance based on the
-           number of images and slide width. */
         transform: translateX(calc(-1 * var(--story-set-width, 320px)));
     }
 }
@@ -351,7 +352,7 @@
     }
 }
 
-/* Profile cards */
+/* ── Profile cards ── */
 .profile-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -365,17 +366,62 @@
     border: 0.5px solid #EDE4D8;
     position: relative;
     min-height: 460px;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
     display: flex;
     flex-direction: column;
 }
 
-.profile-card--groom {
-    border-top: 2.5px solid #C9A227;
+/* Profile card accent strip — runs left edge (photo only) + top edge.
+   Achieved with a pseudo-element confined to the photo area height,
+   so the left strip stops where the photo ends and the text begins.
+   The top border spans the full card width.
+   On card entry, a CSS animation lights up left→top (drawn via
+   clip-path from 0% to 100%). */
+.profile-card--groom,
+.profile-card--bride {
+    border-top: none;
+    /* removed — replaced by pseudo-element */
 }
 
-.profile-card--bride {
-    border-top: 2.5px solid #146B72;
+.profile-card--groom::before,
+.profile-card--bride::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* Width = left strip (2.5px) + card full width for top edge.
+       Height = photo area (260px). */
+    width: 100%;
+    height: 260px;
+    pointer-events: none;
+    z-index: 3;
+    /* Top border spans full width; left border spans photo height only. */
+    border-top: 2.5px solid transparent;
+    border-left: 2.5px solid transparent;
+    border-radius: 12px 12px 0 0;
+    /* Start clipped — animation draws left→top on reveal */
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 3.0s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-card--groom::before {
+    border-top-color: #C9A227;
+    border-left-color: #C9A227;
+}
+
+.profile-card--bride::before {
+    border-top-color: #146B72;
+    border-left-color: #146B72;
+}
+
+/* Triggered when card enters viewport (class added by JS in Profiles.astro
+   or via the existing ScrollTrigger — see note below) */
+.profile-card--groom.strip-lit::before,
+.profile-card--bride.strip-lit::before {
+    clip-path: inset(0 0% 0 0);
 }
 
 .profile-photo {
@@ -383,6 +429,7 @@
     height: 260px;
     background: #EDE4D8;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .profile-photo img {
@@ -399,6 +446,7 @@
     justify-content: center;
     flex-direction: column;
     gap: 10px;
+    height: 100%;
 }
 
 .profile-photo--placeholder span {
@@ -450,7 +498,10 @@
     padding: 36px 32px;
     position: relative;
     z-index: 2;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
 }
 
 .event-list {
@@ -551,21 +602,20 @@
     color: #7A6A5E;
 }
 
-/* RSVP form */
-
-/* Choice toggle buttons */
-/* Toggle card wrapper */
+/* RSVP */
 .rsvp-toggle-card {
     background: #F5EAD8;
     border-radius: 12px;
     border: 0.5px solid #EDE4D8;
     padding: 36px 40px;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
     position: relative;
     z-index: 2;
 }
 
-/* Override the old flex layout */
 .rsvp-toggle {
     display: flex;
     align-items: center;
@@ -612,7 +662,6 @@
     border-color: #146B72;
 }
 
-/* Revealed form section — fades in/out on toggle switch */
 .rsvp-form-section {
     opacity: 0;
     transform: translateY(12px);
@@ -649,7 +698,6 @@
     line-height: 1.6;
 }
 
-/* Reactions */
 .rsvp-reactions {
     margin-top: 4px;
 }
@@ -686,7 +734,6 @@
     color: #FFFBF6;
 }
 
-/* Per-reaction color theming */
 .reaction-btn[data-reaction="celebration"] {
     color: #C9A227;
     border-color: #F0DFA0;
@@ -774,8 +821,6 @@
     color: #146B72;
 }
 
-
-
 .field-label {
     font-family: "Jost", sans-serif;
     font-size: 10px;
@@ -855,7 +900,10 @@
     justify-content: center;
     z-index: 2;
     position: relative;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
 }
 
 .upload-zone:hover {
@@ -897,7 +945,10 @@
     justify-content: center;
     z-index: 2;
     position: relative;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
 }
 
 .qr-label {
@@ -994,9 +1045,6 @@
     margin-top: 8px;
 }
 
-/* "With Best Compliments from" — larger Great Vibes script, same
-   family as .footer-script (with love & gratitude) but bigger to
-   anchor the compliments block below. */
 .footer-compliments {
     font-family: "Great Vibes", cursive;
     font-size: clamp(12px, 6vw, 44px);
@@ -1005,8 +1053,6 @@
     margin-bottom: 28px;
 }
 
-/* Two name-list cards — stays 2-column even on mobile, card treatment
-   matches the RSVP/story/profile card pattern. */
 .footer-compliments-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1020,7 +1066,10 @@
     background: #F5EAD8;
     border-radius: 12px;
     border: 0.5px solid #EDE4D8;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
     padding: 24px 20px;
     z-index: 2;
 }
@@ -1088,7 +1137,7 @@
     transform: rotate(45deg) scale(1.1);
 }
 
-/* Scroll hint bounce */
+/* Scroll hint */
 @keyframes bounce {
 
     0%,
@@ -1131,7 +1180,7 @@
     display: block;
 }
 
-/* ── Album page ── */
+/* Album page */
 #gate {
     min-height: 100vh;
     background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
@@ -1153,7 +1202,10 @@
     border-radius: 12px;
     border: 0.5px solid #EDE4D8;
     padding: 32px 28px;
-    box-shadow: 0 12px 32px -16px rgba(58, 46, 40, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 8px -2px rgba(58, 46, 40, 0.10),
+        0 16px 40px -8px rgba(58, 46, 40, 0.22);
     display: grid;
     gap: 14px;
     text-align: left;
