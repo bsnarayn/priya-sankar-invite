@@ -1,0 +1,400 @@
+---
+import Base from "../layouts/Base.astro";
+import { getEntry } from "astro:content";
+
+const siteEntry = await getEntry("site", "site");
+if (!siteEntry) throw new Error("Missing site content");
+const site = siteEntry.data;
+
+const webhookUrl = site.dashboard_webhook_url ?? "";
+---
+
+<Base title="Dashboard — Sankar & Priya">
+    <div
+        id="dashboard"
+        data-webhook={webhookUrl}
+        style="min-height:100vh;background:#1A1612;padding:80px 24px 64px;font-family:'Jost',sans-serif;color:#FFFBF6;"
+    >
+        <div style="max-width:720px;margin:0 auto;">
+            <!-- Header -->
+            <div
+                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:12px;"
+            >
+                <div>
+                    <p
+                        style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#146B72;margin-bottom:4px;"
+                    >
+                        Reception
+                    </p>
+                    <h1
+                        style="font-family:'Italiana',serif;font-size:clamp(28px,6vw,40px);color:#FFFBF6;font-weight:400;line-height:1;"
+                    >
+                        Dashboard
+                    </h1>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span
+                        id="last-updated"
+                        style="font-size:10px;color:#7A6A5E;letter-spacing:.1em;"
+                    ></span>
+                    <button id="refresh-btn" class="dash-refresh"
+                        >↻ Refresh</button
+                    >
+                </div>
+            </div>
+
+            <!-- Error -->
+            <div
+                id="error-banner"
+                hidden
+                style="background:#3A1A1A;border:0.5px solid #C4622D;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:12px;color:#C4622D;line-height:1.6;"
+            >
+            </div>
+
+            <!-- RSVP -->
+            <section style="margin-bottom:32px;">
+                <h2 class="dash-section-label">RSVP</h2>
+                <div
+                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;"
+                >
+                    <div class="dash-card">
+                        <p class="dash-label">Total</p><p
+                            class="dash-val"
+                            id="rsvp-total"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#146B72">
+                        <p class="dash-label">Joining</p><p
+                            class="dash-val"
+                            id="rsvp-joining"
+                            style="color:#146B72"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#C4622D">
+                        <p class="dash-label">Declining</p><p
+                            class="dash-val"
+                            id="rsvp-declining"
+                            style="color:#C4622D"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+                <div
+                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"
+                >
+                    <div class="dash-card" style="--accent:#C9A227">
+                        <p class="dash-label">Total Guests</p><p
+                            class="dash-val"
+                            id="rsvp-guests"
+                            style="color:#C9A227"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card">
+                        <p class="dash-label">Reminded</p><p
+                            class="dash-val"
+                            id="rsvp-reminded"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#7D1A6B">
+                        <p class="dash-label">Pending</p><p
+                            class="dash-val"
+                            id="rsvp-pending"
+                            style="color:#7D1A6B"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+                <div
+                    style="background:#2A211C;border-radius:10px;border:0.5px solid #3A2E28;padding:16px 20px;margin-top:12px;"
+                >
+                    <p class="dash-label" style="margin-bottom:14px;">
+                        Reactions
+                    </p>
+                    <div
+                        style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;"
+                    >
+                        <div>
+                            <p style="font-size:20px;margin-bottom:4px;">
+                                🎉
+                            </p><p class="dash-label">Excited</p><p
+                                class="dash-reaction"
+                                id="react-celebration"
+                            >
+                                —
+                            </p>
+                        </div>
+                        <div>
+                            <p style="font-size:20px;margin-bottom:4px;">
+                                ❤️
+                            </p><p class="dash-label">Happy</p><p
+                                class="dash-reaction"
+                                id="react-happy"
+                            >
+                                —
+                            </p>
+                        </div>
+                        <div>
+                            <p style="font-size:20px;margin-bottom:4px;">
+                                🥂
+                            </p><p class="dash-label">Toast</p><p
+                                class="dash-reaction"
+                                id="react-toast"
+                            >
+                                —
+                            </p>
+                        </div>
+                        <div>
+                            <p style="font-size:20px;margin-bottom:4px;">
+                                🙏
+                            </p><p class="dash-label">Blessing</p><p
+                                class="dash-reaction"
+                                id="react-blessing"
+                            >
+                                —
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Album Notify -->
+            <section style="margin-bottom:32px;">
+                <h2 class="dash-section-label">Album Notifications</h2>
+                <div
+                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"
+                >
+                    <div class="dash-card">
+                        <p class="dash-label">Signed Up</p><p
+                            class="dash-val"
+                            id="album-total"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#146B72">
+                        <p class="dash-label">Notified</p><p
+                            class="dash-val"
+                            id="album-notified"
+                            style="color:#146B72"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#7D1A6B">
+                        <p class="dash-label">Pending</p><p
+                            class="dash-val"
+                            id="album-pending"
+                            style="color:#7D1A6B"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Photos -->
+            <section style="margin-bottom:32px;">
+                <h2 class="dash-section-label">Photos</h2>
+                <div
+                    style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"
+                >
+                    <div class="dash-card" style="--accent:#C9A227">
+                        <p class="dash-label">Uploaded to Immich</p><p
+                            class="dash-val"
+                            id="photos-count"
+                            style="color:#C9A227"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card">
+                        <p class="dash-label">Shared Album</p><p
+                            class="dash-val"
+                            id="photos-album"
+                            style="font-size:14px;letter-spacing:.04em;"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics -->
+            <section style="margin-bottom:32px;">
+                <h2 class="dash-section-label">Site Analytics</h2>
+                <div
+                    style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px;"
+                >
+                    <div class="dash-card">
+                        <p class="dash-label">Views (30 days)</p><p
+                            class="dash-val"
+                            id="views-30d"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#146B72">
+                        <p class="dash-label">Visitors (30 days)</p><p
+                            class="dash-val"
+                            id="visitors-30d"
+                            style="color:#146B72"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+                <div
+                    style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"
+                >
+                    <div class="dash-card">
+                        <p class="dash-label">Views (All Time)</p><p
+                            class="dash-val"
+                            id="views-all"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#C9A227">
+                        <p class="dash-label">Visitors (All Time)</p><p
+                            class="dash-val"
+                            id="visitors-all"
+                            style="color:#C9A227"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</Base>
+
+<style is:global>
+    .dash-section-label {
+        font-size: 10px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: #146b72;
+        margin-bottom: 16px;
+        font-weight: 400;
+    }
+    .dash-card {
+        background: #2a211c;
+        border-radius: 10px;
+        border: 0.5px solid #3a2e28;
+        border-top: 2px solid var(--accent, #c9a227);
+        padding: 16px 18px;
+    }
+    .dash-label {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #7a6a5e;
+        margin-bottom: 8px;
+    }
+    .dash-val {
+        font-family: "Italiana", serif;
+        font-size: 36px;
+        color: #fffbf6;
+        line-height: 1;
+    }
+    .dash-reaction {
+        font-family: "Italiana", serif;
+        font-size: 28px;
+        color: #fffbf6;
+    }
+    .dash-refresh {
+        padding: 8px 16px;
+        background: transparent;
+        border: 0.5px solid #c9a227;
+        border-radius: 6px;
+        color: #c9a227;
+        font-family: "Jost", sans-serif;
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+    .dash-refresh:hover {
+        background: rgba(201, 162, 39, 0.1);
+    }
+</style>
+
+<script>
+    const el = (id: string) => document.getElementById(id);
+    const set = (id: string, v: string | number) => {
+        const e = el(id);
+        if (e) e.textContent = String(v);
+    };
+
+    const webhookUrl = (el("dashboard") as HTMLElement)?.dataset.webhook ?? "";
+
+    async function load() {
+        const errBanner = el("error-banner");
+        if (errBanner) errBanner.hidden = true;
+
+        if (!webhookUrl) {
+            if (errBanner) {
+                errBanner.textContent =
+                    "dashboard_webhook_url not set in site.json";
+                errBanner.hidden = false;
+            }
+            return;
+        }
+
+        try {
+            const res = await fetch(webhookUrl);
+            if (!res.ok) throw new Error(`Webhook returned ${res.status}`);
+            const d = await res.json();
+
+            // RSVP
+            set("rsvp-total", d.rsvp?.total ?? "—");
+            set("rsvp-joining", d.rsvp?.joining ?? "—");
+            set("rsvp-declining", d.rsvp?.declining ?? "—");
+            set("rsvp-guests", d.rsvp?.totalGuests ?? "—");
+            set("rsvp-reminded", d.rsvp?.remindedSent ?? "—");
+            set("rsvp-pending", d.rsvp?.pendingReminders ?? "—");
+            set("react-celebration", d.rsvp?.reactions?.celebration ?? 0);
+            set("react-happy", d.rsvp?.reactions?.happy ?? 0);
+            set("react-toast", d.rsvp?.reactions?.toast ?? 0);
+            set("react-blessing", d.rsvp?.reactions?.blessing ?? 0);
+
+            // Album
+            set("album-total", d.album?.totalSignedUp ?? "—");
+            set("album-notified", d.album?.notified ?? "—");
+            set("album-pending", d.album?.pendingNotify ?? "—");
+
+            // Photos
+            set("photos-count", d.photos?.count ?? "—");
+            set("photos-album", d.photos?.albumSlug ?? "—");
+
+            // Analytics
+            set("views-30d", d.analytics?.views30d ?? "—");
+            set("visitors-30d", d.analytics?.visitors30d ?? "—");
+            set("views-all", d.analytics?.viewsAllTime ?? "—");
+            set("visitors-all", d.analytics?.visitorsAllTime ?? "—");
+
+            const ts = el("last-updated");
+            if (ts)
+                ts.textContent = `Updated ${new Date().toLocaleTimeString("en-IN")}`;
+        } catch (e: any) {
+            if (errBanner) {
+                errBanner.textContent = e.message;
+                errBanner.hidden = false;
+            }
+        }
+    }
+
+    el("refresh-btn")?.addEventListener("click", load);
+    load();
+</script>

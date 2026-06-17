@@ -1,10 +1,39 @@
 ---
+import { all as allCountries } from "country-codes-list";
+
 interface Props {
     site: {
         rsvp_webhook_url?: string;
     };
 }
 const { site } = Astro.props;
+
+// Build country list at build time — no runtime bundle impact.
+// India first, then remaining countries alphabetically by English name.
+// Deduplicate on countryCode (e.g. US/CA share dial code 1 but are distinct entries).
+const raw = allCountries() as {
+    countryCode: string;
+    countryCallingCode: string;
+    countryNameEn: string;
+    flag: string;
+}[];
+
+const sorted = [
+    // India pinned first
+    ...raw.filter((c) => c.countryCode === "IN"),
+    // Rest alphabetically, skipping India
+    ...raw
+        .filter((c) => c.countryCode !== "IN")
+        .sort((a, b) => a.countryNameEn.localeCompare(b.countryNameEn)),
+];
+
+// Shape: [flag, dialCode, name, iso2]
+const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
+    c.flag,
+    c.countryCallingCode,
+    c.countryNameEn,
+    c.countryCode,
+]);
 ---
 
 <section id="rsvp">
@@ -44,7 +73,8 @@ const { site } = Astro.props;
     <div class="inner">
         <div class="rsvp-form-card">
             <div class="rsvp-grid">
-                <div class="rsvp-2col" id="rsvp-name-email">
+                <!-- Row 1: Name + Guests -->
+                <div class="rsvp-2col">
                     <div>
                         <label class="field-label" for="rsvp-name"
                             >Your name</label
@@ -55,34 +85,136 @@ const { site } = Astro.props;
                             placeholder="Full name"
                             class="field-input"
                             required
+                            autocomplete="name"
                         />
                     </div>
-                    <div>
-                        <label class="field-label" for="rsvp-email">
-                            Email <span id="email-optional-tag">— optional</span
-                            >
-                        </label>
+                    <div id="rsvp-guests-row">
+                        <label class="field-label" for="rsvp-guests"
+                            >Guests</label
+                        >
                         <input
-                            id="rsvp-email"
-                            type="email"
-                            placeholder="We'll use this to reach you"
+                            id="rsvp-guests"
+                            type="number"
+                            min="1"
+                            max="10"
+                            placeholder="Including you"
                             class="field-input"
                         />
                     </div>
                 </div>
 
-                <div id="rsvp-guests-row">
-                    <label class="field-label" for="rsvp-guests">Guests</label>
-                    <input
-                        id="rsvp-guests"
-                        type="number"
-                        min="1"
-                        max="10"
-                        placeholder="Including you"
-                        class="field-input"
-                    />
+                <!-- Row 2: Email + Mobile -->
+                <div class="rsvp-2col">
+                    <!-- Email -->
+                    <div>
+                        <label class="field-label" for="rsvp-email">
+                            Email <span class="field-optional">— optional</span>
+                        </label>
+                        <input
+                            id="rsvp-email"
+                            type="email"
+                            placeholder="your@email.com"
+                            class="field-input"
+                            autocomplete="email"
+                        />
+                        <p class="field-error" id="email-error" hidden>
+                            Please enter a valid email.
+                        </p>
+                    </div>
+                    <!-- Mobile with country picker -->
+                    <div class="phone-field-wrap">
+                        <label class="field-label" for="rsvp-mobile-number">
+                            Mobile <span class="field-optional">— optional</span
+                            >
+                        </label>
+                        <div class="phone-field">
+                            <button
+                                type="button"
+                                class="phone-dial-btn"
+                                id="phone-dial-btn"
+                                aria-haspopup="listbox"
+                                aria-expanded="false"
+                                aria-label="Select country code"
+                            >
+                                <span id="phone-flag">🇮🇳</span>
+                                <span id="phone-code">+91</span>
+                                <svg
+                                    width="10"
+                                    height="6"
+                                    viewBox="0 0 10 6"
+                                    fill="none"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M1 1l4 4 4-4"
+                                        stroke="#7A6A5E"
+                                        stroke-width="1.2"
+                                        stroke-linecap="round"></path>
+                                </svg>
+                            </button>
+                            <input
+                                id="rsvp-mobile-number"
+                                type="tel"
+                                placeholder="Mobile number"
+                                class="field-input phone-number-input"
+                                autocomplete="tel-national"
+                                inputmode="numeric"
+                            />
+                        </div>
+                        <p class="field-error" id="mobile-error" hidden>
+                            Please enter a valid number (8–15 digits).
+                        </p>
+                        <!-- Country dropdown -->
+                        <div
+                            class="phone-dropdown"
+                            id="phone-dropdown"
+                            hidden
+                            role="listbox"
+                            aria-label="Select country"
+                        >
+                            <div class="phone-dropdown-search">
+                                <input
+                                    type="text"
+                                    id="phone-search"
+                                    placeholder="Search country…"
+                                    class="phone-search-input"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                />
+                            </div>
+                            <ul
+                                class="phone-dropdown-list"
+                                id="phone-country-list"
+                            >
+                                {
+                                    COUNTRIES.map(([flag, dial, name, iso]) => (
+                                        <li
+                                            role="option"
+                                            class="phone-country-option"
+                                            data-flag={flag}
+                                            data-dial={dial}
+                                            data-name={name}
+                                            data-iso={iso}
+                                            tabindex="-1"
+                                        >
+                                            <span class="phone-option-flag">
+                                                {flag}
+                                            </span>
+                                            <span class="phone-option-name">
+                                                {name}
+                                            </span>
+                                            <span class="phone-option-dial">
+                                                +{dial}
+                                            </span>
+                                        </li>
+                                    ))
+                                }
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- Reactions -->
                 <div class="rsvp-reactions">
                     <label class="field-label"
                         >A little something for the couple</label
@@ -110,8 +242,9 @@ const { site } = Astro.props;
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                             >
-                                <path d="M4 21l2.5-7L12 9l5.5 5L20 21"></path>
-                                <path d="M12 9V3M8 5l1.5 2M16 5l-1.5 2"></path>
+                                <path d="M4 21l2.5-7L12 9l5.5 5L20 21"
+                                ></path><path d="M12 9V3M8 5l1.5 2M16 5l-1.5 2"
+                                ></path>
                             </svg>
                             <span>So excited!</span>
                         </button>
@@ -159,8 +292,7 @@ const { site } = Astro.props;
                             >
                                 <path
                                     d="M6 3l1 7a3 3 0 003 3v8M18 3l-1 7a3 3 0 01-3 3"
-                                ></path>
-                                <path d="M4 3h4M16 3h4"></path>
+                                ></path><path d="M4 3h4M16 3h4"></path>
                             </svg>
                             <span>Can't wait to celebrate</span>
                         </button>
@@ -182,14 +314,15 @@ const { site } = Astro.props;
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                             >
-                                <path d="M12 3v6M8 6l4 3 4-3"></path>
-                                <path d="M5 21c0-3 3-5 7-5s7 2 7 5"></path>
+                                <path d="M12 3v6M8 6l4 3 4-3"></path><path
+                                    d="M5 21c0-3 3-5 7-5s7 2 7 5"></path>
                             </svg>
                             <span>Wishing you both joy</span>
                         </button>
                     </div>
                 </div>
 
+                <!-- Note -->
                 <div>
                     <label class="field-label" for="rsvp-note"
                         >Leave Us a Note</label
@@ -198,17 +331,17 @@ const { site } = Astro.props;
                         id="rsvp-note"
                         class="field-input field-textarea"
                         rows="4"
-                        placeholder="Share us your wish or memory. Leave us an advice for this joyful beginning."
+                        placeholder="Share a wish or memory. Leave us advice for this joyful beginning."
                     ></textarea>
                 </div>
 
                 <div class="btn-row">
-                    <button id="rsvp-submit" class="btn-primary" type="button">
-                        Joining You
-                    </button>
+                    <button id="rsvp-submit" class="btn-primary" type="button"
+                        >Joining You</button
+                    >
                 </div>
                 <p id="rsvp-success" class="rsvp-success" style="display:none;">
-                    Thank you — we'll see you there.
+                    Thank you — we'll see you there. 🎉
                 </p>
             </div>
         </div>
@@ -216,47 +349,40 @@ const { site } = Astro.props;
 </section>
 
 <script define:vars={{ webhookUrl: site.rsvp_webhook_url ?? "" }}>
+    // ── Toggle ───────────────────────────────────────────
     const toggleJoin = document.getElementById("toggle-join");
     const toggleDecline = document.getElementById("toggle-decline");
     const formSection = document.getElementById("rsvp-form-section");
     const guestsRow = document.getElementById("rsvp-guests-row");
-    const emailOptionalTag = document.getElementById("email-optional-tag");
-    const emailInput = document.getElementById("rsvp-email");
     const submitBtn = document.getElementById("rsvp-submit");
     const success = document.getElementById("rsvp-success");
     const reactionRow = document.getElementById("reaction-row");
     const reactionBtns = reactionRow.querySelectorAll(".reaction-btn");
 
-    let currentMode = null; // "join" | "decline"
-    let guestsValue = ""; // persisted in memory while hidden
+    let currentMode = null;
+    let guestsValue = "";
     let selectedReaction = null;
+    let selectedDial = "91";
 
-    function setReaction(value) {
-        selectedReaction = value;
-        reactionBtns.forEach((btn) => {
-            const isActive = btn.dataset.reaction === value;
-            btn.classList.toggle("active", isActive);
-            btn.setAttribute("aria-checked", String(isActive));
+    function setReaction(v) {
+        selectedReaction = v;
+        reactionBtns.forEach((b) => {
+            const on = b.dataset.reaction === v;
+            b.classList.toggle("active", on);
+            b.setAttribute("aria-checked", String(on));
         });
     }
-
-    reactionBtns.forEach((btn) => {
-        btn.addEventListener("click", () => {
-            setReaction(btn.dataset.reaction);
-        });
-    });
+    reactionBtns.forEach((b) =>
+        b.addEventListener("click", () => setReaction(b.dataset.reaction)),
+    );
 
     function applyMode(mode) {
         const switching = currentMode !== null && currentMode !== mode;
-
-        // Persist Guests value before switching away
-        if (switching && currentMode === "join") {
+        if (switching && currentMode === "join")
             guestsValue =
                 document.getElementById("rsvp-guests")?.value ?? guestsValue;
-        }
 
         currentMode = mode;
-
         toggleJoin.setAttribute("aria-pressed", String(mode === "join"));
         toggleJoin.classList.toggle("active", mode === "join");
         toggleDecline.setAttribute("aria-pressed", String(mode === "decline"));
@@ -265,28 +391,20 @@ const { site } = Astro.props;
         const reveal = () => {
             if (mode === "join") {
                 guestsRow.style.display = "";
-                const guestsInput = document.getElementById("rsvp-guests");
-                if (guestsInput) guestsInput.value = guestsValue;
-                emailOptionalTag.style.display = "";
-                emailInput.removeAttribute("required");
+                const gi = document.getElementById("rsvp-guests");
+                if (gi) gi.value = guestsValue;
                 submitBtn.textContent = "Joining You";
             } else {
                 guestsRow.style.display = "none";
-                emailOptionalTag.style.display = "none";
-                emailInput.setAttribute("required", "required");
                 submitBtn.textContent = "Sorry, Can't Make It";
             }
-
             formSection.hidden = false;
-            requestAnimationFrame(() => {
-                formSection.classList.add("visible");
-            });
+            requestAnimationFrame(() => formSection.classList.add("visible"));
         };
 
-        if (formSection.hidden || !formSection.classList.contains("visible")) {
+        if (formSection.hidden || !formSection.classList.contains("visible"))
             reveal();
-        } else if (switching) {
-            // Fade out, then swap content and fade back in
+        else if (switching) {
             formSection.classList.remove("visible");
             setTimeout(reveal, 350);
         }
@@ -295,9 +413,116 @@ const { site } = Astro.props;
     toggleJoin.addEventListener("click", () => applyMode("join"));
     toggleDecline.addEventListener("click", () => applyMode("decline"));
 
+    // ── Country picker ───────────────────────────────────
+    const dialBtn = document.getElementById("phone-dial-btn");
+    const dropdown = document.getElementById("phone-dropdown");
+    const searchInput = document.getElementById("phone-search");
+    const countryList = document.getElementById("phone-country-list");
+    const flagEl = document.getElementById("phone-flag");
+    const codeEl = document.getElementById("phone-code");
+
+    function selectCountry(flag, dial) {
+        selectedDial = dial;
+        flagEl.textContent = flag;
+        codeEl.textContent = "+" + dial;
+        closeDropdown();
+        document.getElementById("rsvp-mobile-number")?.focus();
+    }
+
+    function openDropdown() {
+        dropdown.hidden = false;
+        dialBtn.setAttribute("aria-expanded", "true");
+        searchInput.value = "";
+        filterCountries("");
+        requestAnimationFrame(() => searchInput.focus());
+    }
+
+    function closeDropdown() {
+        dropdown.hidden = true;
+        dialBtn.setAttribute("aria-expanded", "false");
+    }
+
+    function filterCountries(q) {
+        const t = q.toLowerCase();
+        countryList.querySelectorAll(".phone-country-option").forEach((li) => {
+            li.hidden =
+                t.length > 0 &&
+                !li.dataset.name.toLowerCase().includes(t) &&
+                !li.dataset.dial.includes(t);
+        });
+    }
+
+    dialBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dropdown.hidden ? openDropdown() : closeDropdown();
+    });
+    searchInput.addEventListener("input", (e) =>
+        filterCountries(e.target.value),
+    );
+    countryList.addEventListener("click", (e) => {
+        const li = e.target.closest(".phone-country-option");
+        if (li) selectCountry(li.dataset.flag, li.dataset.dial);
+    });
+    searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+            countryList
+                .querySelector(".phone-country-option:not([hidden])")
+                ?.focus();
+            e.preventDefault();
+        }
+        if (e.key === "Escape") closeDropdown();
+    });
+    countryList.addEventListener("keydown", (e) => {
+        const opts = [
+            ...countryList.querySelectorAll(
+                ".phone-country-option:not([hidden])",
+            ),
+        ];
+        const i = opts.indexOf(document.activeElement);
+        if (e.key === "ArrowDown") {
+            opts[i + 1]?.focus();
+            e.preventDefault();
+        }
+        if (e.key === "ArrowUp") {
+            i > 0 ? opts[i - 1]?.focus() : searchInput.focus();
+            e.preventDefault();
+        }
+        if (e.key === "Enter") {
+            e.target.click();
+        }
+        if (e.key === "Escape") closeDropdown();
+    });
+    document.addEventListener("click", (e) => {
+        if (
+            !dropdown.hidden &&
+            !dropdown.contains(e.target) &&
+            e.target !== dialBtn
+        )
+            closeDropdown();
+    });
+
+    // ── Validation ───────────────────────────────────────
+    function showError(id, show) {
+        const el = document.getElementById(id);
+        if (el) el.hidden = !show;
+    }
+    function validateEmail(v) {
+        if (!v) return true;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+    function validateMobile(v) {
+        if (!v) return true;
+        const d = v.replace(/\D/g, "");
+        return d.length >= 8 && d.length <= 15;
+    }
+
+    // ── Submit ───────────────────────────────────────────
     submitBtn.addEventListener("click", async () => {
         const name = document.getElementById("rsvp-name")?.value.trim();
-        const email = emailInput?.value.trim();
+        const email = document.getElementById("rsvp-email")?.value.trim();
+        const mobile = document
+            .getElementById("rsvp-mobile-number")
+            ?.value.trim();
         const guests =
             currentMode === "join"
                 ? document.getElementById("rsvp-guests")?.value
@@ -308,15 +533,22 @@ const { site } = Astro.props;
             alert("Please enter your name.");
             return;
         }
-        if (currentMode === "decline" && !email) {
-            alert("Please enter your email.");
-            return;
-        }
+
+        const emailOk = validateEmail(email);
+        showError("email-error", !emailOk);
+        const mobileOk = validateMobile(mobile);
+        showError("mobile-error", !mobileOk);
+        if (!emailOk || !mobileOk) return;
+
+        const mobileFormatted = mobile
+            ? "+" + selectedDial + mobile.replace(/\D/g, "")
+            : "";
 
         const payload = {
             response: currentMode === "join" ? "Yes" : "No",
             name,
             email: email || "",
+            mobile: mobileFormatted,
             guests: guests || "",
             reaction: selectedReaction || "",
             note: note || "",
@@ -327,66 +559,72 @@ const { site } = Astro.props;
         };
 
         submitBtn.disabled = true;
-        const originalText = submitBtn.textContent;
+        const orig = submitBtn.textContent;
         submitBtn.textContent = "Sending…";
 
         try {
             if (webhookUrl) {
-                await fetch(webhookUrl, {
+                const res = await fetch(webhookUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload),
                 });
+                if (!res.ok) throw new Error("Server error");
             } else {
                 console.log("RSVP payload:", payload);
             }
 
             submitBtn.textContent =
                 currentMode === "join" ? "Joining You ✓" : "We'll Miss You ✓";
-            if (success) success.style.display = "block";
+            if (success) {
+                success.textContent =
+                    currentMode === "join"
+                        ? "Thank you — we can't wait to celebrate with you! 🎉"
+                        : "We'll miss you — thank you for letting us know. 🤍";
+                success.style.display = "block";
+            }
 
-            // Reset after 2.5s
             setTimeout(() => {
-                // Clear fields
-                document.getElementById("rsvp-name").value = "";
-                document.getElementById("rsvp-email").value = "";
-                document.getElementById("rsvp-guests").value = "";
-                document.getElementById("rsvp-note").value = "";
-
-                // Clear reaction selection
+                [
+                    "rsvp-name",
+                    "rsvp-email",
+                    "rsvp-mobile-number",
+                    "rsvp-guests",
+                    "rsvp-note",
+                ].forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = "";
+                });
+                flagEl.textContent = "🇮🇳";
+                codeEl.textContent = "+91";
+                selectedDial = "91";
                 selectedReaction = null;
                 guestsValue = "";
-                reactionBtns.forEach((btn) => {
-                    btn.classList.remove("active");
-                    btn.setAttribute("aria-checked", "false");
+                reactionBtns.forEach((b) => {
+                    b.classList.remove("active");
+                    b.setAttribute("aria-checked", "false");
                 });
-
-                // Hide success message
+                showError("email-error", false);
+                showError("mobile-error", false);
                 if (success) success.style.display = "none";
-
-                // Re-enable submit button with original label
                 submitBtn.disabled = false;
                 submitBtn.textContent =
                     currentMode === "join"
                         ? "Joining You"
                         : "Sorry, Can't Make It";
-
-                // Fade out and hide the form section
                 formSection.classList.remove("visible");
                 setTimeout(() => {
                     formSection.hidden = true;
                 }, 500);
-
-                // Reset the toggle buttons
                 currentMode = null;
                 toggleJoin.classList.remove("active");
                 toggleJoin.setAttribute("aria-pressed", "false");
                 toggleDecline.classList.remove("active");
                 toggleDecline.setAttribute("aria-pressed", "false");
             }, 2500);
-        } catch (err) {
+        } catch {
             submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            submitBtn.textContent = orig;
             alert("Something went wrong — please try again.");
         }
     });

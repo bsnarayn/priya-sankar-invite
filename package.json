@@ -15,6 +15,7 @@
     "@astrojs/cloudflare": "^13.6.1",
     "@astrojs/mdx": "^6.0.2",
     "astro": "^6.4.4",
+    "country-codes-list": "^2.0.0",
     "gsap": "^3.15.0",
     "howler": "^2.2.4"
   },
