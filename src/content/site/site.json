@@ -16,6 +16,10 @@
         "album_available_after": "2026-12-31T23:00:00",
         "album_notify_webhook_url": "https://workflow.sankaranarayan.in/webhook/album-notify",
         "story_images": 0,
-        "footer_close_delay_seconds": 600
+        "footer_close_delay_seconds": 600,
+        "umami_base_url": "https://analytics.sankaranarayan.in",
+        "umami_website_id": "b095ae70-7898-4408-b7ec-b052cd5a1c30",
+        "immich_api_key": "dFjN6hBuHbzYwq1DMNVTEbgMs3o2i2ShktzzFQBZ2o",
+        "dashboard_webhook_url": "https://workflow.sankaranarayan.in/webhook/dashboard-reception"
     }
 ]

@@ -322,7 +322,7 @@
     margin-bottom: 0;
 }
 
-/* Tagline — two line gaps above (in rem, relative to body font) */
+/* Tagline — more negative space above, two clear line gaps */
 .hero-frame-inner .hero-tagline {
     margin-top: 3.5rem;
     margin-bottom: 0;
@@ -501,7 +501,7 @@
     border-radius: 12px 12px 0 0;
     /* Start clipped — animation draws left→top on reveal */
     clip-path: inset(0 100% 0 0);
-    transition: clip-path 6.0s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: clip-path 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .profile-card--groom::before {
@@ -937,6 +937,147 @@
     color: #146B72;
 }
 
+.field-optional {
+    text-transform: none;
+    letter-spacing: normal;
+    opacity: 0.6;
+    font-weight: 400;
+}
+
+.field-error {
+    font-family: "Jost", sans-serif;
+    font-size: 10px;
+    color: #C4622D;
+    margin-top: 5px;
+    letter-spacing: 0.04em;
+}
+
+/* Phone field — dial button + number input side by side */
+.phone-field-wrap {
+    position: relative;
+}
+
+.phone-field {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+}
+
+.phone-dial-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 10px;
+    background: #FFFBF6;
+    border: 0.5px solid #DDD0C2;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: "Jost", sans-serif;
+    font-size: 13px;
+    color: #3A2E28;
+    white-space: nowrap;
+    flex-shrink: 0;
+    height: 44px;
+    transition: border-color 0.2s ease;
+}
+
+.phone-dial-btn:hover,
+.phone-dial-btn[aria-expanded="true"] {
+    border-color: #146B72;
+}
+
+.phone-number-input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Country dropdown */
+.phone-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #FFFBF6;
+    border: 0.5px solid #DDD0C2;
+    border-radius: 10px;
+    box-shadow:
+        0 8px 24px -4px rgba(58, 46, 40, 0.18),
+        0 2px 6px rgba(58, 46, 40, 0.08);
+    z-index: 100;
+    overflow: hidden;
+    max-height: 280px;
+    display: flex;
+    flex-direction: column;
+}
+
+.phone-dropdown-search {
+    padding: 10px 10px 6px;
+    border-bottom: 0.5px solid #EDE4D8;
+    flex-shrink: 0;
+}
+
+.phone-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: #F5EAD8;
+    border: 0.5px solid #DDD0C2;
+    border-radius: 6px;
+    font-family: "Jost", sans-serif;
+    font-size: 13px;
+    color: #3A2E28;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.phone-search-input:focus {
+    border-color: #146B72;
+}
+
+.phone-dropdown-list {
+    list-style: none;
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 0;
+    margin: 0;
+}
+
+.phone-country-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    cursor: pointer;
+    font-family: "Jost", sans-serif;
+    font-size: 13px;
+    color: #3A2E28;
+    transition: background 0.15s ease;
+}
+
+.phone-country-option:hover,
+.phone-country-option:focus {
+    background: #F5EAD8;
+    outline: none;
+}
+
+.phone-option-flag {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.phone-option-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.phone-option-dial {
+    color: #7A6A5E;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
 .field-label {
     font-family: "Jost", sans-serif;
     font-size: 10px;
@@ -1133,7 +1274,7 @@
 
 .footer-script {
     font-family: "Great Vibes", cursive;
-    font-size: 32px;
+    font-size: 28px;
     color: #7D1A6B;
     display: block;
     margin-bottom: 18px;
@@ -1163,7 +1304,7 @@
 
 .footer-compliments {
     font-family: "Great Vibes", cursive;
-    font-size: clamp(12px, 6vw, 26px);
+    font-size: clamp(12px, 6vw, 44px);
     color: #7D1A6B;
     margin-top: 48px;
     margin-bottom: 28px;

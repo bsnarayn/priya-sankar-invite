@@ -67,6 +67,10 @@ const site = defineCollection({
         camera_max_uploads: z.number().optional(),
         story_images: z.number().optional(),
         footer_close_delay_seconds: z.number().optional(),
+        umami_base_url: z.string().optional(),
+        umami_website_id: z.string().optional(),
+        immich_api_key: z.string().optional(),
+        dashboard_webhook_url: z.string().optional(),
     }),
 });
 

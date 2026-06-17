@@ -55,6 +55,18 @@ const canonicalUrl = new URL(Astro.url.pathname, site.site_url).toString();
 
         <!-- Favicon placeholder -->
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+        <!-- Umami analytics — privacy-first, no cookies, self-hosted.
+             Only loads if umami_base_url and umami_website_id are set in site.json. -->
+        {
+            site.umami_base_url && site.umami_website_id && (
+                <script
+                    defer
+                    src={`${site.umami_base_url}/script.js`}
+                    data-website-id={site.umami_website_id}
+                />
+            )
+        }
     </head>
     <body>
         <slot />
