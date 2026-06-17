@@ -8,13 +8,13 @@
         "hero_pre": "Together with their families Invite",
         "tamil_names": "சங்கர் & ப்ரியா",
         "footer_note": "We can't wait to celebrate with you.",
-        "rsvp_webhook_url": "https://workflow.sankars.in/webhook/rsvp",
+        "rsvp_webhook_url": "https://workflow.sankaranarayan.in/webhook/rsvp",
         "immich_base_url": "https://photos.sankaranarayan.in",
         "immich_share_slug": "priya-sankar-reception",
         "camera_max_shots": 36,
         "camera_max_uploads": 25,
         "album_available_after": "2026-12-31T23:00:00",
-        "album_notify_webhook_url": "https://workflow.sankars.in/webhook/album-notify",
+        "album_notify_webhook_url": "https://workflow.sankaranarayan.in/webhook/album-notify",
         "story_images": 0,
         "footer_close_delay_seconds": 600
     }
