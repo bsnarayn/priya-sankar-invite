@@ -501,7 +501,7 @@
     border-radius: 12px 12px 0 0;
     /* Start clipped — animation draws left→top on reveal */
     clip-path: inset(0 100% 0 0);
-    transition: clip-path 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: clip-path 6.0s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .profile-card--groom::before {
