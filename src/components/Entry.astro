@@ -9,30 +9,43 @@ import Hearts from "./Hearts.astro";
 <Balloons />
 <Hearts />
 
+<!--
+    Gate pivot: each door rotates on its INNER edge (the spine at centre screen).
+    Left door:  transform-origin right edge  → rotateY goes 0 → -110
+    Right door: transform-origin left edge   → rotateY goes 0 →  110
+    Parent div carries perspective so the rotation looks 3-D.
+    overflow:hidden on entry-screen clips the doors once they swing past 90°.
+-->
 <div
     id="entry-screen"
     style="position:fixed;inset:0;z-index:50;display:flex;cursor:pointer;user-select:none;overflow:hidden;"
     aria-label="Tap to open"
 >
-    <div
-        id="door-left"
-        style="
-        width:50%;
-        height:100%;
-        background: linear-gradient(to right, #BF9060 0%, #D4AA7D 25%, #EDD9B8 60%, #F5EAD8 100%);
-        box-shadow: inset -20px 0 40px rgba(80,50,20,0.22);
-    "
-    >
+    <div style="width:50%;height:100%;perspective:1400px;flex-shrink:0;">
+        <div
+            id="door-left"
+            style="
+                width:100%;height:100%;
+                transform-origin:left center;
+                transform-style:preserve-3d;
+                background:linear-gradient(to right,#BF9060 0%,#D4AA7D 25%,#EDD9B8 60%,#F5EAD8 100%);
+                box-shadow:inset -20px 0 40px rgba(80,50,20,0.22);
+            "
+        >
+        </div>
     </div>
-    <div
-        id="door-right"
-        style="
-        width:50%;
-        height:100%;
-        background: linear-gradient(to left, #BF9060 0%, #D4AA7D 25%, #EDD9B8 60%, #F5EAD8 100%);
-        box-shadow: inset 20px 0 40px rgba(80,50,20,0.22);
-    "
-    >
+    <div style="width:50%;height:100%;perspective:1400px;flex-shrink:0;">
+        <div
+            id="door-right"
+            style="
+                width:100%;height:100%;
+                transform-origin:right center;
+                transform-style:preserve-3d;
+                background:linear-gradient(to left,#BF9060 0%,#D4AA7D 25%,#EDD9B8 60%,#F5EAD8 100%);
+                box-shadow:inset 20px 0 40px rgba(80,50,20,0.22);
+            "
+        >
+        </div>
     </div>
 </div>
 
@@ -47,10 +60,6 @@ import Hearts from "./Hearts.astro";
         xmlns="http://www.w3.org/2000/svg"
     >
         <defs>
-            <!-- Soft drop shadow so the monogram lifts off the door
-                 gradient regardless of which part of the gradient sits
-                 behind it (gold letterform especially blends into the
-                 amber doors without this). -->
             <filter
                 id="monogramShadow"
                 x="-50%"
@@ -85,12 +94,12 @@ import Hearts from "./Hearts.astro";
            font-family:var(--font-family-sans);
            font-size:14px;
            letter-spacing:0.3em;
-           text-transform:uppercase;
+           text-transform:camelcase;
            color:var(--color-text-primary);
            opacity:0.6;
            white-space:nowrap;"
     >
-        Tap to Celebrate
+        Tap to Celebrate with Us
     </p>
 </div>
 
@@ -142,7 +151,6 @@ import Hearts from "./Hearts.astro";
         } catch (_) {}
     }
 
-    /* ── Confetti burst ── */
     function burstConfetti() {
         const canvas = document.getElementById(
             "confetti-canvas",
@@ -150,10 +158,8 @@ import Hearts from "./Hearts.astro";
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
-
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-
         const COLORS = [
             "#C9A227",
             "#E8A0A8",
@@ -165,7 +171,6 @@ import Hearts from "./Hearts.astro";
         const PARTICLE_COUNT = 120;
         const originX = canvas.width / 2;
         const originY = canvas.height / 2;
-
         type Particle = {
             x: number;
             y: number;
@@ -178,9 +183,7 @@ import Hearts from "./Hearts.astro";
             opacity: number;
             shape: "rect" | "circle";
         };
-
         const particles: Particle[] = [];
-
         for (let i = 0; i < PARTICLE_COUNT; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = 4 + Math.random() * 10;
@@ -197,19 +200,15 @@ import Hearts from "./Hearts.astro";
                 shape: Math.random() > 0.4 ? "rect" : "circle",
             });
         }
-
         let elapsed = 0;
-        const GRAVITY = 0.25;
-        const DRAG = 0.97;
-
+        const GRAVITY = 0.25,
+            DRAG = 0.97;
         function draw() {
             ctx!.clearRect(0, 0, canvas.width, canvas.height);
             let alive = false;
-
             for (const p of particles) {
                 if (p.opacity <= 0) continue;
                 alive = true;
-
                 p.vy += GRAVITY;
                 p.vx *= DRAG;
                 p.vy *= DRAG;
@@ -217,31 +216,24 @@ import Hearts from "./Hearts.astro";
                 p.y += p.vy;
                 p.rotation += p.rotationSpeed;
                 if (elapsed > 40) p.opacity -= 0.018;
-
                 ctx!.save();
                 ctx!.globalAlpha = Math.max(p.opacity, 0);
                 ctx!.fillStyle = p.color;
                 ctx!.translate(p.x, p.y);
                 ctx!.rotate((p.rotation * Math.PI) / 180);
-
-                if (p.shape === "rect") {
+                if (p.shape === "rect")
                     ctx!.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
-                } else {
+                else {
                     ctx!.beginPath();
                     ctx!.arc(0, 0, p.size / 2, 0, Math.PI * 2);
                     ctx!.fill();
                 }
                 ctx!.restore();
             }
-
             elapsed++;
-            if (alive) {
-                requestAnimationFrame(draw);
-            } else {
-                ctx!.clearRect(0, 0, canvas.width, canvas.height);
-            }
+            if (alive) requestAnimationFrame(draw);
+            else ctx!.clearRect(0, 0, canvas.width, canvas.height);
         }
-
         draw();
     }
 
@@ -253,39 +245,53 @@ import Hearts from "./Hearts.astro";
 
         const tl = gsap.timeline();
 
-        tl.to(tapPrompt, {
-            opacity: 0,
-            duration: 0.3,
-            ease: "power2.in",
-        })
+        tl.to(tapPrompt, { opacity: 0, duration: 0.3, ease: "power2.in" })
+
             .addLabel("open", "-=0.1")
+
+            // Left door pivots on its right edge — swings away from viewer
             .to(
                 doorL,
-                { x: "-100%", duration: 1.6, ease: "power3.inOut" },
+                { rotateY: 110, duration: 3.9, ease: "power3.inOut" },
                 "open",
             )
+
+            // Right door pivots on its left edge — mirrors
             .to(
                 doorR,
-                { x: "100%", duration: 1.6, ease: "power3.inOut" },
+                { rotateY: -110, duration: 3.9, ease: "power3.inOut" },
                 "open",
             )
+
+            // Monogram halves fly off with the doors (same as original)
             .to(
                 pGroup,
-                { x: -1500, duration: 1.6, ease: "power3.inOut" },
+                { x: -2500, duration: 3.9, ease: "power3.inOut" },
+
                 "open",
             )
             .to(
                 sGroup,
-                { x: 1500, duration: 1.6, ease: "power3.inOut" },
+                { x: 2500, duration: 3.9, ease: "power3.inOut" },
                 "open",
             )
+
+            // Invite zooms up from below
             .fromTo(
                 invite,
-                { opacity: 0, y: 16 },
-                { opacity: 1, y: 0, duration: 1.3, ease: "power2.out" },
+                { opacity: 0, y: 60, scale: 0.94 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 1.3,
+                    ease: "power2.out",
+                },
                 "open+=0.4",
             )
+
             .set([screen, monogramWrap], { display: "none" })
+
             .then(() => {
                 document.body.classList.remove("no-scroll");
                 window.dispatchEvent(new CustomEvent("invite:opened"));
@@ -305,8 +311,8 @@ import Hearts from "./Hearts.astro";
         triggered = false;
         document.body.classList.add("no-scroll");
         gsap.set(monogramWrap, { display: "flex" });
-        gsap.set(doorL, { x: "0%" });
-        gsap.set(doorR, { x: "0%" });
+        gsap.set(doorL, { rotateY: 0 });
+        gsap.set(doorR, { rotateY: 0 });
         gsap.set(pGroup, { x: 0 });
         gsap.set(sGroup, { x: 0 });
         gsap.set(tapPrompt, { opacity: 0.4 });
