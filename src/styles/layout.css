@@ -159,7 +159,7 @@
     font-size: 10px;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: #146B72;
+    color: #0F6e5C;
     margin-bottom: 12px;
     display: block;
 }
@@ -193,7 +193,7 @@
 .sec-script {
     font-family: "Great Vibes", cursive;
     font-size: clamp(28px, 5vw, 40px);
-    color: #146B72;
+    color: #0F6e5C;
     display: block;
     line-height: 1.3;
     margin-bottom: 8px;
@@ -215,7 +215,7 @@
     font-weight: 400;
     font-size: clamp(20px, 3.5vw, 28px);
     letter-spacing: 0.3em;
-    color: #146B72;
+    color: #0F6e5C;
     opacity: 0.9;
     margin-bottom: 28px;
 }
@@ -226,7 +226,7 @@
     font-weight: 400;
     letter-spacing: 0.35em;
     text-transform: uppercase;
-    color: #146B72;
+    color: #0F6e5C;
     margin-top: 24px;
     margin-bottom: 24px;
 }
@@ -241,7 +241,7 @@
 .hero-amp {
     font-family: "Great Vibes", cursive;
     font-size: clamp(48px, 9vw, 72px);
-    color: #146B72;
+    color: #0F6e5C;
     display: block;
     margin: 8px 0;
 }
@@ -249,7 +249,7 @@
 .hero-rule {
     width: 1px;
     height: 52px;
-    background: #146B72;
+    background: #0F6e5C;
     opacity: 0.35;
     margin: 28px auto;
 }
@@ -267,7 +267,7 @@
     font-family: "Italiana", serif;
     font-size: clamp(18px, 3vw, 24px);
     letter-spacing: 0.08em;
-    color: #7D1A6B;
+    color: #8B1A8C;
     font-weight: 400;
 }
 
@@ -282,7 +282,7 @@
     max-width: 480px;
     margin: 0 auto;
     padding: 6px;
-    border: 1px solid #C9A227;
+    border: 1px solid #C9952C;
     border-radius: 12px;
 }
 
@@ -290,7 +290,7 @@
     content: "";
     position: absolute;
     inset: 5px;
-    border: 0.5px solid #C9A227;
+    border: 0.5px solid #C9952C;
     border-radius: 8px;
     opacity: 0.6;
     pointer-events: none;
@@ -505,13 +505,13 @@
 }
 
 .profile-card--groom::before {
-    border-top-color: #C9A227;
-    border-left-color: #C9A227;
+    border-top-color: #C9952C;
+    border-left-color: #C9952C;
 }
 
 .profile-card--bride::before {
-    border-top-color: #146B72;
-    border-left-color: #146B72;
+    border-top-color: #0F6e5C;
+    border-left-color: #0F6e5C;
 }
 
 /* Triggered when card enters viewport (class added by JS in Profiles.astro
@@ -564,7 +564,7 @@
 .profile-initial {
     font-family: "Great Vibes", cursive;
     font-size: 38px;
-    color: #146B72;
+    color: #0F6e5C;
     margin-bottom: 6px;
     line-height: 1;
 }
@@ -769,13 +769,13 @@
 }
 
 .rsvp-toggle-btn:hover {
-    border-color: #146B72;
+    border-color: #0F6e5C;
 }
 
 .rsvp-toggle-btn.active {
-    background: #146B72;
+    background: #0F6e5C;
     color: #FFFBF6;
-    border-color: #146B72;
+    border-color: #0F6e5C;
 }
 
 .rsvp-form-section {
@@ -840,32 +840,32 @@
 }
 
 .reaction-btn:hover {
-    border-color: #146B72;
-    color: #146B72;
+    border-color: #0F6e5C;
+    color: #0F6e5C;
 }
 
 .reaction-btn.active {
-    background: #146B72;
-    border-color: #146B72;
+    background: #0F6e5C;
+    border-color: #0F6e5C;
     color: #FFFBF6;
 }
 
 .reaction-btn[data-reaction="celebration"] {
-    color: #C9A227;
+    color: #C9952C;
     border-color: #F0DFA0;
 }
 
 .reaction-btn[data-reaction="celebration"]:hover,
 .reaction-btn[data-reaction="celebration"].active {
     background: #FDF8E7;
-    border-color: #C9A227;
+    border-color: #C9952C;
     color: #A07C10;
 }
 
 .reaction-btn[data-reaction="celebration"].active {
-    background: #C9A227;
+    background: #C9952C;
     color: #FFFBF6;
-    border-color: #C9A227;
+    border-color: #C9952C;
 }
 
 .reaction-btn[data-reaction="happy"] {
@@ -887,39 +887,39 @@
 }
 
 .reaction-btn[data-reaction="toast"] {
-    color: #146B72;
+    color: #0F6e5C;
     border-color: #A8D8DC;
 }
 
 .reaction-btn[data-reaction="toast"]:hover,
 .reaction-btn[data-reaction="toast"].active {
     background: #EAF5F6;
-    border-color: #146B72;
+    border-color: #0F6e5C;
     color: #0D4D52;
 }
 
 .reaction-btn[data-reaction="toast"].active {
-    background: #146B72;
+    background: #0F6e5C;
     color: #FFFBF6;
-    border-color: #146B72;
+    border-color: #0F6e5C;
 }
 
 .reaction-btn[data-reaction="blessing"] {
-    color: #7D1A6B;
+    color: #8B1A8C;
     border-color: #E8B8E2;
 }
 
 .reaction-btn[data-reaction="blessing"]:hover,
 .reaction-btn[data-reaction="blessing"].active {
     background: #F9EDF7;
-    border-color: #7D1A6B;
+    border-color: #8B1A8C;
     color: #5C1250;
 }
 
 .reaction-btn[data-reaction="blessing"].active {
-    background: #7D1A6B;
+    background: #8B1A8C;
     color: #FFFBF6;
-    border-color: #7D1A6B;
+    border-color: #8B1A8C;
 }
 
 .reaction-btn span {
@@ -934,7 +934,7 @@
     font-family: "Cormorant Garant", serif;
     font-style: italic;
     font-size: 14px;
-    color: #146B72;
+    color: #0F6e5C;
 }
 
 .field-optional {
@@ -983,7 +983,7 @@
 
 .phone-dial-btn:hover,
 .phone-dial-btn[aria-expanded="true"] {
-    border-color: #146B72;
+    border-color: #0F6e5C;
 }
 
 .phone-number-input {
@@ -1030,7 +1030,7 @@
 }
 
 .phone-search-input:focus {
-    border-color: #146B72;
+    border-color: #0F6e5C;
 }
 
 .phone-dropdown-list {
@@ -1103,12 +1103,12 @@
 }
 
 .field-input:focus {
-    border-color: #146B72;
+    border-color: #0F6e5C;
 }
 
 .btn-primary {
     padding: 13px 28px;
-    background: #146B72;
+    background: #0F6e5C;
     color: #FFFBF6;
     border: none;
     border-radius: 8px;
@@ -1164,7 +1164,7 @@
 }
 
 .upload-zone:hover {
-    border-color: #146B72;
+    border-color: #0F6e5C;
 }
 
 .upload-title {
@@ -1256,7 +1256,7 @@
 .footer-rule {
     width: 48px;
     height: 1px;
-    background: #146B72;
+    background: #0F6e5C;
     opacity: 0.5;
     margin: 0 auto 28px;
 }
@@ -1266,7 +1266,7 @@
     font-weight: 300;
     font-size: 16px;
     letter-spacing: 0.2em;
-    color: #146B72;
+    color: #0F6e5C;
     opacity: 0.75;
     display: block;
     margin-bottom: 12px;
@@ -1275,7 +1275,7 @@
 .footer-script {
     font-family: "Great Vibes", cursive;
     font-size: 28px;
-    color: #7D1A6B;
+    color: #8B1A8C;
     display: block;
     margin-bottom: 18px;
 }
@@ -1289,7 +1289,7 @@
 
 .footer-amp {
     font-family: "Great Vibes", cursive;
-    color: #146B72;
+    color: #0F6e5C;
     font-size: clamp(32px, 5vw, 44px);
 }
 
@@ -1305,7 +1305,7 @@
 .footer-compliments {
     font-family: "Great Vibes", cursive;
     font-size: clamp(12px, 6vw, 44px);
-    color: #7D1A6B;
+    color: #8B1A8C;
     margin-top: 48px;
     margin-bottom: 28px;
 }
@@ -1340,7 +1340,7 @@
     font-family: "Great Vibes", cursive;
     font-size: clamp(14px, 5vw, 28px);
     line-height: 1.3;
-    color: #146B72;
+    color: #0F6e5C;
     margin-bottom: 10px;
 }
 
@@ -1387,7 +1387,7 @@
 }
 
 #plane-nav:hover {
-    border-color: #146B72;
+    border-color: #0F6e5C;
 }
 
 #plane-nav:hover svg {
@@ -1473,7 +1473,7 @@
     font-family: "Cormorant Garant", serif;
     font-style: italic;
     font-size: 15px;
-    color: #146B72;
+    color: #0F6e5C;
     text-align: center;
     margin-top: 4px;
 }
