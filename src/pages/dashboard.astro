@@ -342,8 +342,53 @@ const webhookUrl = site.dashboard_webhook_url ?? "";
   // ── PIN gate — PIN verified server-side by the Worker ───────────────
   const dashEl = document.getElementById("dashboard") as HTMLElement | null;
   const pinGate = document.getElementById("pin-gate");
+  const pinInput = document.getElementById(
+    "pin-input",
+  ) as HTMLInputElement | null;
+  const pinSubmit = document.getElementById("pin-submit");
+  const pinError = document.getElementById("pin-error");
   let enteredPin = "";
+
   if (dashEl) dashEl.style.display = "none";
+
+  const webhookUrl = dashEl?.dataset.webhook ?? "";
+
+  async function tryPin() {
+    enteredPin = pinInput?.value?.trim() ?? "";
+    if (!enteredPin) return;
+    if (pinError) pinError.style.display = "none";
+
+    try {
+      const testResp = await fetch(webhookUrl, {
+        headers: { "X-Dashboard-Pin": enteredPin },
+      });
+
+      if (testResp.status === 401) {
+        if (pinError) pinError.style.display = "block";
+        if (pinInput) pinInput.value = "";
+        pinInput?.focus();
+        return;
+      }
+
+      if (!testResp.ok) throw new Error(`Error ${testResp.status}`);
+
+      // PIN correct — reveal dashboard and render data
+      if (pinGate) pinGate.style.display = "none";
+      if (dashEl) dashEl.style.display = "";
+      const d = await testResp.json();
+      renderDashboard(d);
+    } catch (e: any) {
+      if (pinError) {
+        pinError.textContent = e.message ?? "Something went wrong";
+        pinError.style.display = "block";
+      }
+    }
+  }
+
+  pinSubmit?.addEventListener("click", tryPin);
+  pinInput?.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Enter") tryPin();
+  });
   // ─────────────────────────────────────────────────────────────────────
 
   const el = (id: string) => document.getElementById(id);
@@ -351,8 +396,6 @@ const webhookUrl = site.dashboard_webhook_url ?? "";
     const e = el(id);
     if (e) e.textContent = String(v);
   };
-
-  const webhookUrl = dashEl?.dataset.webhook ?? "";
 
   function renderDashboard(d: any) {
     set("rsvp-total", d.rsvp?.total ?? "—");
