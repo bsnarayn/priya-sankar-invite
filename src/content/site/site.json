@@ -4,21 +4,21 @@
         "site_url": "https://priya.sankars.in",
         "groom_name": "Sankar",
         "bride_name": "Priya",
-        "tagline": "Some stories begin with a take-off. Across distance, through stillness \u2014 ours never landed.",
+        "tagline": "Some stories begin with a take-off. Across distance, through stillness — ours never landed.",
         "hero_pre": "Together with their families Invite",
-        "tamil_names": "\u0b9a\u0b99\u0bcd\u0b95\u0bb0\u0bcd & \u0baa\u0bcd\u0bb0\u0bbf\u0baf\u0bbe",
+        "tamil_names": "சங்கர் & ப்ரியா",
         "footer_note": "We can't wait to celebrate with you.",
-        "rsvp_webhook_url": "https://workflow.sankaranarayan.in/webhook/rsvp",
+        "rsvp_webhook_url": "https://priya.sankars.in/api/webhook/rsvp",
         "immich_base_url": "https://photos.sankaranarayan.in",
         "immich_share_slug": "priya-sankar-reception",
         "camera_max_shots": 36,
         "camera_max_uploads": 25,
         "album_available_after": "2026-12-31T23:00:00",
-        "album_notify_webhook_url": "https://workflow.sankaranarayan.in/webhook/album-notify",
+        "album_notify_webhook_url": "https://priya.sankars.in/api/webhook/album-notify",
         "story_images": 0,
         "footer_close_delay_seconds": 600,
         "umami_base_url": "https://analytics.sankaranarayan.in",
         "umami_website_id": "b095ae70-7898-4408-b7ec-b052cd5a1c30",
-        "dashboard_webhook_url": "https://workflow.sankaranarayan.in/webhook/dashboard-reception"
+        "dashboard_webhook_url": "https://priya.sankars.in/api/webhook/dashboard"
     }
 ]

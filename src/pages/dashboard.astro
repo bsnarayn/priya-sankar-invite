@@ -7,8 +7,6 @@ if (!siteEntry) throw new Error("Missing site content");
 const site = siteEntry.data;
 
 const webhookUrl = site.dashboard_webhook_url ?? "";
-const webhookSecret = import.meta.env.WEBHOOK_SECRET ?? "";
-const dashboardPin = import.meta.env.DASHBOARD_PIN ?? "";
 ---
 
 <Base title="Dashboard — Sankar & Priya">
@@ -26,8 +24,6 @@ const dashboardPin = import.meta.env.DASHBOARD_PIN ?? "";
     <div
         id="dashboard"
         data-webhook={webhookUrl}
-        data-secret={webhookSecret}
-        data-pin={dashboardPin}
         style="min-height:100vh;background:#1A1612;padding:80px 24px 64px;font-family:'Jost',sans-serif;color:#FFFBF6;"
     >
         <div style="max-width:720px;margin:0 auto;">
@@ -386,7 +382,6 @@ const dashboardPin = import.meta.env.DASHBOARD_PIN ?? "";
     };
 
     const webhookUrl = dashEl?.dataset.webhook ?? "";
-    const webhookSecret = dashEl?.dataset.secret ?? "";
 
     async function load() {
         const errBanner = el("error-banner");
@@ -403,7 +398,6 @@ const dashboardPin = import.meta.env.DASHBOARD_PIN ?? "";
 
         try {
             const res = await fetch(webhookUrl, {
-                headers: webhookSecret ? { "x-webhook-secret": webhookSecret } : {},
             });
             if (!res.ok) throw new Error(`Webhook returned ${res.status}`);
             const d = await res.json();
