@@ -7,12 +7,27 @@ if (!siteEntry) throw new Error("Missing site content");
 const site = siteEntry.data;
 
 const webhookUrl = site.dashboard_webhook_url ?? "";
+const webhookSecret = import.meta.env.WEBHOOK_SECRET ?? "";
+const dashboardPin = import.meta.env.DASHBOARD_PIN ?? "";
 ---
 
 <Base title="Dashboard — Sankar & Priya">
+    <!-- PIN gate -->
+    <div id="pin-gate" style="min-height:100vh;background:#1A1612;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;">
+        <div style="text-align:center;max-width:320px;padding:32px;">
+            <p style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#157A78;margin-bottom:8px;">Dashboard</p>
+            <h1 style="font-family:'Italiana',serif;font-size:32px;color:#FFFBF6;font-weight:400;margin-bottom:32px;">Enter PIN</h1>
+            <input id="pin-input" type="password" inputmode="numeric" maxlength="8"
+                style="width:100%;box-sizing:border-box;background:#2A2218;border:0.5px solid #5A4A3A;border-radius:8px;padding:14px 16px;color:#FFFBF6;font-size:20px;letter-spacing:.4em;text-align:center;outline:none;margin-bottom:12px;" />
+            <button id="pin-submit" style="width:100%;padding:14px;background:#157A78;color:#FFFBF6;border:none;border-radius:8px;font-family:'Jost',sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;">Unlock</button>
+            <p id="pin-error" style="display:none;color:#C4622D;font-size:12px;margin-top:12px;">Incorrect PIN</p>
+        </div>
+    </div>
     <div
         id="dashboard"
         data-webhook={webhookUrl}
+        data-secret={webhookSecret}
+        data-pin={dashboardPin}
         style="min-height:100vh;background:#1A1612;padding:80px 24px 64px;font-family:'Jost',sans-serif;color:#FFFBF6;"
     >
         <div style="max-width:720px;margin:0 auto;">
@@ -331,13 +346,47 @@ const webhookUrl = site.dashboard_webhook_url ?? "";
 </style>
 
 <script>
+    // ── PIN gate ──────────────────────────────────────────────────────────
+    const dashEl = document.getElementById("dashboard") as HTMLElement | null;
+    const pinGate = document.getElementById("pin-gate");
+    const correctPin = dashEl?.dataset.pin ?? "";
+
+    function unlockDashboard() {
+        if (pinGate) pinGate.style.display = "none";
+        if (dashEl) dashEl.style.display = "";
+        load();
+    }
+
+    if (!correctPin) {
+        // No PIN configured — show dashboard directly (dev mode)
+        unlockDashboard();
+    } else {
+        if (dashEl) dashEl.style.display = "none";
+        const pinInput = document.getElementById("pin-input") as HTMLInputElement | null;
+        const pinSubmit = document.getElementById("pin-submit");
+        const pinError = document.getElementById("pin-error");
+        function tryPin() {
+            if (pinInput?.value === correctPin) {
+                unlockDashboard();
+            } else {
+                if (pinError) pinError.style.display = "block";
+                if (pinInput) pinInput.value = "";
+                pinInput?.focus();
+            }
+        }
+        pinSubmit?.addEventListener("click", tryPin);
+        pinInput?.addEventListener("keydown", (e: KeyboardEvent) => { if (e.key === "Enter") tryPin(); });
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     const el = (id: string) => document.getElementById(id);
     const set = (id: string, v: string | number) => {
         const e = el(id);
         if (e) e.textContent = String(v);
     };
 
-    const webhookUrl = (el("dashboard") as HTMLElement)?.dataset.webhook ?? "";
+    const webhookUrl = dashEl?.dataset.webhook ?? "";
+    const webhookSecret = dashEl?.dataset.secret ?? "";
 
     async function load() {
         const errBanner = el("error-banner");
@@ -353,7 +402,9 @@ const webhookUrl = site.dashboard_webhook_url ?? "";
         }
 
         try {
-            const res = await fetch(webhookUrl);
+            const res = await fetch(webhookUrl, {
+                headers: webhookSecret ? { "x-webhook-secret": webhookSecret } : {},
+            });
             if (!res.ok) throw new Error(`Webhook returned ${res.status}`);
             const d = await res.json();
 

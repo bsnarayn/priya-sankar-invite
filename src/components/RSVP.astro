@@ -348,7 +348,7 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
     </div>
 </section>
 
-<script define:vars={{ webhookUrl: site.rsvp_webhook_url ?? "" }}>
+<script define:vars={{ webhookUrl: site.rsvp_webhook_url ?? "", webhookSecret: import.meta.env.WEBHOOK_SECRET ?? "" }}>
     // ── Toggle ───────────────────────────────────────────
     const toggleJoin = document.getElementById("toggle-join");
     const toggleDecline = document.getElementById("toggle-decline");
@@ -566,7 +566,10 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
             if (webhookUrl) {
                 const res = await fetch(webhookUrl, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(webhookSecret ? { "x-webhook-secret": webhookSecret } : {}),
+                    },
                     body: JSON.stringify(payload),
                 });
                 if (!res.ok) throw new Error("Server error");
