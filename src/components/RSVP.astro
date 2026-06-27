@@ -7,6 +7,7 @@ interface Props {
     };
 }
 const { site } = Astro.props;
+const webhookSecret = import.meta.env.WEBHOOK_SECRET ?? "";
 
 // Build country list at build time — no runtime bundle impact.
 // India first, then remaining countries alphabetically by English name.
@@ -348,7 +349,7 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
     </div>
 </section>
 
-<script define:vars={{ webhookUrl: site.rsvp_webhook_url ?? "", webhookSecret: import.meta.env.WEBHOOK_SECRET ?? "" }}>
+<script define:vars={{ webhookUrl: site.rsvp_webhook_url ?? "", webhookSecret }}>
     // ── Toggle ───────────────────────────────────────────
     const toggleJoin = document.getElementById("toggle-join");
     const toggleDecline = document.getElementById("toggle-decline");
