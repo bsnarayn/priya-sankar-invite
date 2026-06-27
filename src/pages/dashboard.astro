@@ -10,443 +10,462 @@ const webhookUrl = site.dashboard_webhook_url ?? "";
 ---
 
 <Base title="Dashboard — Sankar & Priya">
-  <!-- PIN gate -->
-  <div
-    id="pin-gate"
-    style="min-height:100vh;background:#1A1612;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;"
-  >
-    <div style="text-align:center;max-width:320px;padding:32px;">
-      <p
-        style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#157A78;margin-bottom:8px;"
-      >
-        Dashboard
-      </p>
-      <h1
-        style="font-family:'Italiana',serif;font-size:32px;color:#FFFBF6;font-weight:400;margin-bottom:32px;"
-      >
-        Enter PIN
-      </h1>
-      <input
-        id="pin-input"
-        type="password"
-        inputmode="numeric"
-        maxlength="8"
-        style="width:100%;box-sizing:border-box;background:#2A2218;border:0.5px solid #5A4A3A;border-radius:8px;padding:14px 16px;color:#FFFBF6;font-size:20px;letter-spacing:.4em;text-align:center;outline:none;margin-bottom:12px;"
-      />
-      <button
-        id="pin-submit"
-        style="width:100%;padding:14px;background:#157A78;color:#FFFBF6;border:none;border-radius:8px;font-family:'Jost',sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;"
-        >Unlock</button
-      >
-      <p
-        id="pin-error"
-        style="display:none;color:#C4622D;font-size:12px;margin-top:12px;"
-      >
-        Incorrect PIN
-      </p>
+    <!-- PIN gate -->
+    <div id="pin-gate" style="min-height:100vh;background:#FFFBF6;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;">
+        <div style="text-align:center;max-width:320px;padding:32px;">
+            <p style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#157A78;margin-bottom:8px;">Dashboard</p>
+            <h1 style="font-family:'Italiana',serif;font-size:32px;color:#3A2E28;font-weight:400;margin-bottom:32px;">Enter PIN</h1>
+            <input id="pin-input" type="password" inputmode="numeric" maxlength="8"
+                style="width:100%;box-sizing:border-box;background:#FDF6EE;border:0.5px solid #C4A882;border-radius:8px;padding:14px 16px;color:#3A2E28;font-size:20px;letter-spacing:.4em;text-align:center;outline:none;margin-bottom:12px;" />
+            <button id="pin-submit" style="width:100%;padding:14px;background:#157A78;color:#FFFBF6;border:none;border-radius:8px;font-family:'Jost',sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;">Unlock</button>
+            <p id="pin-error" style="display:none;color:#C4622D;font-size:12px;margin-top:12px;">Incorrect PIN</p>
+        </div>
     </div>
-  </div>
-  <div
-    id="dashboard"
-    data-webhook={webhookUrl}
-    style="min-height:100vh;background:#1A1612;padding:80px 24px 64px;font-family:'Jost',sans-serif;color:#FFFBF6;"
-  >
-    <div style="max-width:720px;margin:0 auto;">
-      <!-- Header -->
-      <div
-        style="display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:12px;"
-      >
-        <div>
-          <p
-            style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#157A78;margin-bottom:4px;"
-          >
-            Reception
-          </p>
-          <h1
-            style="font-family:'Italiana',serif;font-size:clamp(28px,6vw,40px);color:#FFFBF6;font-weight:400;line-height:1;"
-          >
-            Dashboard
-          </h1>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span
-            id="last-updated"
-            style="font-size:10px;color:#7A6A5E;letter-spacing:.1em;"></span>
-          <button id="refresh-btn" class="dash-refresh">↻ Refresh</button>
-        </div>
-      </div>
-
-      <!-- Error -->
-      <div
-        id="error-banner"
-        hidden
-        style="background:#3A1A1A;border:0.5px solid #C4622D;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:12px;color:#C4622D;line-height:1.6;"
-      >
-      </div>
-
-      <!-- RSVP -->
-      <section style="margin-bottom:32px;">
-        <h2 class="dash-section-label">RSVP</h2>
-        <div
-          style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;"
-        >
-          <div class="dash-card">
-            <p class="dash-label">Total</p><p class="dash-val" id="rsvp-total">
-              —
-            </p>
-          </div>
-          <div class="dash-card" style="--accent:#157A78">
-            <p class="dash-label">Joining</p><p
-              class="dash-val"
-              id="rsvp-joining"
-              style="color:#157A78"
+    <div
+        id="dashboard"
+        data-webhook={webhookUrl}
+        style="min-height:100vh;background:#FFFBF6;padding:80px 24px 64px;font-family:'Jost',sans-serif;color:#3A2E28;"
+    >
+        <div style="max-width:720px;margin:0 auto;">
+            <!-- Header -->
+            <div
+                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:12px;"
             >
-              —
-            </p>
-          </div>
-          <div class="dash-card" style="--accent:#C4622D">
-            <p class="dash-label">Declining</p><p
-              class="dash-val"
-              id="rsvp-declining"
-              style="color:#C4622D"
-            >
-              —
-            </p>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-          <div class="dash-card" style="--accent:#C9952C">
-            <p class="dash-label">Total Guests</p><p
-              class="dash-val"
-              id="rsvp-guests"
-              style="color:#C9952C"
-            >
-              —
-            </p>
-          </div>
-          <div class="dash-card">
-            <p class="dash-label">Reminded</p><p
-              class="dash-val"
-              id="rsvp-reminded"
-            >
-              —
-            </p>
-          </div>
-          <div class="dash-card" style="--accent:#8B1A8C">
-            <p class="dash-label">Pending</p><p
-              class="dash-val"
-              id="rsvp-pending"
-              style="color:#8B1A8C"
-            >
-              —
-            </p>
-          </div>
-        </div>
-        <div
-          style="background:#2A211C;border-radius:10px;border:0.5px solid #3A2E28;padding:16px 20px;margin-top:12px;"
-        >
-          <p class="dash-label" style="margin-bottom:14px;">Reactions</p>
-          <div
-            style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;"
-          >
-            <div>
-              <p style="font-size:20px;margin-bottom:4px;">🎉</p><p
-                class="dash-label"
-              >
-                Excited
-              </p><p class="dash-reaction" id="react-celebration">—</p>
+                <div>
+                    <p
+                        style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#157A78;margin-bottom:4px;"
+                    >
+                        Reception
+                    </p>
+                    <h1
+                        style="font-family:'Italiana',serif;font-size:clamp(28px,6vw,40px);color:#3A2E28;font-weight:400;line-height:1;"
+                    >
+                        Dashboard
+                    </h1>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span
+                        id="last-updated"
+                        style="font-size:10px;color:#9A8A7E;letter-spacing:.1em;"
+                    ></span>
+                    <button id="refresh-btn" class="dash-refresh"
+                        >↻ Refresh</button
+                    >
+                </div>
             </div>
-            <div>
-              <p style="font-size:20px;margin-bottom:4px;">❤️</p><p
-                class="dash-label"
-              >
-                Happy
-              </p><p class="dash-reaction" id="react-happy">—</p>
-            </div>
-            <div>
-              <p style="font-size:20px;margin-bottom:4px;">🥂</p><p
-                class="dash-label"
-              >
-                Toast
-              </p><p class="dash-reaction" id="react-toast">—</p>
-            </div>
-            <div>
-              <p style="font-size:20px;margin-bottom:4px;">🙏</p><p
-                class="dash-label"
-              >
-                Blessing
-              </p><p class="dash-reaction" id="react-blessing">—</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- Album Notify -->
-      <section style="margin-bottom:32px;">
-        <h2 class="dash-section-label">Album Notifications</h2>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-          <div class="dash-card">
-            <p class="dash-label">Signed Up</p><p
-              class="dash-val"
-              id="album-total"
+            <!-- Error -->
+            <div
+                id="error-banner"
+                hidden
+                style="background:#FEF0EB;border:0.5px solid #C4622D;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:12px;color:#C4622D;line-height:1.6;"
             >
-              —
-            </p>
-          </div>
-          <div class="dash-card" style="--accent:#157A78">
-            <p class="dash-label">Notified</p><p
-              class="dash-val"
-              id="album-notified"
-              style="color:#157A78"
-            >
-              —
-            </p>
-          </div>
-          <div class="dash-card" style="--accent:#8B1A8C">
-            <p class="dash-label">Pending</p><p
-              class="dash-val"
-              id="album-pending"
-              style="color:#8B1A8C"
-            >
-              —
-            </p>
-          </div>
-        </div>
-      </section>
+            </div>
 
-      <!-- Photos -->
-      <section style="margin-bottom:32px;">
-        <h2 class="dash-section-label">Photos</h2>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
-          <div class="dash-card" style="--accent:#C9952C">
-            <p class="dash-label">Uploaded to Immich</p><p
-              class="dash-val"
-              id="photos-count"
-              style="color:#C9952C"
-            >
-              —
-            </p>
-          </div>
-          <div class="dash-card">
-            <p class="dash-label">Shared Album</p><p
-              class="dash-val"
-              id="photos-album"
-              style="font-size:14px;letter-spacing:.04em;"
-            >
-              —
-            </p>
-          </div>
-        </div>
-      </section>
+            <!-- RSVP -->
+            <section style="margin-bottom:32px;">
+                <h2 class="dash-section-label">RSVP</h2>
+                <div
+                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;"
+                >
+                    <div class="dash-card">
+                        <p class="dash-label">Total</p><p
+                            class="dash-val"
+                            id="rsvp-total"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#157A78">
+                        <p class="dash-label">Joining</p><p
+                            class="dash-val"
+                            id="rsvp-joining"
+                            style="color:#157A78"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#C4622D">
+                        <p class="dash-label">Declining</p><p
+                            class="dash-val"
+                            id="rsvp-declining"
+                            style="color:#C4622D"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+                <div
+                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"
+                >
+                    <div class="dash-card" style="--accent:#C9952C">
+                        <p class="dash-label">Total Guests</p><p
+                            class="dash-val"
+                            id="rsvp-guests"
+                            style="color:#C9952C"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card">
+                        <p class="dash-label">Reminded</p><p
+                            class="dash-val"
+                            id="rsvp-reminded"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#8B1A8C">
+                        <p class="dash-label">Pending</p><p
+                            class="dash-val"
+                            id="rsvp-pending"
+                            style="color:#8B1A8C"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+                <div
+                    style="background:#FDF6EE;border-radius:10px;border:0.5px solid #EDE4D8;padding:16px 20px;margin-top:12px;"
+                >
+                    <p class="dash-label" style="margin-bottom:14px;">
+                        Reactions
+                    </p>
+                    <div
+                        style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;"
+                    >
+                        <div>
+                            <p style="font-size:20px;margin-bottom:4px;">
+                                🎉
+                            </p><p class="dash-label">Excited</p><p
+                                class="dash-reaction"
+                                id="react-celebration"
+                            >
+                                —
+                            </p>
+                        </div>
+                        <div>
+                            <p style="font-size:20px;margin-bottom:4px;">
+                                ❤️
+                            </p><p class="dash-label">Happy</p><p
+                                class="dash-reaction"
+                                id="react-happy"
+                            >
+                                —
+                            </p>
+                        </div>
+                        <div>
+                            <p style="font-size:20px;margin-bottom:4px;">
+                                🥂
+                            </p><p class="dash-label">Toast</p><p
+                                class="dash-reaction"
+                                id="react-toast"
+                            >
+                                —
+                            </p>
+                        </div>
+                        <div>
+                            <p style="font-size:20px;margin-bottom:4px;">
+                                🙏
+                            </p><p class="dash-label">Blessing</p><p
+                                class="dash-reaction"
+                                id="react-blessing"
+                            >
+                                —
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-      <!-- Analytics -->
-      <section style="margin-bottom:32px;">
-        <h2 class="dash-section-label">Site Analytics</h2>
-        <div
-          style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px;"
-        >
-          <div class="dash-card">
-            <p class="dash-label">Views (30 days)</p><p
-              class="dash-val"
-              id="views-30d"
-            >
-              —
-            </p>
-          </div>
-          <div class="dash-card" style="--accent:#157A78">
-            <p class="dash-label">Visitors (30 days)</p><p
-              class="dash-val"
-              id="visitors-30d"
-              style="color:#157A78"
-            >
-              —
-            </p>
-          </div>
+            <!-- Album Notify -->
+            <section style="margin-bottom:32px;">
+                <h2 class="dash-section-label">Album Notifications</h2>
+                <div
+                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"
+                >
+                    <div class="dash-card">
+                        <p class="dash-label">Signed Up</p><p
+                            class="dash-val"
+                            id="album-total"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#157A78">
+                        <p class="dash-label">Notified</p><p
+                            class="dash-val"
+                            id="album-notified"
+                            style="color:#157A78"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#8B1A8C">
+                        <p class="dash-label">Pending</p><p
+                            class="dash-val"
+                            id="album-pending"
+                            style="color:#8B1A8C"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Photos -->
+            <section style="margin-bottom:32px;">
+                <h2 class="dash-section-label">Photos</h2>
+                <div
+                    style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"
+                >
+                    <div class="dash-card" style="--accent:#C9952C">
+                        <p class="dash-label">Uploaded to Immich</p><p
+                            class="dash-val"
+                            id="photos-count"
+                            style="color:#C9952C"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card">
+                        <p class="dash-label">Shared Album</p><p
+                            class="dash-val"
+                            id="photos-album"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics -->
+            <section style="margin-bottom:32px;">
+                <h2 class="dash-section-label">Site Analytics</h2>
+                <div
+                    style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px;"
+                >
+                    <div class="dash-card">
+                        <p class="dash-label">Views (30 days)</p><p
+                            class="dash-val"
+                            id="views-30d"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#157A78">
+                        <p class="dash-label">Visitors (30 days)</p><p
+                            class="dash-val"
+                            id="visitors-30d"
+                            style="color:#157A78"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+                <div
+                    style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"
+                >
+                    <div class="dash-card">
+                        <p class="dash-label">Views (All Time)</p><p
+                            class="dash-val"
+                            id="views-all"
+                        >
+                            —
+                        </p>
+                    </div>
+                    <div class="dash-card" style="--accent:#C9952C">
+                        <p class="dash-label">Visitors (All Time)</p><p
+                            class="dash-val"
+                            id="visitors-all"
+                            style="color:#C9952C"
+                        >
+                            —
+                        </p>
+                    </div>
+                </div>
+            </section>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
-          <div class="dash-card">
-            <p class="dash-label">Views (All Time)</p><p
-              class="dash-val"
-              id="views-all"
-            >
-              —
-            </p>
-          </div>
-          <div class="dash-card" style="--accent:#C9952C">
-            <p class="dash-label">Visitors (All Time)</p><p
-              class="dash-val"
-              id="visitors-all"
-              style="color:#C9952C"
-            >
-              —
-            </p>
-          </div>
-        </div>
-      </section>
     </div>
-  </div>
 </Base>
 
 <style is:global>
-  .dash-section-label {
-    font-size: 10px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: #157a78;
-    margin-bottom: 16px;
-    font-weight: 400;
-  }
-  .dash-card {
-    background: #2a211c;
-    border-radius: 10px;
-    border: 0.5px solid #3a2e28;
-    border-top: 2px solid var(--accent, #c9952c);
-    padding: 16px 18px;
-  }
-  .dash-label {
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #7a6a5e;
-    margin-bottom: 8px;
-  }
-  .dash-val {
-    font-family: "Italiana", serif;
-    font-size: 36px;
-    color: #fffbf6;
-    line-height: 1;
-  }
-  .dash-reaction {
-    font-family: "Italiana", serif;
-    font-size: 28px;
-    color: #fffbf6;
-  }
-  .dash-refresh {
-    padding: 8px 16px;
-    background: transparent;
-    border: 0.5px solid #c9952c;
-    border-radius: 6px;
-    color: #c9952c;
-    font-family: "Jost", sans-serif;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-  .dash-refresh:hover {
-    background: rgba(201, 162, 39, 0.1);
-  }
+    body { background: #FFFBF6; }
+    .dash-section-label {
+        font-family: "Jost", sans-serif;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: #157A78;
+        margin-bottom: 16px;
+    }
+    .dash-card {
+        background: #FFFFFF;
+        border-radius: 10px;
+        border: 0.5px solid #EDE4D8;
+        border-top: 2px solid var(--accent, #C9952C);
+        padding: 20px 22px;
+        box-shadow: 0 1px 4px rgba(58,46,40,0.06);
+    }
+    .dash-label {
+        font-family: "Jost", sans-serif;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #9A8A7E;
+        margin-bottom: 10px;
+    }
+    .dash-val {
+        font-family: "Cormorant Garant", serif;
+        font-size: 44px;
+        font-weight: 300;
+        color: #3A2E28;
+        line-height: 1;
+        letter-spacing: -0.01em;
+    }
+    .dash-reaction {
+        font-family: "Cormorant Garant", serif;
+        font-size: 34px;
+        font-weight: 300;
+        color: #3A2E28;
+        line-height: 1;
+    }
+    .dash-refresh {
+        padding: 8px 16px;
+        background: transparent;
+        border: 0.5px solid #C9952C;
+        border-radius: 6px;
+        color: #C9952C;
+        font-family: "Jost", sans-serif;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .dash-refresh:hover {
+        background: rgba(201, 162, 39, 0.08);
+    }
+    /* Album slug — smaller, readable sans */
+    #photos-album {
+        font-family: "Jost", sans-serif;
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        color: #5C4D43;
+    }
+    /* Updated timestamp */
+    #last-updated {
+        font-family: "Jost", sans-serif;
+        font-size: 10px;
+        color: #9A8A7E;
+        letter-spacing: 0.08em;
+    }
 </style>
 
 <script>
-  // ── PIN gate — PIN verified server-side by the Worker ───────────────
-  const dashEl = document.getElementById("dashboard") as HTMLElement | null;
-  const pinGate = document.getElementById("pin-gate");
-  const pinInput = document.getElementById(
-    "pin-input",
-  ) as HTMLInputElement | null;
-  const pinSubmit = document.getElementById("pin-submit");
-  const pinError = document.getElementById("pin-error");
-  let enteredPin = "";
+    // ── PIN gate — PIN verified server-side by the Worker ───────────────
+    const dashEl = document.getElementById("dashboard") as HTMLElement | null;
+    const pinGate = document.getElementById("pin-gate");
+    const pinInput = document.getElementById("pin-input") as HTMLInputElement | null;
+    const pinSubmit = document.getElementById("pin-submit");
+    const pinError = document.getElementById("pin-error");
+    let enteredPin = "";
 
-  if (dashEl) dashEl.style.display = "none";
+    if (dashEl) dashEl.style.display = "none";
 
-  const webhookUrl = dashEl?.dataset.webhook ?? "";
+    const webhookUrl = dashEl?.dataset.webhook ?? "";
 
-  async function tryPin() {
-    enteredPin = pinInput?.value?.trim() ?? "";
-    if (!enteredPin) return;
-    if (pinError) pinError.style.display = "none";
+    async function tryPin() {
+        enteredPin = pinInput?.value?.trim() ?? "";
+        if (!enteredPin) return;
+        if (pinError) pinError.style.display = "none";
 
-    try {
-      const testResp = await fetch(webhookUrl, {
-        headers: { "X-Dashboard-Pin": enteredPin },
-      });
+        try {
+            const testResp = await fetch(webhookUrl, {
+                headers: { "X-Dashboard-Pin": enteredPin },
+            });
 
-      if (testResp.status === 401) {
-        if (pinError) pinError.style.display = "block";
-        if (pinInput) pinInput.value = "";
-        pinInput?.focus();
-        return;
-      }
+            if (testResp.status === 401) {
+                if (pinError) pinError.style.display = "block";
+                if (pinInput) pinInput.value = "";
+                pinInput?.focus();
+                return;
+            }
 
-      if (!testResp.ok) throw new Error(`Error ${testResp.status}`);
+            if (!testResp.ok) throw new Error(`Error ${testResp.status}`);
 
-      // PIN correct — reveal dashboard and render data
-      if (pinGate) pinGate.style.display = "none";
-      if (dashEl) dashEl.style.display = "";
-      const d = await testResp.json();
-      renderDashboard(d);
-    } catch (e: any) {
-      if (pinError) {
-        pinError.textContent = e.message ?? "Something went wrong";
-        pinError.style.display = "block";
-      }
+            // PIN correct — reveal dashboard and render data
+            if (pinGate) pinGate.style.display = "none";
+            if (dashEl) dashEl.style.display = "";
+            const d = await testResp.json();
+            renderDashboard(d);
+        } catch (e: any) {
+            if (pinError) {
+                pinError.textContent = e.message ?? "Something went wrong";
+                pinError.style.display = "block";
+            }
+        }
     }
-  }
 
-  pinSubmit?.addEventListener("click", tryPin);
-  pinInput?.addEventListener("keydown", (e: KeyboardEvent) => {
-    if (e.key === "Enter") tryPin();
-  });
-  // ─────────────────────────────────────────────────────────────────────
+    pinSubmit?.addEventListener("click", tryPin);
+    pinInput?.addEventListener("keydown", (e: KeyboardEvent) => {
+        if (e.key === "Enter") tryPin();
+    });
+    // ─────────────────────────────────────────────────────────────────────
 
-  const el = (id: string) => document.getElementById(id);
-  const set = (id: string, v: string | number) => {
-    const e = el(id);
-    if (e) e.textContent = String(v);
-  };
+    const el = (id: string) => document.getElementById(id);
+    const set = (id: string, v: string | number) => {
+        const e = el(id);
+        if (e) e.textContent = String(v);
+    };
 
-  function renderDashboard(d: any) {
-    set("rsvp-total", d.rsvp?.total ?? "—");
-    set("rsvp-joining", d.rsvp?.joining ?? "—");
-    set("rsvp-declining", d.rsvp?.declining ?? "—");
-    set("rsvp-guests", d.rsvp?.totalGuests ?? "—");
-    set("rsvp-reminded", d.rsvp?.remindedSent ?? "—");
-    set("rsvp-pending", d.rsvp?.pendingReminders ?? "—");
-    set("react-celebration", d.rsvp?.reactions?.celebration ?? 0);
-    set("react-happy", d.rsvp?.reactions?.happy ?? 0);
-    set("react-toast", d.rsvp?.reactions?.toast ?? 0);
-    set("react-blessing", d.rsvp?.reactions?.blessing ?? 0);
-    set("album-total", d.album?.totalSignedUp ?? "—");
-    set("album-notified", d.album?.notified ?? "—");
-    set("album-pending", d.album?.pendingNotify ?? "—");
-    set("photos-count", d.photos?.count ?? "—");
-    set("photos-album", d.photos?.albumSlug ?? "—");
-    set("views-30d", d.analytics?.views30d ?? "—");
-    set("visitors-30d", d.analytics?.visitors30d ?? "—");
-    set("views-all", d.analytics?.viewsAllTime ?? "—");
-    set("visitors-all", d.analytics?.visitorsAllTime ?? "—");
-    const ts = el("last-updated");
-    if (ts)
-      ts.textContent = `Updated ${new Date().toLocaleTimeString("en-IN")}`;
-  }
-
-  async function load() {
-    const errBanner = el("error-banner");
-    if (errBanner) errBanner.hidden = true;
-    if (!webhookUrl) {
-      if (errBanner) {
-        errBanner.textContent = "dashboard_webhook_url not set";
-        errBanner.hidden = false;
-      }
-      return;
+    function renderDashboard(d: any) {
+        set("rsvp-total", d.rsvp?.total ?? "—");
+        set("rsvp-joining", d.rsvp?.joining ?? "—");
+        set("rsvp-declining", d.rsvp?.declining ?? "—");
+        set("rsvp-guests", d.rsvp?.totalGuests ?? "—");
+        set("rsvp-reminded", d.rsvp?.remindedSent ?? "—");
+        set("rsvp-pending", d.rsvp?.pendingReminders ?? "—");
+        set("react-celebration", d.rsvp?.reactions?.celebration ?? 0);
+        set("react-happy", d.rsvp?.reactions?.happy ?? 0);
+        set("react-toast", d.rsvp?.reactions?.toast ?? 0);
+        set("react-blessing", d.rsvp?.reactions?.blessing ?? 0);
+        set("album-total", d.album?.totalSignedUp ?? "—");
+        set("album-notified", d.album?.notified ?? "—");
+        set("album-pending", d.album?.pendingNotify ?? "—");
+        set("photos-count", d.photos?.count ?? "—");
+        set("photos-album", d.photos?.albumSlug ?? "—");
+        set("views-30d", d.analytics?.views30d ?? "—");
+        set("visitors-30d", d.analytics?.visitors30d ?? "—");
+        set("views-all", d.analytics?.viewsAllTime ?? "—");
+        set("visitors-all", d.analytics?.visitorsAllTime ?? "—");
+        const ts = el("last-updated");
+        if (ts) ts.textContent = `Updated ${new Date().toLocaleTimeString("en-IN")}`;
     }
-    try {
-      const res = await fetch(webhookUrl, {
-        headers: { "X-Dashboard-Pin": enteredPin },
-      });
-      if (res.status === 401) throw new Error("Incorrect PIN");
-      if (!res.ok) throw new Error(`Webhook returned ${res.status}`);
-      const d = await res.json();
-      renderDashboard(d);
-    } catch (e: any) {
-      if (errBanner) {
-        errBanner.textContent = e.message;
-        errBanner.hidden = false;
-      }
-    }
-  }
 
-  el("refresh-btn")?.addEventListener("click", load);
+    async function load() {
+        const errBanner = el("error-banner");
+        if (errBanner) errBanner.hidden = true;
+        if (!webhookUrl) {
+            if (errBanner) { errBanner.textContent = "dashboard_webhook_url not set"; errBanner.hidden = false; }
+            return;
+        }
+        try {
+            const res = await fetch(webhookUrl, {
+                headers: { "X-Dashboard-Pin": enteredPin },
+            });
+            if (res.status === 401) throw new Error("Incorrect PIN");
+            if (!res.ok) throw new Error(`Webhook returned ${res.status}`);
+            const d = await res.json();
+            renderDashboard(d);
+        } catch (e: any) {
+            if (errBanner) { errBanner.textContent = e.message; errBanner.hidden = false; }
+        }
+    }
+
+    el("refresh-btn")?.addEventListener("click", load);
 </script>
