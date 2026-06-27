@@ -10,7 +10,6 @@ const site = siteEntry.data;
 // "2025-12-31T23:00:00" — local IST datetime string, no timezone suffix
 const albumAvailableAfter = site.album_available_after ?? "";
 const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
-const webhookSecret = import.meta.env.WEBHOOK_SECRET ?? "";
 ---
 
 <Base title="Event Album — Sankar & Priya">
@@ -306,7 +305,7 @@ const webhookSecret = import.meta.env.WEBHOOK_SECRET ?? "";
 </style>
 
 <!-- Step 1: time gate check — runs immediately, no module boundary -->
-<script define:vars={{ albumAvailableAfter, notifyWebhookUrl, webhookSecret }}>
+<script define:vars={{ albumAvailableAfter, notifyWebhookUrl }}>
     function isAlbumLive() {
         if (!albumAvailableAfter) return true; // no gate configured → always open
         // Parse the IST datetime string as UTC+5:30
@@ -353,10 +352,7 @@ const webhookSecret = import.meta.env.WEBHOOK_SECRET ?? "";
         try {
             const res = await fetch(notifyWebhookUrl, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(webhookSecret ? { "x-webhook-secret": webhookSecret } : {}),
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name,
                     email,
