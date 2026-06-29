@@ -1,4 +1,4 @@
-- Akil Anil
+- Akhil Anil
 - Akash Anil
 - Aishwarya & Anil
 - Usha & Balakrishnan
