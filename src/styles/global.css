@@ -1,8 +1,6 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garant:ital,wght@0,300;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&family=Catamaran:wght@300;400&display=swap");
 
-
-@theme {
+:root {
     --font-family-display: "Italiana", serif;
     --font-family-script: "Great Vibes", cursive;
     --font-family-serif: "Cormorant Garant", serif;
