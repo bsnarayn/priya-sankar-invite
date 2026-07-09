@@ -140,6 +140,50 @@ const calData = {
             </div>
         </div>
 
+        <!-- Countdown card — live days/hours/minutes/seconds to start_datetime.
+             Falls back to a placeholder message when no date is set yet. -->
+        <div class="countdown-card" id="countdown-card">
+            <p class="countdown-label">Counting down to</p>
+            {
+                calData.startDatetime ? (
+                    <div class="countdown-grid" id="countdown-grid">
+                        <div class="countdown-unit">
+                            <p class="countdown-value" id="cd-days">00</p>
+                            <p class="countdown-unit-label">Days</p>
+                        </div>
+                        <div class="countdown-unit">
+                            <p class="countdown-value" id="cd-hours">00</p>
+                            <p class="countdown-unit-label">Hours</p>
+                        </div>
+                        <div class="countdown-unit">
+                            <p class="countdown-value" id="cd-mins">00</p>
+                            <p class="countdown-unit-label">Minutes</p>
+                        </div>
+                        <div class="countdown-unit">
+                            <p class="countdown-value" id="cd-secs">00</p>
+                            <p class="countdown-unit-label">Seconds</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div class="countdown-placeholder">
+                        <svg
+                            width="26"
+                            height="26"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#C9952C"
+                            stroke-width="1.2"
+                            stroke-linecap="round"
+                        >
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 7v5l3 3" />
+                        </svg>
+                        <span>Date &amp; time coming soon</span>
+                    </div>
+                )
+            }
+        </div>
+
         <!-- Venue card — floats higher than the event-card via a stronger
              shadow. Two sections: venue photo (top) and map (bottom),
              separated by a hairline divider inside a single card. -->
@@ -250,6 +294,44 @@ const calData = {
                     a.click();
                     URL.revokeObjectURL(url);
                 });
+        }
+
+        if (startDatetime) {
+            const target = new Date(startDatetime).getTime();
+            const pad = (n: number) => String(n).padStart(2, "0");
+            const daysEl = document.getElementById("cd-days");
+            const hoursEl = document.getElementById("cd-hours");
+            const minsEl = document.getElementById("cd-mins");
+            const secsEl = document.getElementById("cd-secs");
+            const grid = document.getElementById("countdown-grid");
+            let timer: ReturnType<typeof setInterval>;
+
+            const tick = () => {
+                const diff = target - Date.now();
+
+                if (diff <= 0) {
+                    if (grid) {
+                        grid.innerHTML =
+                            '<p class="countdown-arrived">The celebration has begun!</p>';
+                    }
+                    clearInterval(timer);
+                    return;
+                }
+
+                const totalSeconds = Math.floor(diff / 1000);
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor((totalSeconds % 86400) / 3600);
+                const mins = Math.floor((totalSeconds % 3600) / 60);
+                const secs = totalSeconds % 60;
+
+                if (daysEl) daysEl.textContent = pad(days);
+                if (hoursEl) hoursEl.textContent = pad(hours);
+                if (minsEl) minsEl.textContent = pad(mins);
+                if (secsEl) secsEl.textContent = pad(secs);
+            };
+
+            tick();
+            timer = setInterval(tick, 1000);
         }
     </script>
 </section>
