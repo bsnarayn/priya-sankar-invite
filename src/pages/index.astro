@@ -94,6 +94,22 @@ const event = eventEntry.data;
 			},
 		});
 
+		// Story polaroids — fan in one after another from below, then
+		// stay put in their scattered, rotated resting positions.
+		gsap.from(".story-polaroid", {
+			y: 60,
+			opacity: 0,
+			scale: 0.85,
+			duration: 1,
+			ease: "back.out(1.4)",
+			stagger: 1.5,
+			scrollTrigger: {
+				trigger: ".story-polaroids",
+				start: "top 80%",
+				once: true,
+			},
+		});
+
 		// Profile cards — staggered
 		gsap.from(".profile-card", {
 			opacity: 0,
@@ -121,13 +137,13 @@ const event = eventEntry.data;
 			},
 		});
 
-		gsap.from(".venue-card", {
+		gsap.from(".venue-cards", {
 			opacity: 0,
 			y: 24,
 			duration: 1.2,
 			ease: "power2.out",
 			scrollTrigger: {
-				trigger: ".venue-card",
+				trigger: ".venue-cards",
 				start: "top 88%",
 				once: true,
 			},

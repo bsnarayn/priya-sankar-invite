@@ -28,10 +28,15 @@ for (let i = allUrls.length - 1; i > 0; i--) {
 }
 
 // site.story_images optionally caps how many images are shown
-// (0 or unset = no cap).
+// (0 or unset = no cap). The polaroid scatter is hand-tuned for up to
+// 5 photos, so it's capped there regardless of site.story_images.
+const MAX_POLAROIDS = 5;
 const cap =
     site.story_images && site.story_images > 0 ? site.story_images : undefined;
-const storyImages = cap ? allUrls.slice(0, cap) : allUrls;
+const storyImages = (cap ? allUrls.slice(0, cap) : allUrls).slice(
+    0,
+    MAX_POLAROIDS,
+);
 const hasImages = storyImages.length > 0;
 ---
 
@@ -49,30 +54,16 @@ const hasImages = storyImages.length > 0;
             <div class="story-img">
                 {
                     hasImages ? (
-                        <div class="story-carousel">
-                            <div
-                                class="story-carousel-track"
-                                style={`--story-set-width:${storyImages.length * 320}px; --story-marquee-duration:${storyImages.length * 8}s;`}
-                            >
-                                {storyImages.map((src) => (
-                                    <div class="story-carousel-slide">
-                                        <img
-                                            src={src}
-                                            alt="Our story"
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                ))}
-                                {/* Duplicate set for seamless marquee loop */}
-                                {storyImages.map((src) => (
-                                    <div
-                                        class="story-carousel-slide"
-                                        aria-hidden="true"
-                                    >
-                                        <img src={src} alt="" loading="lazy" />
-                                    </div>
-                                ))}
-                            </div>
+                        <div class="story-polaroids">
+                            {storyImages.map((src, i) => (
+                                <div class={`story-polaroid story-polaroid--${i}`}>
+                                    <img
+                                        src={src}
+                                        alt="Our story"
+                                        loading={i === 0 ? "eager" : "lazy"}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <>

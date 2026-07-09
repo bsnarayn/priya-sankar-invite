@@ -387,8 +387,8 @@
 }
 
 .story-img {
-    background: #EDE4D8;
-    min-height: 260px;
+    background: transparent;
+    min-height: 380px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -407,48 +407,68 @@
     opacity: 0.5;
 }
 
-/* Story image carousel */
-.story-carousel {
+/* Story polaroid scatter — a handful of photos fanned out like they've
+   been tossed onto a table, rather than cycling through one at a time
+   or scrolling past in a marquee. */
+.story-polaroids {
     position: absolute;
     inset: 0;
-    overflow: hidden;
 }
 
-.story-carousel-track {
-    display: flex;
-    height: 100%;
-    width: max-content;
-    animation: story-marquee var(--story-marquee-duration, 40s) linear infinite;
+.story-polaroid {
+    position: absolute;
+    width: 44%;
+    background: #FFFBF6;
+    padding: 8px 8px 26px;
+    border-radius: 2px;
+    box-shadow:
+        0 10px 24px -4px rgba(58, 46, 40, 0.30),
+        0 3px 8px rgba(58, 46, 40, 0.18);
 }
 
-.story-carousel-slide {
-    flex: 0 0 auto;
-    height: 100%;
-    width: 320px;
-}
-
-.story-carousel-slide img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #EDE4D8;
+.story-polaroid img {
     display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background: #EDE4D8;
 }
 
-@keyframes story-marquee {
-    from {
-        transform: translateX(0);
-    }
-
-    to {
-        transform: translateX(calc(-1 * var(--story-set-width, 320px)));
-    }
+/* z-index ascends with index so the staggered entrance (which
+   animates in DOM order) reveals the stack from back to front. */
+.story-polaroid--0 {
+    top: 4%;
+    left: 2%;
+    transform: rotate(-8deg);
+    z-index: 1;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .story-carousel-track {
-        animation: none;
-    }
+.story-polaroid--1 {
+    top: 2%;
+    left: 54%;
+    transform: rotate(6deg);
+    z-index: 2;
+}
+
+.story-polaroid--2 {
+    top: 44%;
+    left: 4%;
+    transform: rotate(-4deg);
+    z-index: 3;
+}
+
+.story-polaroid--3 {
+    top: 40%;
+    left: 52%;
+    transform: rotate(8deg);
+    z-index: 4;
+}
+
+.story-polaroid--4 {
+    top: 24%;
+    left: 28%;
+    transform: rotate(-2deg);
+    z-index: 5;
 }
 
 /* ── Profile cards ── */
