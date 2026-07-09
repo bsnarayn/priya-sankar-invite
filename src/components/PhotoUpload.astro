@@ -42,7 +42,7 @@ const { site } = Astro.props;
                     ></path><circle cx="12" cy="13" r="4"></circle>
                 </svg>
                 <p class="upload-title">Drop your photos here</p>
-                <p class="upload-sub">Photos from your phone · Max 5MB each</p>
+                <p class="upload-sub">Photos from your phone</p>
                 <input
                     id="file-input"
                     type="file"
@@ -113,15 +113,9 @@ const { site } = Astro.props;
     }
 
     async function handleFiles(files: FileList) {
-        const valid = Array.from(files).filter(
-            (f) => f.size <= 5 * 1024 * 1024,
-        );
-        const skipped = files.length - valid.length;
+        const valid = Array.from(files);
 
-        if (!valid.length) {
-            showStatus("Files exceed 5MB limit.");
-            return;
-        }
+        if (!valid.length) return;
         if (!immichBase || !immichSlug) {
             showStatus("Upload isn't set up yet — please scan the QR code.");
             return;
@@ -134,9 +128,7 @@ const { site } = Astro.props;
         });
 
         if (uploaded === valid.length) {
-            let msg = `${uploaded} photo(s) uploaded — thank you!`;
-            if (skipped > 0) msg += ` (${skipped} skipped — over 5MB)`;
-            showStatus(msg);
+            showStatus(`${uploaded} photo(s) uploaded — thank you!`);
         } else if (uploaded > 0) {
             showStatus(
                 `${uploaded} of ${valid.length} uploaded — please try the rest again.`,

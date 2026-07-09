@@ -12,7 +12,7 @@
         "immich_base_url": "https://photos.sankaranarayan.in",
         "immich_share_slug": "priya-sankar-reception",
         "camera_max_shots": 36,
-        "camera_max_uploads": 25,
+        "camera_max_uploads": 36,
         "album_available_after": "2026-12-31T23:00:00",
         "album_notify_webhook_url": "https://priya.sankars.in/api/webhook/album-notify",
         "story_images": 0,
