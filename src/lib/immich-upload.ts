@@ -6,6 +6,8 @@
  *   import { uploadToImmich, buildUploadForm } from "@lib/immich-upload";
  */
 
+import piexif from "piexifjs";
+
 export interface ImmichConfig {
     base: string;   // e.g. "https://photos.sankaranarayan.in"
     slug: string;   // share slug
@@ -69,7 +71,25 @@ export async function uploadFiles(
     return uploaded;
 }
 
-// immich-upload.ts — add this export
+function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function dataUrlToFile(dataUrl: string, original: File): File {
+    const base64 = dataUrl.split(",")[1] ?? "";
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new File([bytes], original.name.replace(/\.\w+$/, ".jpg"), {
+        type: "image/jpeg",
+        lastModified: original.lastModified,
+    });
+}
 
 export async function compressImage(
     file: File,
@@ -78,6 +98,19 @@ export async function compressImage(
 ): Promise<File> {
     // Skip if already small or an unsupported type
     if (file.size < 500_000) return file;
+
+    // Canvas re-encoding strips all metadata, so read the original's EXIF
+    // (only JPEGs carry it in a form piexif can read) before resizing, and
+    // re-insert it into the compressed output below.
+    let exifBytes: string | null = null;
+    if (/^image\/jpe?g$/i.test(file.type)) {
+        try {
+            const originalDataUrl = await fileToDataUrl(file);
+            exifBytes = piexif.dump(piexif.load(originalDataUrl));
+        } catch {
+            exifBytes = null; // no EXIF present, or unreadable
+        }
+    }
 
     return new Promise((resolve) => {
         const img = new Image();
@@ -95,19 +128,17 @@ export async function compressImage(
             const ctx = canvas.getContext("2d")!;
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            canvas.toBlob(
-                (blob) => {
-                    if (!blob) { resolve(file); return; } // fallback to original
-                    resolve(
-                        new File([blob], file.name.replace(/\.\w+$/, ".jpg"), {
-                            type: "image/jpeg",
-                            lastModified: file.lastModified,
-                        }),
-                    );
-                },
-                "image/jpeg",
-                quality,
-            );
+            let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+            if (exifBytes) {
+                try {
+                    dataUrl = piexif.insert(exifBytes, dataUrl);
+                } catch {
+                    // fall back to the compressed image without EXIF
+                }
+            }
+
+            resolve(dataUrlToFile(dataUrl, file));
         };
 
         img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
