@@ -949,6 +949,17 @@
     transition: all 0.2s ease;
 }
 
+.reaction-btn .reaction-emoji {
+    font-size: 34px;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.reaction-btn:hover .reaction-emoji,
+.reaction-btn.active .reaction-emoji {
+    transform: scale(1.15);
+}
+
 .reaction-btn:hover {
     border-color: #157A78;
     color: #157A78;
@@ -1120,6 +1131,10 @@
     flex-direction: column;
 }
 
+.phone-dropdown[hidden] {
+    display: none;
+}
+
 .phone-dropdown-search {
     padding: 10px 10px 6px;
     border-bottom: 0.5px solid #EDE4D8;
@@ -1214,6 +1229,54 @@
 
 .field-input:focus {
     border-color: #157A78;
+}
+
+.guest-counter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px;
+    background: #FFFBF6;
+    border: 0.5px solid #DDD0C2;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.guest-counter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background: #F5EAD8;
+    border: 0.5px solid #DDD0C2;
+    border-radius: 50%;
+    color: #157A78;
+    font-family: "Jost", sans-serif;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        transform 0.1s ease;
+}
+
+.guest-counter-btn:hover {
+    background: #EDE4D8;
+}
+
+.guest-counter-btn:active {
+    transform: scale(0.92);
+}
+
+.guest-counter-value {
+    font-family: "Italiana", serif;
+    font-size: 18px;
+    color: #3A2E28;
+    min-width: 24px;
+    text-align: center;
 }
 
 .btn-primary {
