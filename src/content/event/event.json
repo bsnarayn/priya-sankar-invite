@@ -3,12 +3,12 @@
         "id": "event",
         "date": "28th November 2026",
         "time": "6 pm - 9 pm",
-        "venue": "TBA",
-        "address": "",
-        "maps_url": "",
+        "venue": "New Woodlands Hotel, Chennai",
+        "address": "72-75, Dr Radha Krishnan Salai, CIT Colony, Mylapore, Chennai, Greater Chennai, Tamil Nadu 600004",
+        "maps_url": "https://maps.app.goo.gl/8J9diUhzpJjKfDeN6",
         "dress": "Festive",
-        "venue_image": "",
-        "start_datetime": null,
-        "end_datetime": null
+        "venue_image": "NewWoodlands.webp",
+        "start_datetime": "2026-11-28T18:00:00+05:30",
+        "end_datetime": "2026-11-28T21:00:00+05:30"
     }
 ]
