@@ -185,6 +185,7 @@
 .sec-heading {
     font-family: "Italiana", serif;
     font-size: clamp(36px, 6vw, 52px);
+    font-weight: 400;
     line-height: 1.05;
     color: #3A2E28;
     margin-bottom: 4px;
@@ -234,6 +235,7 @@
 .hero-names {
     font-family: "Italiana", serif;
     font-size: clamp(64px, 12vw, 96px);
+    font-weight: 400;
     line-height: 0.95;
     color: #3A2E28;
 }
@@ -1291,6 +1293,7 @@
     font-family: "Great Vibes", cursive;
     color: #157A78;
     font-size: clamp(32px, 5vw, 44px);
+    margin: 0 0.32em 0 0.12em;
 }
 
 .footer-note {
