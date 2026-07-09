@@ -18,6 +18,15 @@ const venueImageSrc = event.venue_image
     ? `/images/venue/${event.venue_image}`
     : undefined;
 
+// Google Maps share links (maps.app.goo.gl / maps.google.com/maps?...) can't
+// be framed directly - Google blocks them with X-Frame-Options. The
+// query-based /maps?...&output=embed form is the one that's actually
+// embeddable without an API key, so we always derive it from the address
+// rather than iframing maps_url itself.
+const mapsEmbedSrc = event.address
+    ? `https://www.google.com/maps?q=${encodeURIComponent(event.address)}&output=embed`
+    : undefined;
+
 const calData = {
     startDatetime: event.start_datetime ?? null,
     endDatetime: event.end_datetime ?? null,
@@ -184,11 +193,12 @@ const calData = {
             }
         </div>
 
-        <!-- Venue card — floats higher than the event-card via a stronger
-             shadow. Two sections: venue photo (top) and map (bottom),
-             separated by a hairline divider inside a single card. -->
-        <div class="venue-card">
-            <div class="venue-card-image">
+        <!-- Venue photo + map — two independent cards, each kept at its
+             natural aspect ratio (3:2 photo, square map) rather than being
+             cropped to fit a shared strip. Stacks on mobile, sits
+             side by side from tablet width up. -->
+        <div class="venue-cards">
+            <div class="venue-photo-card">
                 {
                     venueImageSrc ? (
                         <img
@@ -215,13 +225,11 @@ const calData = {
                 }
             </div>
 
-            <div class="venue-card-divider"></div>
-
-            <div class="venue-card-map">
+            <div class="venue-map-card">
                 {
-                    event.maps_url ? (
+                    mapsEmbedSrc ? (
                         <iframe
-                            src={event.maps_url}
+                            src={mapsEmbedSrc}
                             width="100%"
                             height="100%"
                             style="border:0;display:block;"

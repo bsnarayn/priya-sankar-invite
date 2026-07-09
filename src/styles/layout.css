@@ -725,12 +725,18 @@
     opacity: 0.7;
 }
 
-/* Venue card — sits below event-card, higher shadow projection
-   to create a sense of floating above the section background.
-   Two halves: venue photo (top) + map (bottom), divided by a
-   hairline, all within one card. */
-.venue-card {
+/* Venue photo + map — two independent cards, each at its own natural
+   aspect ratio (photo 3:2, map square) instead of being cropped into a
+   shared strip. Stacked on mobile, side by side from tablet width up. */
+.venue-cards {
     margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.venue-photo-card,
+.venue-map-card {
     border-radius: 12px;
     overflow: hidden;
     border: 0.5px solid #EDE4D8;
@@ -744,15 +750,13 @@
         0 2px 4px 0 rgba(58, 46, 40, 0.06);
 }
 
-.venue-card-image {
+.venue-photo-card {
     width: 100%;
-    height: 220px;
+    aspect-ratio: 3 / 2;
     background: #EDE4D8;
-    overflow: hidden;
-    position: relative;
 }
 
-.venue-card-image img {
+.venue-photo-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -776,16 +780,35 @@
     opacity: 0.5;
 }
 
-.venue-card-divider {
-    height: 0.5px;
-    background: #EDE4D8;
+.venue-map-card {
+    width: 240px;
+    max-width: 60%;
+    aspect-ratio: 1 / 1;
+    background: #F0E8DC;
+    margin: 0 auto;
 }
 
-.venue-card-map {
-    height: 200px;
-    background: #F0E8DC;
-    overflow: hidden;
-    position: relative;
+/* Above phone width, place the photo and map side by side - photo
+   keeps the majority of the width at 3:2, map sits alongside as a
+   smaller square rather than being stretched to match, vertically
+   centered against the taller photo card. */
+@media (min-width: 640px) {
+    .venue-cards {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .venue-photo-card {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .venue-map-card {
+        flex: 0 0 240px;
+        width: 240px;
+        max-width: none;
+        margin: 0;
+    }
 }
 
 .venue-card-map-placeholder {
