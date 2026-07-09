@@ -1,5 +1,10 @@
 ---
 import { all as allCountries } from "country-codes-list";
+import { Metadata } from "libphonenumber-js/core";
+// Deliberately using the full metadata build here (not the default "min"
+// build) - min metadata loses per-country mobile-length precision, which is
+// the whole point of this lookup.
+import phoneMetadata from "libphonenumber-js/metadata.full.json";
 
 interface Props {
   site: {
@@ -34,6 +39,31 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
   c.countryNameEn,
   c.countryCode,
 ]);
+
+// Per-country mobile-number digit length range, computed at build time from
+// libphonenumber's full metadata. Shipped to the client as a compact
+// {ISO: [min, max]} map so validation is exact per country without bundling
+// the phonenumber library itself into the client.
+const phoneMeta = new Metadata(phoneMetadata as any);
+const phoneValidation: Record<string, [number, number]> = {};
+for (const c of sorted) {
+  let min = 6;
+  let max = 13;
+  try {
+    phoneMeta.selectNumberingPlan(c.countryCode);
+    const plan = phoneMeta.numberingPlan;
+    const types = plan.hasTypes() ? (plan.types() as any[]) : null;
+    const mobileMeta = types ? types[1] : null;
+    const lengths: number[] =
+      (mobileMeta && mobileMeta !== 0 ? mobileMeta[1] : null) ??
+      plan.possibleLengths();
+    min = Math.min(...lengths);
+    max = Math.max(...lengths);
+  } catch {
+    // use defaults
+  }
+  phoneValidation[c.countryCode] = [min, max];
+}
 ---
 
 <section id="rsvp">
@@ -87,15 +117,32 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
             />
           </div>
           <div id="rsvp-guests-row">
-            <label class="field-label" for="rsvp-guests">Guests</label>
-            <input
-              id="rsvp-guests"
-              type="number"
-              min="1"
-              max="10"
-              placeholder="Including you"
-              class="field-input"
-            />
+            <label class="field-label" for="guest-count-display">Guests</label>
+            <div class="guest-counter">
+              <button
+                type="button"
+                class="guest-counter-btn"
+                id="guest-decrement"
+                aria-label="Decrease guest count"
+              >
+                &#8722;
+              </button>
+              <span
+                class="guest-counter-value"
+                id="guest-count-display"
+                aria-live="polite"
+                >1</span
+              >
+              <button
+                type="button"
+                class="guest-counter-btn"
+                id="guest-increment"
+                aria-label="Increase guest count"
+              >
+                &#43;
+              </button>
+            </div>
+            <input type="hidden" id="rsvp-guests" value="1" />
           </div>
         </div>
 
@@ -157,7 +204,7 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
               />
             </div>
             <p class="field-error" id="mobile-error" hidden>
-              Please enter a valid number (8–15 digits).
+              Please enter a valid mobile number for the selected country.
             </p>
             <!-- Country dropdown -->
             <div
@@ -212,19 +259,7 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
               aria-checked="false"
               aria-label="So excited!"
             >
-              <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M4 21l2.5-7L12 9l5.5 5L20 21"></path><path
-                  d="M12 9V3M8 5l1.5 2M16 5l-1.5 2"></path>
-              </svg>
+              <span class="reaction-emoji" aria-hidden="true">🎉</span>
               <span>So excited!</span>
             </button>
             <button
@@ -235,20 +270,7 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
               aria-checked="false"
               aria-label="So happy for you"
             >
-              <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  d="M12 20s-7-4.4-7-9.5C5 7 7 5 9.5 5c1.4 0 2.7.7 3.5 2 .8-1.3 2.1-2 3.5-2C19 5 21 7 21 10.5 21 16 12 20 12 20z"
-                ></path>
-              </svg>
+              <span class="reaction-emoji" aria-hidden="true">🥰</span>
               <span>So happy for you</span>
             </button>
             <button
@@ -259,19 +281,7 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
               aria-checked="false"
               aria-label="Can't wait to celebrate"
             >
-              <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M6 3l1 7a3 3 0 003 3v8M18 3l-1 7a3 3 0 01-3 3"
-                ></path><path d="M4 3h4M16 3h4"></path>
-              </svg>
+              <span class="reaction-emoji" aria-hidden="true">🎊</span>
               <span>Can't wait to celebrate</span>
             </button>
             <button
@@ -282,19 +292,7 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
               aria-checked="false"
               aria-label="Wishing you both joy"
             >
-              <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M12 3v6M8 6l4 3 4-3"></path><path
-                  d="M5 21c0-3 3-5 7-5s7 2 7 5"></path>
-              </svg>
+              <span class="reaction-emoji" aria-hidden="true">💐</span>
               <span>Wishing you both joy</span>
             </button>
           </div>
@@ -324,7 +322,9 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
   </div>
 </section>
 
-<script define:vars={{ webhookUrl: site.rsvp_webhook_url ?? "" }}>
+<script
+  define:vars={{ webhookUrl: site.rsvp_webhook_url ?? "", phoneValidation }}
+>
   // ── Toggle ───────────────────────────────────────────
   const toggleJoin = document.getElementById("toggle-join");
   const toggleDecline = document.getElementById("toggle-decline");
@@ -336,9 +336,28 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
   const reactionBtns = reactionRow.querySelectorAll(".reaction-btn");
 
   let currentMode = null;
-  let guestsValue = "";
   let selectedReaction = null;
   let selectedDial = "91";
+  let selectedIso = "IN";
+
+  // ── Guest counter ──────────────────────────────────────
+  const guestCountDisplay = document.getElementById("guest-count-display");
+  const guestCountInput = document.getElementById("rsvp-guests");
+  const GUEST_MIN = 1;
+  const GUEST_MAX = 10;
+  let guestCount = GUEST_MIN;
+
+  function setGuestCount(n) {
+    guestCount = Math.min(GUEST_MAX, Math.max(GUEST_MIN, n));
+    guestCountDisplay.textContent = String(guestCount);
+    guestCountInput.value = String(guestCount);
+  }
+  document
+    .getElementById("guest-decrement")
+    ?.addEventListener("click", () => setGuestCount(guestCount - 1));
+  document
+    .getElementById("guest-increment")
+    ?.addEventListener("click", () => setGuestCount(guestCount + 1));
 
   function setReaction(v) {
     selectedReaction = v;
@@ -354,9 +373,6 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
 
   function applyMode(mode) {
     const switching = currentMode !== null && currentMode !== mode;
-    if (switching && currentMode === "join")
-      guestsValue =
-        document.getElementById("rsvp-guests")?.value ?? guestsValue;
 
     currentMode = mode;
     toggleJoin.setAttribute("aria-pressed", String(mode === "join"));
@@ -367,8 +383,6 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
     const reveal = () => {
       if (mode === "join") {
         guestsRow.style.display = "";
-        const gi = document.getElementById("rsvp-guests");
-        if (gi) gi.value = guestsValue;
         submitBtn.textContent = "Joining You";
       } else {
         guestsRow.style.display = "none";
@@ -397,8 +411,9 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
   const flagEl = document.getElementById("phone-flag");
   const codeEl = document.getElementById("phone-code");
 
-  function selectCountry(flag, dial) {
+  function selectCountry(flag, dial, iso) {
     selectedDial = dial;
+    selectedIso = iso;
     flagEl.textContent = flag;
     codeEl.textContent = "+" + dial;
     closeDropdown();
@@ -435,7 +450,7 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
   searchInput.addEventListener("input", (e) => filterCountries(e.target.value));
   countryList.addEventListener("click", (e) => {
     const li = e.target.closest(".phone-country-option");
-    if (li) selectCountry(li.dataset.flag, li.dataset.dial);
+    if (li) selectCountry(li.dataset.flag, li.dataset.dial, li.dataset.iso);
   });
   searchInput.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown") {
@@ -480,10 +495,21 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
     if (!v) return true;
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   }
+  function getPhoneLimits(iso) {
+    const entry = phoneValidation[iso];
+    return entry ? { min: entry[0], max: entry[1] } : { min: 6, max: 13 };
+  }
   function validateMobile(v) {
     if (!v) return true;
-    const d = v.replace(/\D/g, "");
-    return d.length >= 8 && d.length <= 15;
+    const digits = v.replace(/\D/g, "").length;
+    const { min, max } = getPhoneLimits(selectedIso);
+    return digits >= min && digits <= max;
+  }
+  function mobileErrorMessage() {
+    const { min, max } = getPhoneLimits(selectedIso);
+    return min === max
+      ? `Mobile number should be ${min} digits for the selected country.`
+      : `Mobile number should be ${min}–${max} digits for the selected country.`;
   }
 
   // ── Submit ───────────────────────────────────────────
@@ -505,6 +531,10 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
     const emailOk = validateEmail(email);
     showError("email-error", !emailOk);
     const mobileOk = validateMobile(mobile);
+    if (!mobileOk) {
+      const mobileErrorEl = document.getElementById("mobile-error");
+      if (mobileErrorEl) mobileErrorEl.textContent = mobileErrorMessage();
+    }
     showError("mobile-error", !mobileOk);
     if (!emailOk || !mobileOk) return;
 
@@ -557,17 +587,17 @@ const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
           "rsvp-name",
           "rsvp-email",
           "rsvp-mobile-number",
-          "rsvp-guests",
           "rsvp-note",
         ].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.value = "";
         });
+        setGuestCount(GUEST_MIN);
         flagEl.textContent = "🇮🇳";
         codeEl.textContent = "+91";
         selectedDial = "91";
+        selectedIso = "IN";
         selectedReaction = null;
-        guestsValue = "";
         reactionBtns.forEach((b) => {
           b.classList.remove("active");
           b.setAttribute("aria-checked", "false");
