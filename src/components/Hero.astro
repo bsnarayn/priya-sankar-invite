@@ -14,6 +14,19 @@ interface Props {
     };
 }
 const { site, event } = Astro.props;
+
+// Parse "28th November 2026" -> day "28", month "NOV", year "2026" for the
+// calendar block.
+const dateMatch = event.date.match(
+    /(\d+)(?:st|nd|rd|th)?\s+([A-Za-z]+)\s+(\d{4})/,
+);
+const heroDay = dateMatch ? dateMatch[1] : event.date;
+const heroMonth = dateMatch ? dateMatch[2].slice(0, 3).toUpperCase() : "";
+const heroYear = dateMatch ? dateMatch[3] : "";
+
+// Split "New Woodlands Hotel, Chennai" into two lines at the first comma.
+const [venueLine1, ...venueRest] = event.venue.split(",");
+const venueLine2 = venueRest.join(",").trim();
 ---
 
 <section id="hero">
@@ -38,9 +51,33 @@ const { site, event } = Astro.props;
                 <!-- Two line gaps between together line and tagline -->
                 <p class="hero-tagline">{site.tagline}</p>
 
-                <p class="hero-date">
-                    {event.date}&nbsp;·&nbsp;{event.venue}
-                </p>
+                <div class="hero-date-row">
+                    <div class="hero-calendar">
+                        <span class="hero-calendar-month">{heroMonth}</span>
+                        <span class="hero-calendar-day">{heroDay}</span>
+                        <span class="hero-calendar-year">{heroYear}</span>
+                    </div>
+                    <div class="hero-venue">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            class="hero-venue-pin"
+                        >
+                            <path
+                                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+                                fill="#8B1A8C"
+                            />
+                            <circle cx="12" cy="9" r="2.5" fill="#FFFBF6" />
+                        </svg>
+                        <div class="hero-venue-lines">
+                            <span class="hero-venue-line">{venueLine1}</span>
+                            {venueLine2 && (
+                                <span class="hero-venue-line">{venueLine2}</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -265,12 +265,84 @@
     margin: 0 auto 32px;
 }
 
-.hero-date {
-    font-family: "Italiana", serif;
-    font-size: clamp(18px, 3vw, 24px);
-    letter-spacing: 0.08em;
-    color: #8B1A8C;
+/* Date/venue — a small calendar block (day/month) beside the venue,
+   in Jost rather than the decorative display faces used elsewhere on
+   this card, since this is the logistics guests actually need to
+   read at a glance. */
+.hero-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+}
+
+.hero-calendar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 84px;
+    flex-shrink: 0;
+    border: 1px solid #157A78;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.hero-calendar-month {
+    width: 100%;
+    background: #157A78;
+    color: #FFFBF6;
+    font-family: "Jost", sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-align: center;
+    padding: 5px 0;
+}
+
+.hero-calendar-day {
+    font-family: "Jost", sans-serif;
+    font-size: 33px;
+    font-weight: 500;
+    color: #3A2E28;
+    line-height: 1;
+    padding: 8px 0 2px;
+}
+
+.hero-calendar-year {
+    font-family: "Jost", sans-serif;
+    font-size: 12px;
     font-weight: 400;
+    letter-spacing: 0.06em;
+    color: #7A6A5E;
+    padding-bottom: 8px;
+}
+
+.hero-venue {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 8px;
+    text-align: right;
+}
+
+.hero-venue-pin {
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.hero-venue-lines {
+    display: flex;
+    flex-direction: column;
+}
+
+.hero-venue-line {
+    font-family: "Jost", sans-serif;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: #157A78;
+    line-height: 1.4;
 }
 
 /* ── Hero dual-border frame ──
@@ -330,8 +402,8 @@
     margin-bottom: 0;
 }
 
-/* Date — small gap below tagline */
-.hero-frame-inner .hero-date {
+/* Date/venue row — small gap below tagline */
+.hero-frame-inner .hero-date-row {
     margin-top: 20px;
     margin-bottom: 0;
 }
