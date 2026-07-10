@@ -1,0 +1,74 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Page Not Found — Sankar & Priya">
+    <section id="not-found">
+        <div class="nf-content">
+            <span class="nf-script">oops</span>
+            <h1 class="nf-heading">This page wandered off</h1>
+            <p class="nf-sub">
+                The link you followed doesn't lead anywhere on our invite.
+                Let's get you back to the celebration.
+            </p>
+            <a class="nf-home-btn" href="/">Back to the invite</a>
+        </div>
+    </section>
+</Base>
+
+<style>
+    #not-found {
+        min-height: 100svh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 24px;
+        text-align: center;
+        background-color: var(--color-base);
+    }
+
+    .nf-content {
+        max-width: 420px;
+    }
+
+    .nf-script {
+        display: block;
+        font-family: var(--font-family-script);
+        font-size: 40px;
+        color: var(--color-accent-dark);
+        margin-bottom: 8px;
+    }
+
+    .nf-heading {
+        font-family: var(--font-family-display);
+        font-weight: 400;
+        font-size: 28px;
+        color: var(--color-text-primary);
+        margin-bottom: 16px;
+    }
+
+    .nf-sub {
+        font-family: var(--font-family-sans);
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+        margin-bottom: 32px;
+    }
+
+    .nf-home-btn {
+        display: inline-block;
+        font-family: var(--font-family-sans);
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        color: var(--color-base);
+        background-color: var(--color-accent);
+        padding: 12px 28px;
+        border-radius: 999px;
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+    }
+
+    .nf-home-btn:hover {
+        background-color: var(--color-accent-dark);
+    }
+</style>
