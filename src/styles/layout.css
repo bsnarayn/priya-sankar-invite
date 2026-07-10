@@ -273,7 +273,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 28px;
     width: 100%;
 }
 
@@ -320,29 +320,32 @@
 
 .hero-venue {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: flex-end;
-    gap: 8px;
-    text-align: right;
+    gap: 6px;
+    min-width: 0;
 }
 
 .hero-venue-pin {
     flex-shrink: 0;
-    margin-top: 3px;
 }
 
 .hero-venue-lines {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    min-width: 0;
 }
 
 .hero-venue-line {
     font-family: "Jost", sans-serif;
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 400;
     letter-spacing: 0.02em;
     color: #157A78;
     line-height: 1.4;
+    white-space: nowrap;
 }
 
 /* ── Hero dual-border frame ──
@@ -1798,6 +1801,19 @@
 
 /* Responsive */
 @media (max-width: 640px) {
+    .hero-date-row {
+        gap: 18px;
+    }
+
+    .hero-venue-line {
+        font-size: 14px;
+    }
+
+    .hero-venue-pin {
+        width: 18px;
+        height: 18px;
+    }
+
     .story-card {
         grid-template-columns: 1fr;
     }
