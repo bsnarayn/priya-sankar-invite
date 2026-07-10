@@ -6,7 +6,7 @@
  *   import { uploadToImmich, buildUploadForm } from "@lib/immich-upload";
  */
 
-import piexif from "piexifjs";
+import imageCompression from "browser-image-compression";
 
 export interface ImmichConfig {
     base: string;   // e.g. "https://photos.sankaranarayan.in"
@@ -40,8 +40,7 @@ export async function uploadToImmich(
     form.append("fileCreatedAt", now);
     form.append("fileModifiedAt", now);
     form.append("isFavorite", "false");
-    form.append("duration", "0:00:00.000000");
-    form.append("assetData", file);
+    form.append("assetData", compressed);
 
     try {
         const res = await fetch(endpoint, { method: "POST", body: form });
@@ -71,77 +70,31 @@ export async function uploadFiles(
     return uploaded;
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-function dataUrlToFile(dataUrl: string, original: File): File {
-    const base64 = dataUrl.split(",")[1] ?? "";
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new File([bytes], original.name.replace(/\.\w+$/, ".jpg"), {
-        type: "image/jpeg",
-        lastModified: original.lastModified,
-    });
-}
-
 export async function compressImage(
     file: File,
-    maxPx = 2400,
-    quality = 0.82,
+    maxPx = 4096,
+    quality = 0.9,
 ): Promise<File> {
     // Skip if already small or an unsupported type
     if (file.size < 500_000) return file;
 
-    // Canvas re-encoding strips all metadata, so read the original's EXIF
-    // (only JPEGs carry it in a form piexif can read) before resizing, and
-    // re-insert it into the compressed output below.
-    let exifBytes: string | null = null;
-    if (/^image\/jpe?g$/i.test(file.type)) {
-        try {
-            const originalDataUrl = await fileToDataUrl(file);
-            exifBytes = piexif.dump(piexif.load(originalDataUrl));
-        } catch {
-            exifBytes = null; // no EXIF present, or unreadable
-        }
+    try {
+        // Runs in a Web Worker so it doesn't block the UI thread on large
+        // camera photos, and preserves EXIF (orientation/GPS/timestamp) on
+        // JPEGs via the preserveExif option.
+        const compressed = await imageCompression(file, {
+            maxWidthOrHeight: maxPx,
+            initialQuality: quality,
+            useWebWorker: true,
+            preserveExif: true,
+            fileType: "image/jpeg",
+        });
+        return new File(
+            [compressed],
+            file.name.replace(/\.\w+$/, ".jpg"),
+            { type: "image/jpeg", lastModified: file.lastModified },
+        );
+    } catch {
+        return file; // fall back to the original on any compression failure
     }
-
-    return new Promise((resolve) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-
-            const { naturalWidth: w, naturalHeight: h } = img;
-            const scale = Math.min(1, maxPx / Math.max(w, h));
-            const canvas = document.createElement("canvas");
-            canvas.width = Math.round(w * scale);
-            canvas.height = Math.round(h * scale);
-
-            const ctx = canvas.getContext("2d")!;
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            let dataUrl = canvas.toDataURL("image/jpeg", quality);
-
-            if (exifBytes) {
-                try {
-                    dataUrl = piexif.insert(exifBytes, dataUrl);
-                } catch {
-                    // fall back to the compressed image without EXIF
-                }
-            }
-
-            resolve(dataUrlToFile(dataUrl, file));
-        };
-
-        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-        img.src = url;
-    });
 }
