@@ -1,5 +1,5 @@
 name = "priya-sankar-invite-webhook-proxy"
-main = "src/index.ts"
+main = "src/index.js"
 compatibility_date = "2026-07-15"
 
 # WEBHOOK_SECRET is set via `wrangler secret put WEBHOOK_SECRET` (or the

@@ -2,12 +2,8 @@ const N8N_BASE = "https://workflow.sankaranarayan.in";
 
 const ALLOWED_ORIGINS = ["https://priya.sankars.in", "https://priya-sankar-invite.pages.dev"];
 
-export interface Env {
-  WEBHOOK_SECRET: string;
-}
-
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") ?? "";
     const corsOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
