@@ -18,7 +18,6 @@
         "story_images": 0,
         "footer_close_delay_seconds": 600,
         "umami_base_url": "https://analytics.sankaranarayan.in",
-        "umami_website_id": "b095ae70-7898-4408-b7ec-b052cd5a1c30",
-        "dashboard_webhook_url": "https://priya.sankars.in/api/webhook/dashboard"
+        "umami_website_id": "b095ae70-7898-4408-b7ec-b052cd5a1c30"
     }
 ]

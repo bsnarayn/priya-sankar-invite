@@ -1,0 +1,8 @@
+name = "priya-sankar-invite-webhook-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-07-15"
+
+# WEBHOOK_SECRET is set via `wrangler secret put WEBHOOK_SECRET` (or the
+# Cloudflare dashboard) -- never committed here. DASHBOARD_PIN is no longer
+# used now that the dashboard route is gone; remove it from the Worker's
+# Settings > Variables and secrets once this is deployed.
