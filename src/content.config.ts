@@ -69,7 +69,6 @@ const site = defineCollection({
         footer_close_delay_seconds: z.number().optional(),
         umami_base_url: z.string().optional(),
         umami_website_id: z.string().optional(),
-        dashboard_webhook_url: z.string().optional(),
     }),
 });
 
