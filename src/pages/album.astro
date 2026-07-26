@@ -72,13 +72,7 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
                 it larger.
             </p>
 
-            <div
-                id="album-grid"
-                data-immich-base={site.immich_base_url ?? ""}
-                data-immich-slug={site.immich_share_slug ?? ""}
-                class="album-grid"
-            >
-            </div>
+            <div id="album-grid" class="album-grid"></div>
 
             <p id="album-status" class="album-status">Loading photos…</p>
         </div>
@@ -391,15 +385,12 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
             "lightbox-track",
         ) as HTMLElement | null;
 
-        const base = grid?.dataset.immichBase?.trim().replace(/\/$/, "");
-        const slug = grid?.dataset.immichSlug?.trim();
-
         const assetIds: string[] = [];
         const slideEls: HTMLImageElement[] = [];
         let currentIndex = -1;
 
         function thumbUrl(id: string, size: "thumbnail" | "preview") {
-            return `${base}/api/assets/${id}/thumbnail?slug=${encodeURIComponent(slug ?? "")}&size=${size}`;
+            return `/api/album/thumbnail/${id}?size=${size}`;
         }
 
         // Build the track once, with one slide per photo. Each slide's
@@ -588,14 +579,12 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
         }
 
         async function loadAlbum() {
-            if (!base || !slug || !grid) {
+            if (!grid) {
                 if (status) status.textContent = "Album isn't set up yet.";
                 return;
             }
             try {
-                const infoRes = await fetch(
-                    `${base}/api/shared-links/me?slug=${encodeURIComponent(slug)}`,
-                );
+                const infoRes = await fetch("/api/album/info");
                 if (!infoRes.ok)
                     throw new Error(`Album lookup failed: ${infoRes.status}`);
                 const info = await infoRes.json();
@@ -620,9 +609,8 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
 
                 for (const timeBucket of buckets) {
                     const url =
-                        `${base}/api/timeline/bucket?albumId=${encodeURIComponent(albumId)}` +
-                        `&order=desc&slug=${encodeURIComponent(slug)}` +
-                        `&timeBucket=${encodeURIComponent(timeBucket)}`;
+                        `/api/album/bucket?albumId=${encodeURIComponent(albumId)}` +
+                        `&order=desc&timeBucket=${encodeURIComponent(timeBucket)}`;
                     const res = await fetch(url);
                     if (!res.ok) continue;
                     const data = await res.json();

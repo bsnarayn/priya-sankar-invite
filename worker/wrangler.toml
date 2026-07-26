@@ -6,3 +6,10 @@ compatibility_date = "2026-07-15"
 # Cloudflare dashboard) -- never committed here. DASHBOARD_PIN is no longer
 # used now that the dashboard route is gone; remove it from the Worker's
 # Settings > Variables and secrets once this is deployed.
+#
+# Album proxy config (keeps the Immich share slug out of the browser):
+#   IMMICH_BASE — plain var, e.g. "https://photos.sankaranarayan.in"
+#   IMMICH_SLUG — secret, set via `wrangler secret put IMMICH_SLUG`
+
+[vars]
+IMMICH_BASE = "https://photos.sankaranarayan.in"
