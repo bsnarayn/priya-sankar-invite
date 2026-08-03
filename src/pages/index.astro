@@ -94,17 +94,16 @@ const event = eventEntry.data;
 			},
 		});
 
-		// Story polaroids — fan in one after another from below, then
-		// stay put in their scattered, rotated resting positions.
-		gsap.from(".story-polaroid", {
-			y: 60,
+		// Story slider — the whole frame rises in once, then the slider's
+		// own script handles cycling through photos.
+		gsap.from(".story-slider", {
+			y: 40,
 			opacity: 0,
-			scale: 0.85,
+			scale: 0.92,
 			duration: 1,
 			ease: "back.out(1.4)",
-			stagger: 1.5,
 			scrollTrigger: {
-				trigger: ".story-polaroids",
+				trigger: ".story-slider",
 				start: "top 80%",
 				once: true,
 			},

@@ -286,6 +286,11 @@ import Hearts from "./Hearts.astro";
                     scale: 1,
                     duration: 1.3,
                     ease: "power2.out",
+                    // A lingering inline transform on this ancestor makes it
+                    // the containing block for any position:fixed descendant
+                    // (e.g. the hero's scroll hint), pinning them to this
+                    // box instead of the viewport. Drop it once settled.
+                    clearProps: "transform",
                 },
                 "open+=0.4",
             )

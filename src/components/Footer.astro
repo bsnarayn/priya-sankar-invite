@@ -2,12 +2,12 @@
 import { getEntry, render } from "astro:content";
 
 interface Props {
-    site: {
-        groom_name: string;
-        bride_name: string;
-        footer_note: string;
-        footer_close_delay_seconds?: number;
-    };
+  site: {
+    groom_name: string;
+    bride_name: string;
+    footer_note: string;
+    footer_close_delay_seconds?: number;
+  };
 }
 const { site } = Astro.props;
 const closeDelayMs = (site.footer_close_delay_seconds ?? 5) * 1000;
@@ -20,119 +20,119 @@ const footnote = footnoteEntry?.data ?? { left: "", right: "" };
 const currentYear = new Date().getFullYear();
 
 const { Content: Compliments } = complimentsEntry
-    ? await render(complimentsEntry)
-    : { Content: null };
+  ? await render(complimentsEntry)
+  : { Content: null };
 const { Content: LeftColumn } = leftEntry
-    ? await render(leftEntry)
-    : { Content: null };
+  ? await render(leftEntry)
+  : { Content: null };
 const { Content: RightColumn } = rightEntry
-    ? await render(rightEntry)
-    : { Content: null };
+  ? await render(rightEntry)
+  : { Content: null };
 ---
 
 <div
-    id="curtain-left"
-    style="position:fixed;top:0;left:0;height:100%;width:50%;z-index:40;background:#FDF6EE;transform:translateX(-100%);pointer-events:none;"
+  id="curtain-left"
+  style="position:fixed;top:0;left:0;height:100%;width:50%;z-index:40;background:#FDF6EE;transform:translateX(-100%);pointer-events:none;"
 >
 </div>
 <div
-    id="curtain-right"
-    style="position:fixed;top:0;right:0;height:100%;width:50%;z-index:40;background:#FDF6EE;transform:translateX(100%);pointer-events:none;"
+  id="curtain-right"
+  style="position:fixed;top:0;right:0;height:100%;width:50%;z-index:40;background:#FDF6EE;transform:translateX(100%);pointer-events:none;"
 >
 </div>
 
 <footer id="footer" data-close-delay-ms={closeDelayMs}>
-    <div class="footer-rule"></div>
-    <span class="footer-script">with love &amp; gratitude</span>
-    <p class="footer-names">
-        {site.groom_name}
-        <span class="footer-amp">&amp;</span>
-        {site.bride_name}
-    </p>
-    <p class="footer-note">{site.footer_note}</p>
-    <div class="footer-rule" style="margin-top:28px;opacity:0.3;"></div>
+  <div class="footer-rule"></div>
+  <span class="footer-script">looking for to seeing you there</span>
+  <p class="footer-names">
+    {site.groom_name}
+    <span class="footer-amp">&amp;</span>
+    {site.bride_name}
+  </p>
+  <p class="footer-note">{site.footer_note}</p>
+  <div class="footer-rule" style="margin-top:28px;opacity:0.3;"></div>
 
-    {
-        Compliments && (
-            <div class="footer-compliments">
-                <Compliments />
-            </div>
-        )
-    }
+  {
+    Compliments && (
+      <div class="footer-compliments">
+        <Compliments />
+      </div>
+    )
+  }
 
-    <div class="footer-compliments-grid">
-        <div class="footer-compliments-card">
-            {LeftColumn && <LeftColumn />}
-        </div>
-        <div class="footer-compliments-card">
-            {RightColumn && <RightColumn />}
-        </div>
+  <div class="footer-compliments-grid">
+    <div class="footer-compliments-card">
+      {LeftColumn && <LeftColumn />}
     </div>
-
-    <div class="footer-rule" style="margin-top:40px;"></div>
-    <div class="footer-footnote">
-        <span class="footer-footnote-left">
-            &copy; {currentYear}
-            {footnote.left}
-        </span>
-        <span class="footer-footnote-right">{footnote.right}</span>
+    <div class="footer-compliments-card">
+      {RightColumn && <RightColumn />}
     </div>
+  </div>
+
+  <div class="footer-rule" style="margin-top:40px;"></div>
+  <div class="footer-footnote">
+    <span class="footer-footnote-left">
+      &copy; {currentYear}
+      {footnote.left}
+    </span>
+    <span class="footer-footnote-right">{footnote.right}</span>
+  </div>
 </footer>
 
 <script>
-    import { gsap } from "gsap";
+  import { gsap } from "gsap";
 
-    const footer = document.getElementById("footer");
-    const curtainL = document.getElementById("curtain-left");
-    const curtainR = document.getElementById("curtain-right");
-    const entryScreen = document.getElementById("entry-screen");
-    const invite = document.getElementById("invite");
-    const closeDelayMs = Number(footer?.dataset.closeDelayMs ?? 5000);
-    let closed = false;
+  const footer = document.getElementById("footer");
+  const curtainL = document.getElementById("curtain-left");
+  const curtainR = document.getElementById("curtain-right");
+  const entryScreen = document.getElementById("entry-screen");
+  const invite = document.getElementById("invite");
+  const closeDelayMs = Number(footer?.dataset.closeDelayMs ?? 5000);
+  let closed = false;
 
-    function closeDoors() {
-        closed = true;
-        gsap.to([curtainL, curtainR], {
-            x: 0,
-            duration: 1.0,
-            ease: "power3.inOut",
-            onComplete: () => {
-                window.scrollTo({ top: 0, behavior: "instant" });
-                gsap.set(invite, { opacity: 0, y: 16 });
-                if (entryScreen) {
-                    gsap.set(entryScreen, { display: "flex", opacity: 1 });
-                }
-                if (typeof (window as any).__resetEntry === "function") {
-                    (window as any).__resetEntry();
-                }
-                setTimeout(() => {
-                    gsap.set(curtainL, { x: "-100%" });
-                    gsap.set(curtainR, { x: "100%" });
-                    closed = false;
-                }, 50);
-            },
-        });
-    }
+  function closeDoors() {
+    closed = true;
+    gsap.to([curtainL, curtainR], {
+      x: 0,
+      duration: 1.0,
+      ease: "power3.inOut",
+      onComplete: () => {
+        window.scrollTo({ top: 0, behavior: "instant" });
+        gsap.set(invite, { opacity: 0, y: 16 });
+        if (entryScreen) {
+          gsap.set(entryScreen, { display: "flex", opacity: 1 });
+        }
+        if (typeof (window as any).__resetEntry === "function") {
+          (window as any).__resetEntry();
+        }
+        setTimeout(() => {
+          gsap.set(curtainL, { x: "-100%" });
+          gsap.set(curtainR, { x: "100%" });
+          closed = false;
+        }, 50);
+      },
+    });
+  }
 
-    let closeTimer: ReturnType<typeof setTimeout> | null = null;
+  let closeTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const observer = new IntersectionObserver(
-        (entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting && !closed) {
-                    if (closeTimer) clearTimeout(closeTimer);
-                    closeTimer = setTimeout(() => {
-                        closeDoors();
-                        closeTimer = null;
-                    }, closeDelayMs);
-                } else if (closeTimer) {
-                    clearTimeout(closeTimer);
-                    closeTimer = null;
-                }
-            });
-        },
-        { threshold: 0.6 },
-    );
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !closed) {
+          if (closeTimer) clearTimeout(closeTimer);
+          closeTimer = setTimeout(() => {
+            closeDoors();
+            closeTimer = null;
+          }, closeDelayMs);
+        } else if (closeTimer) {
+          clearTimeout(closeTimer);
+          closeTimer = null;
+        }
+      });
+    },
+    { threshold: 0.6 },
+  );
 
-    if (footer) observer.observe(footer);
+  if (footer) observer.observe(footer);
 </script>

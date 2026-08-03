@@ -14,85 +14,166 @@ const site = siteEntry.data;
 // Node filesystem access not available in the Workers runtime.
 // Each match resolves to a processed, served asset URL (string).
 const storyImageModules = import.meta.glob<string>(
-    "/src/images/story/*.{jpg,jpeg,png,webp,gif,avif,JPG,JPEG,PNG,WEBP,GIF,AVIF}",
-    { eager: true, query: "?url", import: "default" },
+  "/src/images/story/*.{jpg,jpeg,png,webp,gif,avif,JPG,JPEG,PNG,WEBP,GIF,AVIF}",
+  { eager: true, query: "?url", import: "default" },
 );
 
-let allUrls = Object.values(storyImageModules);
+// The polaroid crop is a forced 1:1 square (object-fit: cover), so any
+// photo whose subjects aren't centered in the original frame needs an
+// explicit crop anchor or they get cropped out entirely. Keyed by
+// filename since import.meta.glob only gives us the source path.
+const FOCAL_POINTS: Record<string, string> = {
+  "_KNR5494.webp": "15% 40%",
+};
+
+let allImages = Object.entries(storyImageModules).map(([path, src]) => ({
+  src,
+  position: FOCAL_POINTS[path.split("/").pop()!] ?? "center",
+}));
 
 // Shuffle (Fisher-Yates) for variety between builds — fine for a
 // continuously-looping carousel.
-for (let i = allUrls.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [allUrls[i], allUrls[j]] = [allUrls[j], allUrls[i]];
+for (let i = allImages.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [allImages[i], allImages[j]] = [allImages[j], allImages[i]];
 }
 
 // site.story_images optionally caps how many images are shown
 // (0 or unset = no cap). The polaroid scatter is hand-tuned for up to
 // 5 photos, so it's capped there regardless of site.story_images.
-const MAX_POLAROIDS = 5;
+const MAX_POLAROIDS = 10;
 const cap =
-    site.story_images && site.story_images > 0 ? site.story_images : undefined;
-const storyImages = (cap ? allUrls.slice(0, cap) : allUrls).slice(
-    0,
-    MAX_POLAROIDS,
+  site.story_images && site.story_images > 0 ? site.story_images : undefined;
+const storyImages = (cap ? allImages.slice(0, cap) : allImages).slice(
+  0,
+  MAX_POLAROIDS,
 );
 const hasImages = storyImages.length > 0;
 ---
 
 <section id="story">
-    <div class="inner">
-        <h2 class="sec-heading">How we got</h2>
-        <span class="sec-script">here</span>
-        <div class="story-card">
-            <div class="story-text">
-                <h3 class="story-title">{story.data.title}</h3>
-                <div class="story-body">
-                    <Content />
-                </div>
-            </div>
-            <div class="story-img">
-                {
-                    hasImages ? (
-                        <div class="story-polaroids">
-                            {storyImages.map((src, i) => (
-                                <div class={`story-polaroid story-polaroid--${i}`}>
-                                    <img
-                                        src={src}
-                                        alt="Our story"
-                                        loading={i === 0 ? "eager" : "lazy"}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <>
-                            <svg
-                                width="32"
-                                height="32"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="#C4622D"
-                                stroke-width="1"
-                                stroke-linecap="round"
-                            >
-                                <>
-                                    <rect
-                                        x="3"
-                                        y="3"
-                                        width="18"
-                                        height="18"
-                                        rx="2"
-                                    />
-                                    <circle cx="8.5" cy="8.5" r="1.5" />
-                                    <path d="M21 15l-5-5L5 21" />
-                                </>
-                            </svg>
-                            <span>Your photo here</span>
-                        </>
-                    )
-                }
-            </div>
+  <div class="inner">
+    <h2 class="sec-heading">How we got</h2>
+    <span class="sec-script">here</span>
+    <div class="story-card">
+      <div class="story-text">
+        <h3 class="story-title">{story.data.title}</h3>
+        <div class="story-body">
+          <Content />
         </div>
+      </div>
+      <div class="story-img">
+        {
+          hasImages ? (
+            <div class="story-slider" data-story-slider>
+              <div class="story-slider-frame">
+                {storyImages.map((img, i) => (
+                  <figure class={`story-slide${i === 0 ? " is-active" : ""}`}>
+                    <img
+                      src={img.src}
+                      alt="Our story"
+                      loading={i === 0 ? "eager" : "lazy"}
+                      style={`object-position: ${img.position};`}
+                    />
+                  </figure>
+                ))}
+              </div>
+              {storyImages.length > 1 && (
+                <div
+                  class="story-slider-dots"
+                  role="tablist"
+                  aria-label="Story photos"
+                >
+                  {storyImages.map((_, i) => (
+                    <button
+                      type="button"
+                      class="story-slider-dot"
+                      data-dot={i}
+                      aria-label={`Show photo ${i + 1} of ${storyImages.length}`}
+                      aria-current={i === 0 ? "true" : "false"}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#C4622D"
+                stroke-width="1"
+                stroke-linecap="round"
+              >
+                <>
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </>
+              </svg>
+              <span>Your photo here</span>
+            </>
+          )
+        }
+      </div>
     </div>
+  </div>
 </section>
+
+<script>
+  // Polaroid slider — one full photo at a time (no square-crop or
+  // stacked-overlap tradeoffs of the old scattered layout), auto-advancing
+  // with manual dot navigation.
+  const AUTOPLAY_MS = 4200;
+
+  function initStorySliders() {
+    document
+      .querySelectorAll<HTMLElement>("[data-story-slider]")
+      .forEach((root) => {
+        if (root.dataset.sliderInit) return;
+        root.dataset.sliderInit = "true";
+
+        const slides = Array.from(
+          root.querySelectorAll<HTMLElement>(".story-slide"),
+        );
+        const dots = Array.from(
+          root.querySelectorAll<HTMLButtonElement>(".story-slider-dot"),
+        );
+        if (slides.length <= 1) return;
+
+        let index = 0;
+        let timer: ReturnType<typeof setInterval> | null = null;
+
+        function show(next: number) {
+          slides[index].classList.remove("is-active");
+          dots[index]?.setAttribute("aria-current", "false");
+          index = (next + slides.length) % slides.length;
+          slides[index].classList.add("is-active");
+          dots[index]?.setAttribute("aria-current", "true");
+        }
+
+        function start() {
+          stop();
+          timer = setInterval(() => show(index + 1), AUTOPLAY_MS);
+        }
+        function stop() {
+          if (timer) clearInterval(timer);
+          timer = null;
+        }
+
+        dots.forEach((dot, i) => {
+          dot.addEventListener("click", () => {
+            show(i);
+            start();
+          });
+        });
+
+        start();
+      });
+  }
+
+  initStorySliders();
+  document.addEventListener("astro:page-load", initStorySliders);
+</script>
