@@ -103,11 +103,80 @@ const venueLine2 = venueRest.join(",").trim();
 
 <script>
     const scrollHint = document.getElementById("scroll-hint");
+    let userScrolled = false;
+    let nudging = false;
+
     if (scrollHint) {
         const onFirstScroll = () => {
+            if (nudging) return;
+            userScrolled = true;
             scrollHint.classList.add("scroll-hint--hidden");
             window.removeEventListener("scroll", onFirstScroll);
         };
         window.addEventListener("scroll", onFirstScroll, { passive: true });
     }
+
+    // Repeating nudge — a small scroll-and-back a few seconds after the
+    // doors open, so guests who don't notice the bouncing hint still get
+    // a physical cue that the page moves. Eases both ways by hand (native
+    // `behavior: "smooth"` scroll timing varies by browser and tends to
+    // feel abrupt for a distance this small). Repeats a few times with a
+    // gap between, and bails permanently the moment the user scrolls.
+    const NUDGE_DISTANCE = 70;
+    const NUDGE_DURATION = 550;
+    const NUDGE_HOLD = 450;
+    const NUDGE_REPEATS = 3;
+    const NUDGE_GAP = 6000;
+
+    function easeInOutQuad(t: number) {
+        return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+
+    function smoothScrollTo(target: number, duration: number) {
+        return new Promise<void>((resolve) => {
+            const start = window.scrollY;
+            const delta = target - start;
+            const startTime = performance.now();
+
+            function step(now: number) {
+                if (userScrolled) return resolve();
+                const elapsed = now - startTime;
+                const t = Math.min(elapsed / duration, 1);
+                window.scrollTo(0, start + delta * easeInOutQuad(t));
+                if (t < 1) requestAnimationFrame(step);
+                else resolve();
+            }
+            requestAnimationFrame(step);
+        });
+    }
+
+    async function nudgeOnce() {
+        if (userScrolled || window.scrollY > 4) return;
+        nudging = true;
+        await smoothScrollTo(NUDGE_DISTANCE, NUDGE_DURATION);
+        await new Promise((r) => setTimeout(r, NUDGE_HOLD));
+        if (!userScrolled) await smoothScrollTo(0, NUDGE_DURATION);
+        // The browser can dispatch "scroll" events a frame or two behind
+        // our own programmatic scrollTo calls. Keep the guard up briefly
+        // after we're done so one of those late events doesn't get
+        // misread as the user scrolling.
+        await new Promise((r) => setTimeout(r, 300));
+        nudging = false;
+    }
+
+    async function nudgeScroll() {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            return;
+        }
+        for (let i = 0; i < NUDGE_REPEATS; i++) {
+            if (userScrolled) break;
+            await nudgeOnce();
+            if (userScrolled) break;
+            await new Promise((r) => setTimeout(r, NUDGE_GAP));
+        }
+    }
+
+    window.addEventListener("invite:opened", () => {
+        setTimeout(nudgeScroll, 3500);
+    });
 </script>
