@@ -1,4 +1,6 @@
-const N8N_BASE = "https://workflow.sankaranarayan.in";
+// Public Cloudflare Tunnel hostname for wedding-planner-api -- not a
+// secret (just a domain), so it's a plain constant like N8N_BASE was.
+const WEDDING_API_BASE = "https://wedding-planner-api.sankaranarayan.in";
 
 const ALLOWED_ORIGINS = ["https://priya.sankars.in", "https://priya-sankar-invite.pages.dev"];
 
@@ -23,13 +25,16 @@ export default {
     const cors = { "Access-Control-Allow-Origin": corsOrigin };
 
     // ── POST /api/webhook/rsvp ───────────────────────────────────────────
+    // Proxies to wedding-planner-api's own intake route now, not n8n --
+    // see priya-sankar-wedding-planner's invite.ts. Public-facing path here
+    // is unchanged so RSVP.astro doesn't need to know anything moved.
     if (url.pathname === "/api/webhook/rsvp" && request.method === "POST") {
       const body = await request.text();
-      const resp = await fetch(`${N8N_BASE}/webhook/rsvp`, {
+      const resp = await fetch(`${WEDDING_API_BASE}/invite/rsvp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-webhook-secret": env.WEBHOOK_SECRET,
+          "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
         },
         body,
       });
@@ -42,11 +47,11 @@ export default {
     // ── POST /api/webhook/album-notify ──────────────────────────────────
     if (url.pathname === "/api/webhook/album-notify" && request.method === "POST") {
       const body = await request.text();
-      const resp = await fetch(`${N8N_BASE}/webhook/album-notify`, {
+      const resp = await fetch(`${WEDDING_API_BASE}/invite/album-notify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-webhook-secret": env.WEBHOOK_SECRET,
+          "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
         },
         body,
       });

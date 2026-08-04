@@ -3,9 +3,10 @@
 # `wrangler secret put <NAME>` (or the Cloudflare dashboard) -- never
 # committed here.
 
-# Must match the value configured in n8n's "Public Webhook Secret"
-# credential, sent as x-webhook-secret on every proxied request.
-WEBHOOK_SECRET=your-secret-here
+# Must match wedding-planner-api's own PROXY_SHARED_SECRET -- /api/webhook/rsvp
+# and /api/webhook/album-notify proxy to that service's /invite/rsvp and
+# /invite/album-notify routes now, not n8n directly.
+WEDDING_API_PROXY_SECRET=your-secret-here
 
 # Immich's shared-album access slug -- kept server-side only so it never
 # reaches the browser (see worker/src/index.js's /api/album/* routes).
@@ -14,7 +15,5 @@ WEBHOOK_SECRET=your-secret-here
 # is the token in *that* URL, not the album's own /albums/<uuid> address.
 IMMICH_SLUG=your-immich-share-slug-here
 
-# Also configured as a Secret on the deployed Worker (not a plain [vars]
-# entry like wrangler.toml currently declares -- see the note in
-# wrangler.toml about that mismatch).
+# Also configured as a Secret on the deployed Worker.
 IMMICH_BASE=https://photos.sankaranarayan.in

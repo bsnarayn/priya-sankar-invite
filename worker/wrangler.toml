@@ -2,13 +2,21 @@ name = "priya-sankar-invite-webhook-proxy"
 main = "src/index.js"
 compatibility_date = "2026-07-15"
 
-# All three of the following are set via `wrangler secret put <NAME>` (or
-# the Cloudflare dashboard) -- never committed here:
-#   WEBHOOK_SECRET — must match the value configured in n8n
+# All of the following are set via `wrangler secret put <NAME>` (or the
+# Cloudflare dashboard) -- never committed here:
+#   WEDDING_API_PROXY_SECRET — must match wedding-planner-api's own
+#                    PROXY_SHARED_SECRET, sent as x-proxy-secret. /api/webhook/rsvp
+#                    and /api/webhook/album-notify proxy to wedding-planner-api's
+#                    /invite/rsvp and /invite/album-notify now, not n8n --
+#                    see that repo's routes/invite.ts.
 #   IMMICH_SLUG    — Immich's public share-link slug for the reception album
 #   IMMICH_BASE    — e.g. "https://photos.sankaranarayan.in"; kept as a
 #                    secret (not a plain [vars] entry) to match how it's
 #                    actually configured on the deployed Worker.
+# WEBHOOK_SECRET is no longer used by this Worker now that RSVP/album-notify
+# proxy to wedding-planner-api instead of n8n directly -- safe to remove
+# from the Worker's Settings > Variables and secrets once this is deployed
+# and confirmed working, if it's still there.
 # DASHBOARD_PIN is no longer used now that the dashboard route is gone;
 # remove it from the Worker's Settings > Variables and secrets once this is
 # deployed, if it's still there.
