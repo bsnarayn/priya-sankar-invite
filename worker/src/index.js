@@ -65,7 +65,12 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
-          "x-real-ip": request.headers.get("CF-Connecting-IP") ?? "",
+          // Same x-guest-ip fix as the RSVP route above -- this was still
+          // sending x-real-ip, which NPM's reverse proxy silently
+          // overwrites, so every guest's submission was landing on the
+          // same rate-limit key (NPM's own internal IP) and blocking
+          // everyone else after 3 total submissions per hour, site-wide.
+          "x-guest-ip": request.headers.get("CF-Connecting-IP") ?? "",
         },
         body,
       });

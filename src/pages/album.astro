@@ -390,12 +390,26 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
                 document.getElementById("gate-form").style.display = "none";
                 successEl.style.display = "block";
             } else {
-                throw new Error("non-ok response");
+                // Surface the server's actual message (e.g. rate-limited)
+                // when there is one, instead of a generic message that
+                // looks identical for every failure -- this is exactly
+                // what made a site-wide rate-limit bug look like "the form
+                // is just broken" instead of pointing at the real cause.
+                let serverMessage = "";
+                try {
+                    serverMessage = (await res.json())?.error ?? "";
+                } catch {
+                    // response wasn't JSON -- fall through to generic message
+                }
+                throw new Error(serverMessage || "non-ok response");
             }
-        } catch {
+        } catch (err) {
             submitBtn.disabled = false;
             submitBtn.textContent = "Notify me";
-            errorEl.textContent = "Something went wrong — please try again.";
+            errorEl.textContent =
+                err instanceof Error && err.message && err.message !== "non-ok response"
+                    ? err.message
+                    : "Something went wrong — please try again.";
             errorEl.style.display = "block";
         }
     });
