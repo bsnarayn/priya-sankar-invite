@@ -57,17 +57,23 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
                 <button id="notify-submit" class="btn-primary">
                     Notify me
                 </button>
-                <p
-                    id="notify-success"
-                    class="gate-success"
-                    style="display:none;"
-                >
-                    Thank you — we'll let you know when the album is live.
-                </p>
-                <p id="notify-error" class="gate-error" style="display:none;">
-                    Something went wrong — please try again.
-                </p>
             </div>
+            <!-- Siblings of gate-form, not children -- these must stay
+                 visible after a successful submit hides gate-form (see the
+                 click handler below), and a child of a display:none parent
+                 is never visible no matter its own display value. That
+                 nesting bug was making a genuinely successful submission
+                 look like the form had just silently vanished. -->
+            <p
+                id="notify-success"
+                class="gate-success"
+                style="display:none;"
+            >
+                Thank you — we'll let you know when the album is live.
+            </p>
+            <p id="notify-error" class="gate-error" style="display:none;">
+                Something went wrong — please try again.
+            </p>
         </div>
     </section>
 
