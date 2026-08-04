@@ -182,6 +182,7 @@ const { site } = Astro.props;
         <p id="rsvp-success" class="rsvp-success" style="display:none;">
           Thank you — we'll see you there. 🎉
         </p>
+        <p id="rsvp-error" class="rsvp-error" style="display:none;"></p>
       </div>
     </div>
   </div>
@@ -197,6 +198,7 @@ const { site } = Astro.props;
   const guestsRow = document.getElementById("rsvp-guests-row");
   const submitBtn = document.getElementById("rsvp-submit");
   const success = document.getElementById("rsvp-success");
+  const formError = document.getElementById("rsvp-error");
   const reactionRow = document.getElementById("reaction-row");
   const reactionBtns = reactionRow.querySelectorAll(".reaction-btn");
 
@@ -321,6 +323,7 @@ const { site } = Astro.props;
     submitBtn.disabled = true;
     const orig = submitBtn.textContent;
     submitBtn.textContent = "Sending…";
+    formError.style.display = "none";
 
     try {
       if (webhookUrl) {
@@ -329,7 +332,18 @@ const { site } = Astro.props;
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error("Server error");
+        if (!res.ok) {
+          // Surface the server's actual message (e.g. rate-limited) instead
+          // of a generic one that looks identical for every failure -- same
+          // fix as album-notify's equivalent handler.
+          let serverMessage = "";
+          try {
+            serverMessage = (await res.json())?.error ?? "";
+          } catch {
+            // response wasn't JSON -- fall through to generic message
+          }
+          throw new Error(serverMessage || "Server error");
+        }
       } else {
         // no-op: webhookUrl not configured
       }
@@ -372,10 +386,14 @@ const { site } = Astro.props;
         toggleDecline.classList.remove("active");
         toggleDecline.setAttribute("aria-pressed", "false");
       }, 2500);
-    } catch {
+    } catch (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = orig;
-      alert("Something went wrong — please try again.");
+      formError.textContent =
+        err instanceof Error && err.message && err.message !== "Server error"
+          ? err.message
+          : "Something went wrong — please try again.";
+      formError.style.display = "block";
     }
   });
 </script>

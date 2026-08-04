@@ -393,6 +393,10 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
                 }),
             });
             if (res.ok) {
+                // One-time signup, not something a visitor would resubmit --
+                // unlike RSVP (which can be toggled and resent), there's no
+                // reason to reset fields or ever show this form again once
+                // it's succeeded. Just hide it and leave the confirmation up.
                 document.getElementById("gate-form").style.display = "none";
                 successEl.style.display = "block";
             } else {
