@@ -1,0 +1,20 @@
+# Copy this file to .dev.vars (gitignored) for local `wrangler dev`, and
+# fill in real values. In production these are set via
+# `wrangler secret put <NAME>` (or the Cloudflare dashboard) -- never
+# committed here.
+
+# Must match the value configured in n8n's "Public Webhook Secret"
+# credential, sent as x-webhook-secret on every proxied request.
+WEBHOOK_SECRET=your-secret-here
+
+# Immich's shared-album access slug -- kept server-side only so it never
+# reaches the browser (see worker/src/index.js's /api/album/* routes).
+# Get this from Immich: open the album, click the share-link icon next to
+# the collaborator avatars, and create/copy a public share link -- the slug
+# is the token in *that* URL, not the album's own /albums/<uuid> address.
+IMMICH_SLUG=your-immich-share-slug-here
+
+# Also configured as a Secret on the deployed Worker (not a plain [vars]
+# entry like wrangler.toml currently declares -- see the note in
+# wrangler.toml about that mismatch).
+IMMICH_BASE=https://photos.sankaranarayan.in

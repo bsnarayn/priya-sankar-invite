@@ -2,14 +2,13 @@ name = "priya-sankar-invite-webhook-proxy"
 main = "src/index.js"
 compatibility_date = "2026-07-15"
 
-# WEBHOOK_SECRET is set via `wrangler secret put WEBHOOK_SECRET` (or the
-# Cloudflare dashboard) -- never committed here. DASHBOARD_PIN is no longer
-# used now that the dashboard route is gone; remove it from the Worker's
-# Settings > Variables and secrets once this is deployed.
-#
-# Album proxy config (keeps the Immich share slug out of the browser):
-#   IMMICH_BASE — plain var, e.g. "https://photos.sankaranarayan.in"
-#   IMMICH_SLUG — secret, set via `wrangler secret put IMMICH_SLUG`
-
-[vars]
-IMMICH_BASE = "https://photos.sankaranarayan.in"
+# All three of the following are set via `wrangler secret put <NAME>` (or
+# the Cloudflare dashboard) -- never committed here:
+#   WEBHOOK_SECRET — must match the value configured in n8n
+#   IMMICH_SLUG    — Immich's public share-link slug for the reception album
+#   IMMICH_BASE    — e.g. "https://photos.sankaranarayan.in"; kept as a
+#                    secret (not a plain [vars] entry) to match how it's
+#                    actually configured on the deployed Worker.
+# DASHBOARD_PIN is no longer used now that the dashboard route is gone;
+# remove it from the Worker's Settings > Variables and secrets once this is
+# deployed, if it's still there.

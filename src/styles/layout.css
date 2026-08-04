@@ -1767,7 +1767,11 @@
     min-height: 100vh;
     background: radial-gradient(ellipse at center, #FDF6EE 0%, #FFFBF6 60%, #F5EAD8 100%);
     display: flex;
-    align-items: center;
+    /* flex-start, not center: centering a box taller than the viewport
+       pushes its top edge above the padding-top offset and under the
+       fixed header ("Event" gets clipped) once the notify form grows
+       past a single screen's height. */
+    align-items: flex-start;
     justify-content: center;
     padding: 140px 24px 64px;
 }

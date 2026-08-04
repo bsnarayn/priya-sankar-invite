@@ -1,0 +1,274 @@
+---
+import { all as allCountries } from "country-codes-list";
+import { Metadata } from "libphonenumber-js/core";
+// Deliberately using the full metadata build here (not the default "min"
+// build) - min metadata loses per-country mobile-length precision, which is
+// the whole point of this lookup.
+import phoneMetadata from "libphonenumber-js/metadata.full.json";
+
+interface Props {
+  // Distinguishes multiple instances of this field across different pages
+  // (e.g. "rsvp" vs "notify") so their element ids never collide.
+  idPrefix: string;
+}
+const { idPrefix } = Astro.props;
+
+// Build country list at build time — no runtime bundle impact.
+// India first, then remaining countries alphabetically by English name.
+// Deduplicate on countryCode (e.g. US/CA share dial code 1 but are distinct entries).
+const raw = allCountries() as {
+  countryCode: string;
+  countryCallingCode: string;
+  countryNameEn: string;
+  flag: string;
+}[];
+
+const sorted = [
+  // India pinned first
+  ...raw.filter((c) => c.countryCode === "IN"),
+  // Rest alphabetically, skipping India
+  ...raw
+    .filter((c) => c.countryCode !== "IN")
+    .sort((a, b) => a.countryNameEn.localeCompare(b.countryNameEn)),
+];
+
+// Shape: [flag, dialCode, name, iso2]
+const COUNTRIES: [string, string, string, string][] = sorted.map((c) => [
+  c.flag,
+  c.countryCallingCode,
+  c.countryNameEn,
+  c.countryCode,
+]);
+
+// Per-country mobile-number digit length range, computed at build time from
+// libphonenumber's full metadata. Shipped to the client as a compact
+// {ISO: [min, max]} map so validation is exact per country without bundling
+// the phonenumber library itself into the client.
+const phoneMeta = new Metadata(phoneMetadata as any);
+const phoneValidation: Record<string, [number, number]> = {};
+for (const c of sorted) {
+  let min = 6;
+  let max = 13;
+  try {
+    phoneMeta.selectNumberingPlan(c.countryCode);
+    const plan = phoneMeta.numberingPlan;
+    const types = plan.hasTypes() ? (plan.types() as any[]) : null;
+    const mobileMeta = types ? types[1] : null;
+    const lengths: number[] =
+      (mobileMeta && mobileMeta !== 0 ? mobileMeta[1] : null) ??
+      plan.possibleLengths();
+    min = Math.min(...lengths);
+    max = Math.max(...lengths);
+  } catch {
+    // use defaults
+  }
+  phoneValidation[c.countryCode] = [min, max];
+}
+---
+
+<div class="phone-field-wrap">
+  <label class="field-label" for={`${idPrefix}-mobile-number`}>Mobile</label>
+  <div class="phone-field">
+    <button
+      type="button"
+      class="phone-dial-btn"
+      id={`${idPrefix}-phone-dial-btn`}
+      aria-haspopup="listbox"
+      aria-expanded="false"
+      aria-label="Select country code"
+    >
+      <span id={`${idPrefix}-phone-flag`}>🇮🇳</span>
+      <span id={`${idPrefix}-phone-code`}>+91</span>
+      <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+        <path
+          d="M1 1l4 4 4-4"
+          stroke="#7A6A5E"
+          stroke-width="1.2"
+          stroke-linecap="round"></path>
+      </svg>
+    </button>
+    <input
+      id={`${idPrefix}-mobile-number`}
+      type="tel"
+      placeholder="Mobile number"
+      class="field-input phone-number-input"
+      autocomplete="tel-national"
+      inputmode="numeric"
+    />
+  </div>
+  <p class="field-error" id={`${idPrefix}-mobile-error`} hidden>
+    Please enter a valid mobile number for the selected country.
+  </p>
+  <!-- Country dropdown -->
+  <div
+    class="phone-dropdown"
+    id={`${idPrefix}-phone-dropdown`}
+    hidden
+    role="listbox"
+    aria-label="Select country"
+  >
+    <div class="phone-dropdown-search">
+      <input
+        type="text"
+        id={`${idPrefix}-phone-search`}
+        placeholder="Search country…"
+        class="phone-search-input"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <ul class="phone-dropdown-list" id={`${idPrefix}-phone-country-list`}>
+      {
+        COUNTRIES.map(([flag, dial, name, iso]) => (
+          <li
+            role="option"
+            class="phone-country-option"
+            data-flag={flag}
+            data-dial={dial}
+            data-name={name}
+            data-iso={iso}
+            tabindex="-1"
+          >
+            <span class="phone-option-flag">{flag}</span>
+            <span class="phone-option-name">{name}</span>
+            <span class="phone-option-dial">+{dial}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</div>
+
+<script define:vars={{ idPrefix, phoneValidation }}>
+  const mobileInput = document.getElementById(`${idPrefix}-mobile-number`);
+  const dialBtn = document.getElementById(`${idPrefix}-phone-dial-btn`);
+  const dropdown = document.getElementById(`${idPrefix}-phone-dropdown`);
+  const searchInput = document.getElementById(`${idPrefix}-phone-search`);
+  const countryList = document.getElementById(`${idPrefix}-phone-country-list`);
+  const flagEl = document.getElementById(`${idPrefix}-phone-flag`);
+  const codeEl = document.getElementById(`${idPrefix}-phone-code`);
+  const errorEl = document.getElementById(`${idPrefix}-mobile-error`);
+
+  let selectedDial = "91";
+  let selectedIso = "IN";
+
+  function selectCountry(flag, dial, iso) {
+    selectedDial = dial;
+    selectedIso = iso;
+    flagEl.textContent = flag;
+    codeEl.textContent = "+" + dial;
+    closeDropdown();
+    mobileInput?.focus();
+  }
+
+  function openDropdown() {
+    dropdown.hidden = false;
+    dialBtn.setAttribute("aria-expanded", "true");
+    searchInput.value = "";
+    filterCountries("");
+    requestAnimationFrame(() => searchInput.focus());
+  }
+
+  function closeDropdown() {
+    dropdown.hidden = true;
+    dialBtn.setAttribute("aria-expanded", "false");
+  }
+
+  function filterCountries(q) {
+    const t = q.toLowerCase();
+    countryList.querySelectorAll(".phone-country-option").forEach((li) => {
+      li.hidden =
+        t.length > 0 &&
+        !li.dataset.name.toLowerCase().includes(t) &&
+        !li.dataset.dial.includes(t);
+    });
+  }
+
+  dialBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.hidden ? openDropdown() : closeDropdown();
+  });
+  searchInput.addEventListener("input", (e) => filterCountries(e.target.value));
+  countryList.addEventListener("click", (e) => {
+    const li = e.target.closest(".phone-country-option");
+    if (li) selectCountry(li.dataset.flag, li.dataset.dial, li.dataset.iso);
+  });
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") {
+      countryList.querySelector(".phone-country-option:not([hidden])")?.focus();
+      e.preventDefault();
+    }
+    if (e.key === "Escape") closeDropdown();
+  });
+  countryList.addEventListener("keydown", (e) => {
+    const opts = [
+      ...countryList.querySelectorAll(".phone-country-option:not([hidden])"),
+    ];
+    const i = opts.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") {
+      opts[i + 1]?.focus();
+      e.preventDefault();
+    }
+    if (e.key === "ArrowUp") {
+      i > 0 ? opts[i - 1]?.focus() : searchInput.focus();
+      e.preventDefault();
+    }
+    if (e.key === "Enter") {
+      e.target.click();
+    }
+    if (e.key === "Escape") closeDropdown();
+  });
+  document.addEventListener("click", (e) => {
+    if (!dropdown.hidden && !dropdown.contains(e.target) && e.target !== dialBtn)
+      closeDropdown();
+  });
+
+  function getPhoneLimits(iso) {
+    const entry = phoneValidation[iso];
+    return entry ? { min: entry[0], max: entry[1] } : { min: 6, max: 13 };
+  }
+  function digitCount() {
+    return (mobileInput?.value.trim() ?? "").replace(/\D/g, "").length;
+  }
+  function isEmpty() {
+    return !mobileInput?.value.trim();
+  }
+  function isValid() {
+    if (isEmpty()) return true;
+    const { min, max } = getPhoneLimits(selectedIso);
+    const digits = digitCount();
+    return digits >= min && digits <= max;
+  }
+  function errorMessage() {
+    const { min, max } = getPhoneLimits(selectedIso);
+    return min === max
+      ? `Mobile number should be ${min} digits for the selected country.`
+      : `Mobile number should be ${min}–${max} digits for the selected country.`;
+  }
+  function showError(show) {
+    if (errorEl) errorEl.hidden = !show;
+  }
+  function getE164() {
+    return isEmpty() ? "" : "+" + selectedDial + mobileInput.value.trim().replace(/\D/g, "");
+  }
+  function reset() {
+    if (mobileInput) mobileInput.value = "";
+    selectedDial = "91";
+    selectedIso = "IN";
+    flagEl.textContent = "🇮🇳";
+    codeEl.textContent = "+91";
+    showError(false);
+  }
+
+  // Registry so each page's submit handler can drive its own instance
+  // without needing to know this component's internal DOM ids.
+  window.phoneFields = window.phoneFields || {};
+  window.phoneFields[idPrefix] = {
+    isEmpty,
+    isValid,
+    errorMessage,
+    showError,
+    getE164,
+    reset,
+  };
+</script>

@@ -2,6 +2,7 @@
 import { getEntry } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import PhoneField from "../components/PhoneField.astro";
 
 const siteEntry = await getEntry("site", "site");
 if (!siteEntry) throw new Error("Missing site content entry");
@@ -44,7 +45,15 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
                         placeholder="We'll let you know when it's ready"
                         class="field-input"
                     />
+                    <p class="field-error" id="notify-email-error" hidden>
+                        Please enter a valid email.
+                    </p>
                 </div>
+                <PhoneField idPrefix="notify" />
+                <p class="field-error" id="notify-contact-error" hidden>
+                    Please provide at least an email or a mobile number so we
+                    can reach you.
+                </p>
                 <button id="notify-submit" class="btn-primary">
                     Notify me
                 </button>
@@ -114,20 +123,9 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
     }
 
     /* ── Gate ── */
-    #gate {
-        min-height: 100vh;
-        background: #fffbf6;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 64px 24px;
-    }
-    .gate-inner {
-        max-width: 480px;
-        width: 100%;
-        margin: 0 auto;
-        text-align: center;
-    }
+    /* #gate / .gate-inner / .gate-form intentionally not redeclared here —
+       layout.css owns those (this page's older copies were stale and had
+       fallen out of sync, clipping "Event" under the fixed header). */
     .gate-message {
         font-family: "Cormorant Garant", serif;
         font-style: italic;
@@ -324,15 +322,39 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
     const successEl = document.getElementById("notify-success");
     const errorEl = document.getElementById("notify-error");
 
+    function validateEmail(v) {
+        if (!v) return true;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+    function showFieldError(id, show) {
+        const el = document.getElementById(id);
+        if (el) el.hidden = !show;
+    }
+
     submitBtn?.addEventListener("click", async () => {
+        const phone = window.phoneFields.notify;
         const name = document.getElementById("notify-name").value.trim();
         const email = document.getElementById("notify-email").value.trim();
 
-        if (!name || !email) {
-            errorEl.textContent = "Please enter your name and email.";
+        if (!name) {
+            errorEl.textContent = "Please enter your name.";
             errorEl.style.display = "block";
             return;
         }
+
+        const emailOk = validateEmail(email);
+        showFieldError("notify-email-error", !emailOk);
+        const mobileOk = phone.isValid();
+        phone.showError(!mobileOk);
+        showFieldError("notify-contact-error", false);
+        errorEl.style.display = "none";
+        if (!emailOk || !mobileOk) return;
+
+        if (!email && phone.isEmpty()) {
+            showFieldError("notify-contact-error", true);
+            return;
+        }
+
         if (!notifyWebhookUrl) {
             errorEl.textContent = "Notification sign-up isn't configured yet.";
             errorEl.style.display = "block";
@@ -350,6 +372,7 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
                 body: JSON.stringify({
                     name,
                     email,
+                    mobile: phone.getE164(),
                     timestamp: new Date().toISOString(),
                 }),
             });
