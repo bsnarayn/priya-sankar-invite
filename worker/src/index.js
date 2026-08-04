@@ -35,12 +35,17 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
-          // Forwarded explicitly -- a Worker's own outbound fetch() doesn't
-          // carry the original guest's IP to the next hop on its own, so
-          // without this every submission looks like it comes from
-          // Cloudflare's own edge, and they'd all share one rate-limit
-          // bucket instead of each guest getting their own.
-          "cf-connecting-ip": request.headers.get("CF-Connecting-IP") ?? "",
+          // Forwarded explicitly, as x-real-ip rather than cf-connecting-ip
+          // -- CF-Connecting-IP is a Cloudflare-reserved header their edge
+          // overwrites on any request re-entering their network, which
+          // includes this very fetch() (the API's tunnel hostname is also
+          // Cloudflare-fronted). Setting that name ourselves gets silently
+          // clobbered back to Cloudflare's own edge IP, which is exactly
+          // the bug this was meant to fix -- confirmed live, every
+          // submission landed under the same 2a06:98c0::/29 (Cloudflare's
+          // own range) regardless. x-real-ip isn't reserved, and
+          // invite.ts's clientIp() already checks it as a fallback.
+          "x-real-ip": request.headers.get("CF-Connecting-IP") ?? "",
         },
         body,
       });
@@ -58,7 +63,7 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
-          "cf-connecting-ip": request.headers.get("CF-Connecting-IP") ?? "",
+          "x-real-ip": request.headers.get("CF-Connecting-IP") ?? "",
         },
         body,
       });
