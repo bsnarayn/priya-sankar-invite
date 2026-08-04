@@ -35,6 +35,12 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
+          // Forwarded explicitly -- a Worker's own outbound fetch() doesn't
+          // carry the original guest's IP to the next hop on its own, so
+          // without this every submission looks like it comes from
+          // Cloudflare's own edge, and they'd all share one rate-limit
+          // bucket instead of each guest getting their own.
+          "cf-connecting-ip": request.headers.get("CF-Connecting-IP") ?? "",
         },
         body,
       });
@@ -52,6 +58,7 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
+          "cf-connecting-ip": request.headers.get("CF-Connecting-IP") ?? "",
         },
         body,
       });
