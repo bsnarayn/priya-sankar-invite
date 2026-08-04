@@ -3,6 +3,7 @@ import { getEntry } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
 import PhoneField from "../components/PhoneField.astro";
+import AlbumHeading from "../components/AlbumHeading.astro";
 
 const siteEntry = await getEntry("site", "site");
 if (!siteEntry) throw new Error("Missing site content entry");
@@ -19,8 +20,7 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
     <!-- Gate — shown by default, hidden once JS confirms album is live -->
     <section id="gate">
         <div class="gate-inner">
-            <h2 class="sec-heading">Event</h2>
-            <span class="sec-script">album</span>
+            <AlbumHeading />
 
             <p class="sec-sub" style="margin: 24px 0 36px;">
                 The album will be available after the celebration. Leave your
@@ -74,8 +74,7 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
     <!-- Album — hidden until JS confirms the time has passed -->
     <section id="album-content" style="display:none;">
         <div class="inner">
-            <h2 class="sec-heading">Event</h2>
-            <span class="sec-script">album</span>
+            <AlbumHeading />
             <p class="sec-sub">
                 Every photo our guests have shared so far — tap any photo to see
                 it larger.
@@ -158,9 +157,20 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
 
     /* ── Album ── */
     #album-content {
-        padding: 64px 24px;
         min-height: 100vh;
         background: #fffbf6;
+        display: flex;
+        /* flex-start (not center), same reasoning as #gate in layout.css:
+           centering a box taller than the viewport pushes its top edge
+           above the padding-top offset and under the fixed header. */
+        align-items: flex-start;
+        justify-content: center;
+        padding: 140px 24px 64px;
+    }
+    #album-content > .inner {
+        max-width: 720px;
+        width: 100%;
+        text-align: center;
     }
     .album-status {
         font-family: "Cormorant Garant", serif;
@@ -314,7 +324,7 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
 
     if (isAlbumLive()) {
         document.getElementById("gate").style.display = "none";
-        document.getElementById("album-content").style.display = "block";
+        document.getElementById("album-content").style.display = "flex";
     }
 
     // Notification form

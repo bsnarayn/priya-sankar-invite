@@ -197,6 +197,7 @@
 .sec-heading-row {
     display: flex;
     align-items: baseline;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 0.25em;
     margin-bottom: 8px;
