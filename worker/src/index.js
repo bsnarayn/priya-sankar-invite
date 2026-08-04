@@ -35,17 +35,19 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
-          // Forwarded explicitly, as x-real-ip rather than cf-connecting-ip
-          // -- CF-Connecting-IP is a Cloudflare-reserved header their edge
-          // overwrites on any request re-entering their network, which
-          // includes this very fetch() (the API's tunnel hostname is also
-          // Cloudflare-fronted). Setting that name ourselves gets silently
-          // clobbered back to Cloudflare's own edge IP, which is exactly
-          // the bug this was meant to fix -- confirmed live, every
-          // submission landed under the same 2a06:98c0::/29 (Cloudflare's
-          // own range) regardless. x-real-ip isn't reserved, and
-          // invite.ts's clientIp() already checks it as a fallback.
-          "x-real-ip": request.headers.get("CF-Connecting-IP") ?? "",
+          // Forwarded under a custom header name, not cf-connecting-ip or
+          // x-real-ip -- both got silently overwritten in testing.
+          // CF-Connecting-IP is Cloudflare-reserved and re-stamped on any
+          // request re-entering their network (this fetch() included,
+          // since the API's tunnel hostname is also Cloudflare-fronted) to
+          // reflect the truthful sender for *that* hop, which is this
+          // Worker's edge location, not the guest. X-Real-IP then got
+          // overwritten again one hop later by NPM's reverse-proxy config
+          // in front of the API container (its default behavior for that
+          // specific header name). x-guest-ip has no special meaning to
+          // either layer, so nothing along the chain has a built-in reason
+          // to touch it.
+          "x-guest-ip": request.headers.get("CF-Connecting-IP") ?? "",
         },
         body,
       });
