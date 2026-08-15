@@ -80,6 +80,39 @@ export default {
       });
     }
 
+    // ── POST /api/webhook/photo-normalize ───────────────────────────────
+    // Runs a guest's photo through wedding-planner-api's server-side
+    // HEIC-decode/resize step (see invite.ts's normalize-image route)
+    // before this Worker uploads it on to Immich. Replaces the old
+    // browser-image-compression client-side step, which silently no-op'd
+    // for HEIC photos on most non-Safari browsers.
+    if (url.pathname === "/api/webhook/photo-normalize" && request.method === "POST") {
+      const resp = await fetch(`${WEDDING_API_BASE}/invite/normalize-image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": request.headers.get("Content-Type") ?? "",
+          "x-proxy-secret": env.WEDDING_API_PROXY_SECRET,
+          "x-guest-ip": request.headers.get("CF-Connecting-IP") ?? "",
+        },
+        body: request.body,
+      });
+      if (!resp.ok) {
+        return new Response(await resp.text(), {
+          status: resp.status,
+          headers: { "Content-Type": "application/json", ...cors },
+        });
+      }
+      const normalizedFilename = resp.headers.get("X-Normalized-Filename") ?? "";
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "X-Normalized-Filename": normalizedFilename,
+          ...cors,
+        },
+      });
+    }
+
     // The dashboard-reception route (GET /api/webhook/dashboard, PIN-gated)
     // has been removed -- that view moved to wedding.sankars.in, which is
     // already behind its own session auth and calls the n8n webhook

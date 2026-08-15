@@ -6,7 +6,6 @@
  *   import { uploadToImmich, buildUploadForm } from "@lib/immich-upload";
  */
 
-import imageCompression from "browser-image-compression";
 
 export interface ImmichConfig {
     base: string;   // e.g. "https://photos.sankaranarayan.in"
@@ -70,31 +69,35 @@ export async function uploadFiles(
     return uploaded;
 }
 
-export async function compressImage(
-    file: File,
-    maxPx = 4096,
-    quality = 0.9,
-): Promise<File> {
-    // Skip if already small or an unsupported type
+/**
+ * Sends a photo through wedding-planner-api's server-side normalize step
+ * (HEIC/HEIF decode + resize, see that repo's image-normalize.ts) via the
+ * invite site's own Worker. Replaces an earlier client-side
+ * browser-image-compression step, which relied on the browser being able to
+ * decode the source format into a <canvas> -- true for JPEG/PNG everywhere,
+ * but HEIC/HEIF (the default photo format on iPhone) only decodes in
+ * Safari, so every other browser was silently uploading the untouched
+ * original. Doing this server-side, after the bytes are already safely
+ * received, is the only place guaranteed to work regardless of
+ * device/browser/picker.
+ */
+export async function compressImage(file: File): Promise<File> {
+    // Skip if already small -- not worth the round trip.
     if (file.size < 500_000) return file;
 
     try {
-        // Runs in a Web Worker so it doesn't block the UI thread on large
-        // camera photos, and preserves EXIF (orientation/GPS/timestamp) on
-        // JPEGs via the preserveExif option.
-        const compressed = await imageCompression(file, {
-            maxWidthOrHeight: maxPx,
-            initialQuality: quality,
-            useWebWorker: true,
-            preserveExif: true,
-            fileType: "image/jpeg",
+        const form = new FormData();
+        form.append("file", file, file.name);
+        const res = await fetch("/api/webhook/photo-normalize", {
+            method: "POST",
+            body: form,
         });
-        return new File(
-            [compressed],
-            file.name.replace(/\.\w+$/, ".jpg"),
-            { type: "image/jpeg", lastModified: file.lastModified },
-        );
+        if (!res.ok) return file; // fall back to the original on any server error
+
+        const filename = decodeURIComponent(res.headers.get("X-Normalized-Filename") ?? file.name);
+        const blob = await res.blob();
+        return new File([blob], filename, { type: "image/jpeg", lastModified: file.lastModified });
     } catch {
-        return file; // fall back to the original on any compression failure
+        return file; // fall back to the original on any network failure
     }
 }
