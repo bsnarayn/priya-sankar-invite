@@ -192,15 +192,6 @@ const MAX_UPLOADS = site.camera_max_uploads ?? 0; // 0 = unlimited
         const SHOTS_BAR_SEGMENTS = 5;
         const UPLOADS_BAR_SEGMENTS = 5;
 
-        console.log("[camera] init", {
-            MAX_SHOTS,
-            MAX_UPLOADS,
-            shotsCapped,
-            uploadsCapped,
-            shotsUsed,
-            uploadsUsed,
-        });
-
         /* ── Shots badge + segmented bar ── */
         function renderBadge() {
             if (!shotsCapped) return;
