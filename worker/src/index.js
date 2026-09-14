@@ -5,7 +5,7 @@ const WEDDING_API_BASE = "https://wedding-planner-api.sankaranarayan.in";
 const ALLOWED_ORIGINS = ["https://priya.sankars.in", "https://priya-sankar-invite.pages.dev"];
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") ?? "";
     const corsOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
@@ -142,9 +142,31 @@ export default {
         });
       }
 
+      // Edge-caches an upstream Immich response at Cloudflare's PoP, keyed
+      // on the upstream URL itself (not the incoming request) so it's
+      // shared across every guest hitting this route, regardless of which
+      // origin/referer they came from. Cuts repeat concurrent album
+      // viewing down to one Immich origin hit per PoP per TTL window,
+      // instead of one per guest.
+      async function cachedImmichFetch(immichUrl, ttlSeconds) {
+        const cache = caches.default;
+        const cacheKey = new Request(immichUrl, { method: "GET" });
+        const hit = await cache.match(cacheKey);
+        if (hit) return hit;
+
+        const upstream = await fetch(immichUrl);
+        const resp = new Response(upstream.body, upstream);
+        resp.headers.set("Cache-Control", `public, max-age=${ttlSeconds}`);
+        if (upstream.ok) ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+        return resp;
+      }
+
       if (url.pathname === "/api/album/info" && request.method === "GET") {
-        const resp = await fetch(
+        // Short TTL — album metadata (title, asset count) rarely changes,
+        // but should reflect new uploads reasonably promptly.
+        const resp = await cachedImmichFetch(
           `${immichBase}/api/shared-links/me?slug=${encodeURIComponent(slug)}`,
+          30,
         );
         return new Response(await resp.text(), {
           status: resp.status,
@@ -160,7 +182,11 @@ export default {
           `${immichBase}/api/timeline/bucket?albumId=${encodeURIComponent(albumId)}` +
           `&order=${encodeURIComponent(order)}&slug=${encodeURIComponent(slug)}` +
           `&timeBucket=${encodeURIComponent(timeBucket)}`;
-        const resp = await fetch(immichUrl);
+        // Short TTL — this is the list of asset ids in the bucket. New
+        // photos guests upload during the event need to show up for
+        // everyone else without a long wait, so we trade a little bit of
+        // origin load for freshness here rather than caching hard.
+        const resp = await cachedImmichFetch(immichUrl, 20);
         return new Response(await resp.text(), {
           status: resp.status,
           headers: { "Content-Type": "application/json", ...cors },
@@ -174,12 +200,15 @@ export default {
         const immichUrl =
           `${immichBase}/api/assets/${encodeURIComponent(assetId)}/thumbnail` +
           `?slug=${encodeURIComponent(slug)}&size=${encodeURIComponent(size)}`;
-        const resp = await fetch(immichUrl);
+        // Long TTL, safe to cache hard — a given assetId+size's image bytes
+        // never change once uploaded (a new photo is always a new assetId,
+        // so this never goes stale the way the bucket listing above can).
+        const resp = await cachedImmichFetch(immichUrl, 604800);
         return new Response(resp.body, {
           status: resp.status,
           headers: {
             "Content-Type": resp.headers.get("Content-Type") ?? "image/jpeg",
-            "Cache-Control": "private, max-age=3600",
+            "Cache-Control": "public, max-age=604800, immutable",
             ...cors,
           },
         });
