@@ -46,6 +46,35 @@ const event = defineCollection({
     }),
 });
 
+const menu = defineCollection({
+    loader: file("./src/content/menu/menu.json"),
+    schema: z.object({
+        title: z.string(),
+        // Display order of the category on the page. The file() loader does
+        // not guarantee array order out of getCollection, so sort on this.
+        order: z.number(),
+        items: z.array(
+            z.object({
+                name: z.string(),
+                description: z.string().optional(),
+                // Optional accompaniments shown as a "Choice of" list
+                sides: z.array(z.string()).optional(),
+                // Label above the sides list; defaults to "Choice of"
+                sides_label: z.string().optional(),
+                // Filename under public/images/menu/
+                photo: z.string().optional(),
+                credit: z
+                    .object({
+                        author: z.string(),
+                        license: z.string(),
+                        source: z.string(),
+                    })
+                    .optional(),
+            }),
+        ),
+    }),
+});
+
 const site = defineCollection({
     loader: file("./src/content/site/site.json"),
     schema: z.object({
@@ -72,4 +101,4 @@ const site = defineCollection({
     }),
 });
 
-export const collections = { couple, story, footer, footnote, event, site };
+export const collections = { couple, story, footer, footnote, event, menu, site };

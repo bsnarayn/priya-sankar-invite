@@ -1,0 +1,158 @@
+[
+    {
+        "id": "sweet",
+        "title": "Sweet",
+        "order": 1,
+        "items": [
+            {
+                "name": "Putharekulu",
+                "description": "Delicate rice-starch wafers layered with sugar and ghee, folded into a sweet parcel.",
+                "photo": "putharekulu.jpg",
+                "credit": {
+                    "author": "Balajijagadesh",
+                    "license": "CC BY-SA 3.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Pootharekulu_dry_fruits.jpg"
+                }
+            }
+        ]
+    },
+    {
+        "id": "starters",
+        "title": "Starters",
+        "order": 2,
+        "items": [
+            {
+                "name": "Gobi 65",
+                "description": "Crisp-fried cauliflower florets tossed in a spiced, tangy South Indian masala.",
+                "photo": "gobi-65.jpg",
+                "credit": {
+                    "author": "Alvinjesusyouth",
+                    "license": "CC BY-SA 4.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Gobi_65_(cauliflower_fry).jpg"
+                }
+            },
+            {
+                "name": "Bhindi Fry",
+                "description": "Tender okra pan-fried with spices until golden and crisp.",
+                "photo": "bhindi-fry.jpg",
+                "credit": {
+                    "author": "PaletteOfZaaiqa",
+                    "license": "CC BY-SA 4.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Kurkuri_Bhindi.jpg"
+                }
+            },
+            {
+                "name": "Rasa Vadai",
+                "description": "Soft lentil fritters soaked in peppery, tangy rasam.",
+                "photo": "rasa-vadai.jpg",
+                "credit": {
+                    "author": "jeffgunn",
+                    "license": "CC BY 2.0",
+                    "source": "https://www.flickr.com/photos/25483059@N08/4991703370"
+                }
+            }
+        ]
+    },
+    {
+        "id": "mains",
+        "title": "Mains",
+        "order": 3,
+        "items": [
+            {
+                "name": "Phulka",
+                "description": "Soft, puffed whole-wheat flatbread, served hot.",
+                "photo": "phulka.jpg",
+                "credit": {
+                    "author": "Zeel Patel",
+                    "license": "CC BY-SA 4.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Roti_-_Perfect_Gujarati_Fulka_Roti.JPG"
+                }
+            },
+            {
+                "name": "Navaratan Korma",
+                "description": "A rich, creamy curry of mixed vegetables and nuts in a mild, fragrant gravy.",
+                "photo": "navaratan-korma.jpg",
+                "credit": {
+                    "author": "Kaivalya89",
+                    "license": "CC BY-SA 4.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Veg_Jafrani_Navratna_Korma.jpg"
+                }
+            },
+            {
+                "name": "Idiyappam",
+                "description": "Delicate steamed rice noodles, served with your choice of side.",
+                "sides": ["Kadalai Curry", "Coconut Milk"],
+                "photo": "idiyappam.jpg",
+                "credit": {
+                    "author": "Charles Haynes",
+                    "license": "CC BY-SA 2.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Idiyappam_and_curry_in_Green_leaf_plate.jpg"
+                }
+            },
+            {
+                "name": "Brinji Rice",
+                "description": "Fragrant spiced vegetable rice in the Madras style.",
+                "sides": ["Potato Chips"],
+                "sides_label": "Served with",
+                "photo": "brinji.jpg",
+                "credit": {
+                    "author": "Phadke09",
+                    "license": "CC BY-SA 4.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Vegetable_Biryani_IMG_001.jpg"
+                }
+            },
+            {
+                "name": "Cucumber Raita",
+                "description": "Cool, lightly spiced yogurt with fresh cucumber.",
+                "photo": "cucumber-raita.jpg",
+                "credit": {
+                    "author": "Zeel Patel",
+                    "license": "CC BY-SA 4.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Cucumber_Raita.JPG"
+                }
+            },
+            {
+                "name": "Curd Rice",
+                "description": "Cool, creamy curd rice, a comforting South Indian classic.",
+                "photo": "curd-rice.jpg",
+                "credit": {
+                    "author": "Chinchu.C",
+                    "license": "CC BY-SA 4.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Curd_Rice_ThayirSaadam.JPG"
+                }
+            }
+        ]
+    },
+    {
+        "id": "desserts",
+        "title": "Desserts",
+        "order": 4,
+        "items": [
+            {
+                "name": "Vanilla Ice Cream",
+                "description": "Classic, creamy vanilla ice cream.",
+                "photo": "vanilla-ice-cream.jpg",
+                "credit": {
+                    "author": "a.pasquier",
+                    "license": "CC BY-SA 2.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Vanilla_bean_ice_cream_(3086700978).jpg"
+                }
+            },
+            {
+                "name": "Chocolate Ice Cream",
+                "description": "Rich, smooth chocolate ice cream.",
+                "photo": "chocolate-ice-cream.jpg"
+            },
+            {
+                "name": "Sweet Beeda",
+                "description": "A traditional betel-leaf after-dinner treat with sweet, aromatic fillings.",
+                "photo": "sweet-beeda.jpg",
+                "credit": {
+                    "author": "Nandhiniraji",
+                    "license": "CC BY-SA 4.0",
+                    "source": "https://commons.wikimedia.org/wiki/File:Sweet_beeda.jpg"
+                }
+            }
+        ]
+    }
+]

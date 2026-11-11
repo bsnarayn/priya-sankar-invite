@@ -1,4 +1,6 @@
 ---
+import MenuButton from "./MenuButton.astro";
+
 interface Props {
     event: {
         date: string;
@@ -146,6 +148,7 @@ const calData = {
                         </button>
                     )
                 }
+                <MenuButton />
             </div>
         </div>
 

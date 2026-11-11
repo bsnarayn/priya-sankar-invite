@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
+import MenuButton from "../../components/MenuButton.astro";
 
 const [siteEntry] = await getCollection("site");
 const site = siteEntry.data;
@@ -30,9 +31,10 @@ const site = siteEntry.data;
         <div class="cam-bottom">
             <a href="/camera/camera" class="cam-load-btn">Load camera</a>
             <p class="cam-legal">
-                Photos are added to our private event album<br />and shared
-                after the celebration.
+                Photos are added to our private event album,<br />which opens
+                during the reception and again after the celebration.
             </p>
+            <MenuButton />
         </div>
     </div>
 </Base>
