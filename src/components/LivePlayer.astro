@@ -89,15 +89,10 @@ const event = name ? LIVE_EVENTS[name] : undefined;
             </div>
         </div>
 
-        <!-- Experiment: YouTube's own controls include its Cast button, which our
-             controls hide. Opt-in only, because they also bring back share. -->
-        <div class="live-tv" id="live-tv" hidden>
-            <button type="button" id="live-tv-btn">Cast to TV</button>
-            <p id="live-tv-note" hidden>
-                YouTube's own controls are showing so you can cast to a TV. They include a
-                share button and the video title.
-            </p>
-        </div>
+        <p class="live-cast-hint" id="live-cast-hint" hidden>
+            Want it on the big screen? Cast this tab from your browser, or mirror your phone’s
+            screen to your TV.
+        </p>
 
         <a class="live-back" href="/">Back</a>
     </div>
@@ -147,9 +142,7 @@ const event = name ? LIVE_EVENTS[name] : undefined;
     const badge = $("live-badge");
     const fullBtn = $<HTMLButtonElement>("live-full");
     const shield = $("live-shield");
-    const tv = $("live-tv");
-    const tvBtn = $<HTMLButtonElement>("live-tv-btn");
-    const tvNote = $("live-tv-note");
+    const castHint = $("live-cast-hint");
 
     const PLAY = "M8 5v14l11-7z";
     const PAUSE = "M6 5h4v14H6zM14 5h4v14h-4z";
@@ -160,8 +153,6 @@ const event = name ? LIVE_EVENTS[name] : undefined;
     let tickTimer: number | undefined;
     let progressTimer: number | undefined;
     let seeking = false;
-    // True while the guest has chosen YouTube's own controls (to cast to a TV).
-    let nativeMode = false;
 
     // Heading and details follow the event being shown (fixed on /wedding and
     // /reception, changing on /live as the day moves from one event to the next).
@@ -254,13 +245,12 @@ const event = name ? LIVE_EVENTS[name] : undefined;
         });
     }
 
-    async function showPlayer(videoId: string, startSeconds = 0) {
+    async function showPlayer(videoId: string) {
         if (shownId === videoId) return;
         shownId = videoId;
         statusBox.hidden = true;
         stage.hidden = false;
-        tv.hidden = false;
-        stage.classList.toggle("native", nativeMode);
+        castHint.hidden = false;
         await loadYouTubeApi();
         player = new window.YT.Player("live-player", {
             host: "https://www.youtube-nocookie.com",
@@ -268,14 +258,13 @@ const event = name ? LIVE_EVENTS[name] : undefined;
             width: "100%",
             height: "100%",
             playerVars: {
-                controls: nativeMode ? 1 : 0,
+                controls: 0,
                 modestbranding: 1,
                 rel: 0,
-                disablekb: nativeMode ? 0 : 1,
-                fs: nativeMode ? 1 : 0,
+                disablekb: 1,
+                fs: 0,
                 iv_load_policy: 3,
                 playsinline: 1,
-                ...(startSeconds > 0 ? { start: Math.floor(startSeconds) } : {}),
             },
             events: {
                 onStateChange: (e: { data: number }) => setPlaying(e.data === 1 || e.data === 3),
@@ -291,16 +280,15 @@ const event = name ? LIVE_EVENTS[name] : undefined;
         progressTimer = window.setInterval(updateProgress, 500);
     }
 
-    function hidePlayer(keepMode = false) {
+    function hidePlayer() {
         window.clearInterval(progressTimer);
-        tv.hidden = true;
-        if (!keepMode) setNative(false);
         try {
             player?.destroy();
         } catch {}
         player = null;
         shownId = null;
         stage.hidden = true;
+        castHint.hidden = true;
         // destroy() removes the mount node; put it back for a later show.
         if (!document.getElementById("live-player")) {
             const mount = document.createElement("div");
@@ -308,25 +296,6 @@ const event = name ? LIVE_EVENTS[name] : undefined;
             shield.before(mount);
         }
         setPlaying(false);
-    }
-
-    // Shows or hides the "native" mode UI (our controls and shield off, YouTube's on).
-    function setNative(on: boolean) {
-        nativeMode = on;
-        stage.classList.toggle("native", on);
-        tvBtn.textContent = on ? "Back to simple controls" : "Cast to TV";
-        tvNote.hidden = !on;
-    }
-
-    // Rebuild the player in the other mode, keeping the place in a recording.
-    async function switchMode(on: boolean) {
-        if (!player || !shownId) return;
-        const id = shownId;
-        const isLive = !!player.getVideoData()?.isLive;
-        const at = isLive ? 0 : player.getCurrentTime();
-        hidePlayer(true);
-        setNative(on);
-        await showPlayer(id, at);
     }
 
     function schedule(ms: number) {
@@ -374,7 +343,6 @@ const event = name ? LIVE_EVENTS[name] : undefined;
     // It stops casual copying only, not someone using the browser's dev tools.
     stage.addEventListener("contextmenu", (e) => e.preventDefault());
 
-    tvBtn.addEventListener("click", () => void switchMode(!nativeMode));
     playBtn.addEventListener("click", togglePlay);
     shield.addEventListener("click", togglePlay);
     seek.addEventListener("input", () => {
@@ -575,31 +543,9 @@ const event = name ? LIVE_EVENTS[name] : undefined;
         flex: 1;
     }
 
-    .live-stage.native .live-controls,
-    .live-stage.native .live-shield {
-        display: none;
-    }
-
-    .live-tv {
+    .live-cast-hint {
         margin-top: 14px;
         text-align: center;
-    }
-
-    .live-tv button {
-        font-family: var(--font-family-sans);
-        font-size: 12px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        padding: 10px 18px;
-        border: 1px solid var(--color-accent);
-        border-radius: 8px;
-        background: transparent;
-        color: var(--color-accent);
-        cursor: pointer;
-    }
-
-    .live-tv p {
-        margin-top: 10px;
         font-family: var(--font-family-sans);
         font-size: 12px;
         line-height: 1.5;
