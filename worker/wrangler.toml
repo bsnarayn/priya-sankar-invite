@@ -13,6 +13,12 @@ compatibility_date = "2026-07-15"
 #   IMMICH_BASE    — e.g. "https://photos.sankaranarayan.in"; kept as a
 #                    secret (not a plain [vars] entry) to match how it's
 #                    actually configured on the deployed Worker.
+#   IMMICH_PROXY_KEY — long random value (e.g. `openssl rand -hex 24`) sent to
+#                    Immich as the X-Album-Key header on every request. The
+#                    Cloudflare WAF rule on photos.sankaranarayan.in blocks any
+#                    request carrying a share credential (`slug=` / `key=` query,
+#                    or the x-immich-share-* headers) that lacks it, so this must
+#                    match the value inside that rule. Never commit it.
 # WEBHOOK_SECRET is no longer used by this Worker now that RSVP/album-notify
 # proxy to wedding-planner-api instead of n8n directly -- safe to remove
 # from the Worker's Settings > Variables and secrets once this is deployed
@@ -20,3 +26,14 @@ compatibility_date = "2026-07-15"
 # DASHBOARD_PIN is no longer used now that the dashboard route is gone;
 # remove it from the Worker's Settings > Variables and secrets once this is
 # deployed, if it's still there.
+
+# When the shared album may be viewed (IST, explicit +05:30 offset). Open from
+# ALBUM_OPEN_AT up to ALBUM_CLOSE_AT, closed until ALBUM_PERMANENT_AFTER, then
+# open for good. Not secrets, so plain vars. Must satisfy
+# open < close <= permanent or the album routes return 500.
+# The 9 Dec date is also in n8n's Reception Reminders Config node
+# (album_available_after) -- change both together.
+[vars]
+ALBUM_OPEN_AT = "2026-11-28T18:00:00+05:30"
+ALBUM_CLOSE_AT = "2026-11-28T23:00:00+05:30"
+ALBUM_PERMANENT_AFTER = "2026-12-09T00:00:00+05:30"

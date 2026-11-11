@@ -1,8 +1,14 @@
+import { albumState, parseWindowConfig } from "./album-window.js";
+import { checkUploadRequest, isAllowedReferer, isCleanUpstream } from "./proxy-guards.js";
+
 // Public Cloudflare Tunnel hostname for wedding-planner-api -- not a
 // secret (just a domain), so it's a plain constant like N8N_BASE was.
 const WEDDING_API_BASE = "https://wedding-planner-api.sankaranarayan.in";
 
 const ALLOWED_ORIGINS = ["https://priya.sankars.in", "https://priya-sankar-invite.pages.dev"];
+
+// Guest photo uploads are capped here, before anything is streamed to Immich.
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 export default {
   async fetch(request, env, ctx) {
@@ -23,6 +29,11 @@ export default {
     }
 
     const cors = { "Access-Control-Allow-Origin": corsOrigin };
+    const json = (body, status = 200, extra = {}) =>
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { "Content-Type": "application/json", ...cors, ...extra },
+      });
 
     // ── POST /api/webhook/rsvp ───────────────────────────────────────────
     // Proxies to wedding-planner-api's own intake route now, not n8n --
@@ -128,19 +139,21 @@ export default {
       // Requests must be same-origin loads of the invite site, not a
       // direct hit on this worker route from elsewhere.
       const referer = request.headers.get("Referer") ?? "";
-      const refererOk = ALLOWED_ORIGINS.some((o) => referer.startsWith(o));
-      if (!refererOk) {
+      if (!isAllowedReferer(referer, ALLOWED_ORIGINS)) {
         return new Response("Forbidden", { status: 403, headers: cors });
       }
 
       const immichBase = env.IMMICH_BASE;
       const slug = env.IMMICH_SLUG;
-      if (!immichBase || !slug) {
-        return new Response(JSON.stringify({ message: "Album not configured" }), {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...cors },
-        });
+      // Sent to Immich as X-Album-Key; the Cloudflare WAF rule on the photos
+      // host blocks any slug-bearing request that does not carry it.
+      const proxyKey = env.IMMICH_PROXY_KEY;
+      const windowCfg = parseWindowConfig(env);
+      if (!immichBase || !slug || !proxyKey || !windowCfg) {
+        return json({ message: "Album not configured" }, 500);
       }
+      const badGateway = () => json({ message: "Photo service unavailable" }, 502);
+      const windowState = albumState(Date.now(), windowCfg);
 
       // Edge-caches an upstream Immich response at Cloudflare's PoP, keyed
       // on the upstream URL itself (not the incoming request) so it's
@@ -148,17 +161,68 @@ export default {
       // origin/referer they came from. Cuts repeat concurrent album
       // viewing down to one Immich origin hit per PoP per TTL window,
       // instead of one per guest.
-      async function cachedImmichFetch(immichUrl, ttlSeconds) {
+      // Only a response of the kind the route expects ("json" or "image") is
+      // cached, so a 200 HTML login/block page cannot be stuck in the cache.
+      async function cachedImmichFetch(immichUrl, ttlSeconds, expected) {
         const cache = caches.default;
         const cacheKey = new Request(immichUrl, { method: "GET" });
         const hit = await cache.match(cacheKey);
         if (hit) return hit;
 
-        const upstream = await fetch(immichUrl);
+        const upstream = await fetch(immichUrl, { headers: { "X-Album-Key": proxyKey } });
         const resp = new Response(upstream.body, upstream);
         resp.headers.set("Cache-Control", `public, max-age=${ttlSeconds}`);
-        if (upstream.ok) ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+        if (upstream.ok && isCleanUpstream(upstream.status, upstream.headers.get("Content-Type"), expected)) {
+          ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+        }
         return resp;
+      }
+
+      // Always answerable, so the album page can decide what to show.
+      if (url.pathname === "/api/album/status" && request.method === "GET") {
+        return json(
+          {
+            ...windowState,
+            receptionOpenAt: windowCfg.receptionOpenAt,
+            receptionCloseAt: windowCfg.receptionCloseAt,
+            permanentAfter: windowCfg.permanentAfter,
+          },
+          200,
+          { "Cache-Control": "no-store" },
+        );
+      }
+
+      // Guest uploads go through here so the Immich slug never reaches a
+      // browser. Deliberately not time-gated: guests can upload any time.
+      if (url.pathname === "/api/album/upload" && request.method === "POST") {
+        const contentType = request.headers.get("Content-Type") ?? "";
+        const check = checkUploadRequest(
+          { referer, contentType, contentLength: request.headers.get("Content-Length") },
+          ALLOWED_ORIGINS,
+          MAX_UPLOAD_BYTES,
+        );
+        if (!check.ok) return json({ message: check.message }, check.status);
+
+        const upstream = await fetch(`${immichBase}/api/assets?slug=${encodeURIComponent(slug)}`, {
+          method: "POST",
+          headers: { "Content-Type": contentType, "X-Album-Key": proxyKey },
+          body: request.body,
+          duplex: "half",
+        });
+        if (!isCleanUpstream(upstream.status, upstream.headers.get("Content-Type"), "json")) {
+          return badGateway();
+        }
+        return new Response(await upstream.text(), {
+          status: upstream.status,
+          headers: { "Content-Type": "application/json", ...cors },
+        });
+      }
+
+      // Everything below shows photos, so it only works while the album is
+      // open. Checked before cachedImmichFetch so edge-cached copies cannot
+      // be served outside the window.
+      if (windowState.state === "closed") {
+        return json({ state: "closed", reason: windowState.reason, opensAt: windowState.opensAt }, 403);
       }
 
       if (url.pathname === "/api/album/info" && request.method === "GET") {
@@ -167,11 +231,22 @@ export default {
         const resp = await cachedImmichFetch(
           `${immichBase}/api/shared-links/me?slug=${encodeURIComponent(slug)}`,
           30,
+          "json",
         );
-        return new Response(await resp.text(), {
-          status: resp.status,
-          headers: { "Content-Type": "application/json", ...cors },
-        });
+        if (!isCleanUpstream(resp.status, resp.headers.get("Content-Type"), "json")) return badGateway();
+        // Immich's shared-link object also carries the share key and slug,
+        // which would let a guest query Immich directly outside the window,
+        // so only the album fields the page uses are passed on.
+        if (!resp.ok) return json({ message: "Album unavailable" }, resp.status);
+        let link;
+        try {
+          link = JSON.parse(await resp.text());
+        } catch {
+          return badGateway();
+        }
+        if (!link?.album) return badGateway();
+        const { id, startDate, endDate, assetCount } = link.album;
+        return json({ album: { id, startDate, endDate, assetCount } });
       }
 
       if (url.pathname === "/api/album/bucket" && request.method === "GET") {
@@ -186,7 +261,8 @@ export default {
         // photos guests upload during the event need to show up for
         // everyone else without a long wait, so we trade a little bit of
         // origin load for freshness here rather than caching hard.
-        const resp = await cachedImmichFetch(immichUrl, 20);
+        const resp = await cachedImmichFetch(immichUrl, 20, "json");
+        if (!isCleanUpstream(resp.status, resp.headers.get("Content-Type"), "json")) return badGateway();
         return new Response(await resp.text(), {
           status: resp.status,
           headers: { "Content-Type": "application/json", ...cors },
@@ -203,7 +279,8 @@ export default {
         // Long TTL, safe to cache hard — a given assetId+size's image bytes
         // never change once uploaded (a new photo is always a new assetId,
         // so this never goes stale the way the bucket listing above can).
-        const resp = await cachedImmichFetch(immichUrl, 604800);
+        const resp = await cachedImmichFetch(immichUrl, 604800, "image");
+        if (!isCleanUpstream(resp.status, resp.headers.get("Content-Type"), "image")) return badGateway();
         return new Response(resp.body, {
           status: resp.status,
           headers: {
