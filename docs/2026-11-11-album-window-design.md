@@ -1,6 +1,12 @@
 # Album window (reception hours + permanent open) - design
 
-Status: DRAFT for review. Not yet approved for implementation.
+Status: implemented. The Worker was deployed on 2026-11-11 by pasting
+`worker/src/index.js` into the Cloudflare dashboard editor and adding the secrets
+and window dates there. Still to do: push the site, swap the WAF rule, rotate the
+Immich share link (see Rollout order). Everything is one file, `worker/src/index.js`
+(helpers `parseWindowConfig`, `albumState`, `isAllowedReferer`,
+`checkUploadRequest`, `isCleanUpstream` sit above the routes), tested through the
+fetch handler in `worker/src/index.test.js`.
 Reception: 28 Nov 2026, 6-9 pm IST, New Woodlands Hotel, Chennai.
 
 ## Goal
@@ -90,12 +96,13 @@ and not (any(http.request.headers["x-album-key"][*] eq "<IMMICH_PROXY_KEY value>
 
 ### Worker (`worker/src/`)
 
-- New `album-window.js`: pure `albumState(nowMs, cfg)` returning
+- Pure helper `albumState(nowMs, cfg)` (in `index.js`) returning
   `{ state: "open" | "closed", mode: "reception" | "permanent" | null,
   reason: "before" | "between" | null, opensAt: ISO | null, closesAt: ISO | null }`.
   `cfg` = `receptionOpenAt`, `receptionCloseAt`, `permanentAfter` parsed from
   ISO-8601 strings with an explicit `+05:30` offset. No I/O, no globals.
-- `[vars]` in `wrangler.toml` (not secrets): `ALBUM_OPEN_AT =
+- `[vars]` in `wrangler.toml` (not secrets; the deployed Worker has them entered
+  in the dashboard as Secrets, which behaves the same): `ALBUM_OPEN_AT =
   "2026-11-28T18:00:00+05:30"`, `ALBUM_CLOSE_AT = "2026-11-28T23:00:00+05:30"`,
   `ALBUM_PERMANENT_AFTER = "2026-12-09T00:00:00+05:30"`.
 - Secret `IMMICH_PROXY_KEY`. Every Worker request to Immich (`cachedImmichFetch`
@@ -111,8 +118,8 @@ and not (any(http.request.headers["x-album-key"][*] eq "<IMMICH_PROXY_KEY value>
   - New `POST /api/album/upload` (not time-gated): checks the Referer, requires
     `multipart/form-data`, rejects bodies over 25 MB, then streams the request
     body to `{IMMICH_BASE}/api/assets?slug={IMMICH_SLUG}` with the secret header
-    and relays Immich's status and JSON. A pure `checkUploadRequest()` holds the
-    Referer/type/size rules so it is unit-testable.
+    and relays Immich's status and JSON. `checkUploadRequest()` holds the
+    Referer/type/size rules.
   - The Worker passes Immich's real status through, but never relays a Cloudflare
     HTML block page as `application/json` (map a non-JSON upstream error to a clean
     `502 {message}`), so a misconfigured rule shows up as an obvious error.
@@ -142,7 +149,8 @@ and not (any(http.request.headers["x-album-key"][*] eq "<IMMICH_PROXY_KEY value>
 
 ## Rollout order
 
-1. Create `IMMICH_PROXY_KEY`; `wrangler secret put IMMICH_PROXY_KEY`.
+1. Create `IMMICH_PROXY_KEY` and add it to the Worker as a Secret (dashboard, or
+   `wrangler secret put IMMICH_PROXY_KEY`).
 2. Deploy the Worker (new route, header, window vars). The old site keeps uploading
    straight to Immich, which the old rule does not cover, so nothing breaks.
 3. Deploy the site (uploads now go through `/api/album/upload`).

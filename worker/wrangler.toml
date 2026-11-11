@@ -31,6 +31,9 @@ compatibility_date = "2026-07-15"
 # ALBUM_OPEN_AT up to ALBUM_CLOSE_AT, closed until ALBUM_PERMANENT_AFTER, then
 # open for good. Not secrets, so plain vars. Must satisfy
 # open < close <= permanent or the album routes return 500.
+# (The deployed Worker has these entered in the dashboard as Secrets, not Text
+# vars. A `wrangler deploy` with this block would conflict with those bindings,
+# so delete them in the dashboard first if deploying with wrangler.)
 # The 9 Dec date is also in n8n's Reception Reminders Config node
 # (album_available_after) -- change both together.
 [vars]

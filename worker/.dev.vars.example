@@ -17,3 +17,16 @@ IMMICH_SLUG=your-immich-share-slug-here
 
 # Also configured as a Secret on the deployed Worker.
 IMMICH_BASE=https://photos.sankaranarayan.in
+
+# Random value sent to Immich as the X-Album-Key header on every request; the
+# Cloudflare WAF rule on the photos host must contain the same value. Set it
+# as a Secret on the deployed Worker.
+IMMICH_PROXY_KEY=your-random-key-here
+
+# When the album may be viewed (IST, explicit +05:30 offset); see
+# docs/2026-11-11-album-window-design.md. Open from OPEN up to CLOSE, closed
+# until PERMANENT, then open for good. Set a window around "now" to try the
+# album routes locally.
+ALBUM_OPEN_AT=2026-11-28T18:00:00+05:30
+ALBUM_CLOSE_AT=2026-11-28T23:00:00+05:30
+ALBUM_PERMANENT_AFTER=2026-12-09T00:00:00+05:30
