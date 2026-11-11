@@ -1,27 +1,7 @@
 // Gate message for the album page, built from the times the Worker's
 // /api/album/status returns. Always formatted in IST so a guest's own
 // timezone cannot shift the dates.
-
-const TZ = "Asia/Kolkata";
-
-function parts(date, options) {
-    const out = {};
-    for (const p of new Intl.DateTimeFormat("en-US", { timeZone: TZ, ...options }).formatToParts(date)) {
-        out[p.type] = p.value;
-    }
-    return out;
-}
-
-function day(iso) {
-    const p = parts(new Date(iso), { weekday: "short", day: "numeric", month: "short" });
-    return { weekday: p.weekday, label: `${p.day} ${p.month}` };
-}
-
-function time(iso) {
-    const p = parts(new Date(iso), { hour: "numeric", minute: "2-digit", hour12: true });
-    const clock = p.minute === "00" ? p.hour : `${p.hour}:${p.minute}`;
-    return `${clock} ${p.dayPeriod.toLowerCase()}`;
-}
+import { day, time } from "./ist-format.js";
 
 /**
  * @param {{reason: "before"|"between", receptionOpenAt: string,

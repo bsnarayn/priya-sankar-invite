@@ -1,0 +1,467 @@
+---
+// Stream page body shared by /wedding and /reception. The page itself holds
+// no video id: the script below asks the Worker (/api/live/<name>), which only
+// reveals the id inside the page's time window, and only once the stream has
+// started (or finished, for the replay). Until then the guest sees a message
+// and a countdown, and the page switches to the player on its own.
+interface Props {
+    name: "wedding" | "reception";
+    title: string;
+    intro: string;
+}
+const { name, title, intro } = Astro.props;
+---
+
+<section id="live" data-name={name}>
+    <div class="live-inner">
+        <div class="sec-heading-row">
+            <h2 class="sec-heading">{title}</h2>
+            <span class="sec-script">live</span>
+        </div>
+        <p class="sec-sub live-intro">{intro}</p>
+
+        <div class="live-status" id="live-status" aria-live="polite">
+            <h3 id="live-headline">One moment…</h3>
+            <p id="live-text"></p>
+            <p id="live-countdown" class="live-countdown" hidden></p>
+        </div>
+
+        <div class="live-stage" id="live-stage" hidden>
+            <div class="live-frame">
+                <div id="live-player"></div>
+                <!-- Sits over the video so YouTube's own title, share and
+                     logo overlays never receive a tap; a tap plays or pauses. -->
+                <div class="live-shield" id="live-shield"></div>
+            </div>
+            <div class="live-controls">
+                <button type="button" id="live-play" aria-label="Play">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+                        <path id="live-play-icon" d="M8 5v14l11-7z"></path>
+                    </svg>
+                </button>
+                <span id="live-time" class="live-time">0:00</span>
+                <input
+                    type="range"
+                    id="live-seek"
+                    min="0"
+                    max="1000"
+                    value="0"
+                    aria-label="Seek"
+                />
+                <span id="live-badge" class="live-badge" hidden>LIVE</span>
+                <button type="button" id="live-full" aria-label="Full screen" hidden>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <a class="live-back" href="/">Back</a>
+    </div>
+</section>
+
+<script>
+    import { liveCopy, countdownText } from "../lib/live-copy.js";
+
+    // Minimal typing for the parts of YouTube's IFrame Player API used here.
+    type YTPlayer = {
+        playVideo(): void;
+        pauseVideo(): void;
+        seekTo(seconds: number, allowSeekAhead: boolean): void;
+        getCurrentTime(): number;
+        getDuration(): number;
+        getPlayerState(): number;
+        getVideoData(): { isLive?: boolean };
+        destroy(): void;
+    };
+    declare global {
+        interface Window {
+            YT?: any;
+            onYouTubeIframeAPIReady?: () => void;
+        }
+    }
+
+    const root = document.getElementById("live")!;
+    const name = root.dataset.name as "wedding" | "reception";
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+    const statusBox = $("live-status");
+    const headline = $("live-headline");
+    const text = $("live-text");
+    const countdown = $("live-countdown");
+    const stage = $("live-stage");
+    const playBtn = $<HTMLButtonElement>("live-play");
+    const playIcon = document.getElementById("live-play-icon")!;
+    const seek = $<HTMLInputElement>("live-seek");
+    const timeEl = $("live-time");
+    const badge = $("live-badge");
+    const fullBtn = $<HTMLButtonElement>("live-full");
+    const shield = $("live-shield");
+
+    const PLAY = "M8 5v14l11-7z";
+    const PAUSE = "M6 5h4v14H6zM14 5h4v14h-4z";
+
+    let player: YTPlayer | null = null;
+    let shownId: string | null = null;
+    let pollTimer: number | undefined;
+    let tickTimer: number | undefined;
+    let progressTimer: number | undefined;
+    let seeking = false;
+
+    function showMessage(copy: { headline: string; text: string }) {
+        headline.textContent = copy.headline;
+        text.textContent = copy.text;
+        statusBox.hidden = false;
+    }
+
+    function stopCountdown() {
+        window.clearInterval(tickTimer);
+        countdown.hidden = true;
+    }
+
+    function startCountdown(opensAt: string) {
+        stopCountdown();
+        const render = () => {
+            const left = Date.parse(opensAt) - Date.now();
+            countdown.textContent = `Opens in ${countdownText(left)}`;
+            if (left <= 0) {
+                stopCountdown();
+                void check();
+            }
+        };
+        countdown.hidden = false;
+        render();
+        tickTimer = window.setInterval(render, 1000);
+    }
+
+    function clock(seconds: number) {
+        const s = Math.max(0, Math.floor(seconds));
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = String(s % 60).padStart(2, "0");
+        return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+    }
+
+    function setPlaying(playing: boolean) {
+        playIcon.setAttribute("d", playing ? PAUSE : PLAY);
+        playBtn.setAttribute("aria-label", playing ? "Pause" : "Play");
+    }
+
+    function togglePlay() {
+        if (!player) return;
+        // 1 = playing, 3 = buffering
+        const state = player.getPlayerState();
+        if (state === 1 || state === 3) player.pauseVideo();
+        else player.playVideo();
+    }
+
+    function updateProgress() {
+        if (!player || seeking) return;
+        const duration = player.getDuration();
+        const current = player.getCurrentTime();
+        const isLive = !!player.getVideoData()?.isLive;
+        badge.hidden = !isLive;
+        timeEl.textContent = clock(current);
+        seek.disabled = !(duration > 0);
+        if (duration > 0) seek.value = String(Math.round((current / duration) * 1000));
+    }
+
+    function loadYouTubeApi(): Promise<void> {
+        if (window.YT?.Player) return Promise.resolve();
+        return new Promise((resolve) => {
+            const previous = window.onYouTubeIframeAPIReady;
+            window.onYouTubeIframeAPIReady = () => {
+                previous?.();
+                resolve();
+            };
+            const tag = document.createElement("script");
+            tag.src = "https://www.youtube.com/iframe_api";
+            document.head.appendChild(tag);
+        });
+    }
+
+    async function showPlayer(videoId: string) {
+        if (shownId === videoId) return;
+        shownId = videoId;
+        statusBox.hidden = true;
+        stage.hidden = false;
+        await loadYouTubeApi();
+        player = new window.YT.Player("live-player", {
+            host: "https://www.youtube-nocookie.com",
+            videoId,
+            width: "100%",
+            height: "100%",
+            playerVars: {
+                controls: 0,
+                modestbranding: 1,
+                rel: 0,
+                disablekb: 1,
+                fs: 0,
+                iv_load_policy: 3,
+                playsinline: 1,
+            },
+            events: {
+                onStateChange: (e: { data: number }) => setPlaying(e.data === 1 || e.data === 3),
+                onError: () => {
+                    hidePlayer();
+                    showMessage({
+                        headline: "The video couldn't be loaded",
+                        text: "Please wait a moment, this page will try again by itself.",
+                    });
+                },
+            },
+        }) as YTPlayer;
+        progressTimer = window.setInterval(updateProgress, 500);
+    }
+
+    function hidePlayer() {
+        window.clearInterval(progressTimer);
+        try {
+            player?.destroy();
+        } catch {}
+        player = null;
+        shownId = null;
+        stage.hidden = true;
+        // destroy() removes the mount node; put it back for a later show.
+        if (!document.getElementById("live-player")) {
+            const mount = document.createElement("div");
+            mount.id = "live-player";
+            shield.before(mount);
+        }
+        setPlaying(false);
+    }
+
+    function schedule(ms: number) {
+        window.clearTimeout(pollTimer);
+        pollTimer = window.setTimeout(check, ms);
+    }
+
+    async function check() {
+        try {
+            const res = await fetch(`/api/live/${name}`, { cache: "no-store" });
+            if (!res.ok) throw new Error(`status ${res.status}`);
+            const status = await res.json();
+
+            if ((status.state === "live" || status.state === "replay") && status.videoId) {
+                stopCountdown();
+                await showPlayer(status.videoId);
+                schedule(60_000); // notice the window closing while someone watches
+                return;
+            }
+            // Anything else: never leave a player on screen.
+            if (shownId) hidePlayer();
+            showMessage(liveCopy(status, name));
+            if (status.state === "before") {
+                startCountdown(status.opensAt);
+                schedule(60_000);
+            } else {
+                stopCountdown();
+                if (status.state === "waiting") schedule(15_000);
+                // "closed": nothing more to wait for.
+            }
+        } catch {
+            if (shownId) hidePlayer();
+            showMessage(liveCopy({ state: "error" }, name));
+            schedule(20_000);
+        }
+    }
+
+    // YouTube's right-click and long-press menu has "Copy video URL". The shield
+    // already catches those on the video; this also covers the controls bar.
+    // It stops casual copying only, not someone using the browser's dev tools.
+    stage.addEventListener("contextmenu", (e) => e.preventDefault());
+
+    playBtn.addEventListener("click", togglePlay);
+    shield.addEventListener("click", togglePlay);
+    seek.addEventListener("input", () => {
+        seeking = true;
+        const duration = player?.getDuration() ?? 0;
+        timeEl.textContent = clock((Number(seek.value) / 1000) * duration);
+    });
+    seek.addEventListener("change", () => {
+        const duration = player?.getDuration() ?? 0;
+        if (duration > 0) player?.seekTo((Number(seek.value) / 1000) * duration, true);
+        seeking = false;
+    });
+
+    const frame = stage;
+    const canFullscreen = !!(document.fullscreenEnabled || (document as any).webkitFullscreenEnabled);
+    fullBtn.hidden = !canFullscreen;
+    fullBtn.addEventListener("click", () => {
+        const doc = document as any;
+        if (document.fullscreenElement || doc.webkitFullscreenElement) {
+            (document.exitFullscreen ?? doc.webkitExitFullscreen)?.call(document);
+        } else {
+            const el = frame as any;
+            (el.requestFullscreen ?? el.webkitRequestFullscreen)?.call(el);
+        }
+    });
+
+    void check();
+</script>
+
+<style>
+    #live {
+        min-height: 100svh;
+        background-color: var(--color-base);
+        display: flex;
+        justify-content: center;
+        /* Same top offset as the album and menu pages: clears the fixed header. */
+        padding: 140px 24px 64px;
+    }
+
+    .live-inner {
+        max-width: 860px;
+        width: 100%;
+        text-align: left;
+    }
+
+    .live-inner .sec-heading-row {
+        justify-content: flex-start;
+    }
+
+    .live-intro {
+        max-width: 560px;
+        margin-bottom: 0;
+    }
+
+    .live-status {
+        margin-top: 36px;
+        padding: 28px 24px;
+        text-align: center;
+        background: var(--color-surface);
+        border: 0.5px solid var(--color-border-soft);
+        border-radius: 12px;
+    }
+
+    .live-status h3 {
+        font-family: var(--font-family-display);
+        font-weight: 400;
+        font-size: 26px;
+        color: var(--color-text-primary);
+    }
+
+    .live-status p {
+        margin-top: 10px;
+        font-family: var(--font-family-serif);
+        font-style: italic;
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+    }
+
+    .live-status .live-countdown {
+        font-family: var(--font-family-display);
+        font-style: normal;
+        font-size: 20px;
+        color: var(--color-accent);
+    }
+
+    .live-stage {
+        margin-top: 32px;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 12px 28px -8px rgba(58, 46, 40, 0.3);
+    }
+
+    .live-frame {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        background: #000;
+    }
+
+    .live-frame :global(iframe),
+    .live-frame :global(#live-player) {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+    .live-shield {
+        position: absolute;
+        inset: 0;
+        cursor: pointer;
+    }
+
+    .live-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background: #1c1714;
+        color: #fff;
+    }
+
+    .live-controls button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .live-controls button:hover {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .live-time {
+        font-family: var(--font-family-sans);
+        font-size: 12px;
+        min-width: 44px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .live-controls input[type="range"] {
+        flex: 1;
+        min-width: 0;
+        accent-color: var(--color-accent);
+    }
+
+    .live-controls input[type="range"]:disabled {
+        opacity: 0.35;
+    }
+
+    .live-badge {
+        font-family: var(--font-family-sans);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #c0392b;
+    }
+
+    /* Full screen is on the stage so the controls stay with the video. */
+    .live-stage:fullscreen {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-radius: 0;
+    }
+
+    .live-stage:fullscreen .live-frame {
+        aspect-ratio: auto;
+        flex: 1;
+    }
+
+    .live-back {
+        display: inline-block;
+        margin-top: 40px;
+        font-family: var(--font-family-sans);
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        color: var(--color-accent);
+        text-decoration: none;
+    }
+
+    .live-back:hover {
+        color: var(--color-accent-dark);
+    }
+</style>

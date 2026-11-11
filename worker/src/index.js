@@ -108,6 +108,61 @@ function albumState(nowMs, cfg) {
   return { state: "closed", mode: null, reason: "between", opensAt: cfg.permanentAfter, closesAt: null };
 }
 
+// -- Live stream pages -------------------------------------------------------
+
+// The /wedding and /reception pages show a YouTube player. The video id is
+// only ever sent while the page may show the player: it is not in the site's
+// HTML, so it cannot be read from the page source before the window opens or
+// after it closes. Each page has its own window (explicit +05:30 offsets,
+// open inclusive, close exclusive) and its own video.
+
+const LIVE_PAGES = { wedding: "WEDDING", reception: "RECEPTION" };
+const HAS_OFFSET = /(Z|[+-]\d{2}:\d{2})$/i;
+const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+
+/**
+ * Reads one page's window and video from the Worker env. The id is null until
+ * a well-formed one is set (the page then says the stream is coming soon).
+ * Returns null when the window is missing, has no offset, or is not open < close.
+ */
+function parseLiveConfig(env, name) {
+  const key = LIVE_PAGES[name];
+  const open = env?.[`LIVE_${key}_OPEN_AT`];
+  const close = env?.[`LIVE_${key}_CLOSE_AT`];
+  if (!open || !close || !HAS_OFFSET.test(open) || !HAS_OFFSET.test(close)) return null;
+  const openMs = Date.parse(open);
+  const closeMs = Date.parse(close);
+  if (!Number.isFinite(openMs) || !Number.isFinite(closeMs) || !(openMs < closeMs)) return null;
+  const id = env?.[`LIVE_${key}_VIDEO_ID`];
+  return {
+    openAt: open,
+    closeAt: close,
+    videoId: typeof id === "string" && VIDEO_ID.test(id) ? id : null,
+    force: env?.[`LIVE_${key}_FORCE`] === "1",
+  };
+}
+
+/** @returns {"before"|"open"|"closed"} */
+function liveWindow(nowMs, cfg) {
+  if (nowMs < Date.parse(cfg.openAt)) return "before";
+  if (nowMs >= Date.parse(cfg.closeAt)) return "closed";
+  return "open";
+}
+
+/**
+ * Maps YouTube's videos.list answer to what the page should do.
+ * "live" and "replay" show the player; "waiting" (not started, or YouTube
+ * does not know the video, e.g. it is private or deleted) does not.
+ */
+function streamState(body) {
+  const item = body?.items?.[0];
+  if (!item) return "waiting";
+  const kind = item.snippet?.liveBroadcastContent;
+  if (kind === "live") return "live";
+  if (kind === "none") return "replay";
+  return "waiting";
+}
+
 // -- Routes ----------------------------------------------------------------
 
 // Public Cloudflare Tunnel hostname for wedding-planner-api -- not a
@@ -237,6 +292,59 @@ export default {
     // has been removed -- that view moved to wedding.sankars.in, which is
     // already behind its own session auth and calls the n8n webhook
     // directly from its own API service, not through this proxy.
+
+    // ── GET /api/live/<wedding|reception> ───────────────────────────────
+    const liveMatch = url.pathname.match(/^\/api\/live\/([^/]+)$/);
+    if (liveMatch) {
+      const name = liveMatch[1];
+      const noStore = { "Cache-Control": "no-store" };
+      if (!Object.hasOwn(LIVE_PAGES, name)) return json({ message: "Not found" }, 404, noStore);
+      if (request.method !== "GET") return json({ message: "Method not allowed" }, 405, noStore);
+      if (!isAllowedReferer(request.headers.get("Referer") ?? "", ALLOWED_ORIGINS)) {
+        return new Response("Forbidden", { status: 403, headers: { ...cors, ...noStore } });
+      }
+      const cfg = parseLiveConfig(env, name);
+      if (!cfg) return json({ message: "Live page not configured" }, 500, noStore);
+
+      const times = { opensAt: cfg.openAt, closesAt: cfg.closeAt };
+      const phase = liveWindow(Date.now(), cfg);
+      if (phase === "before") return json({ state: "before", ...times }, 200, noStore);
+      if (phase === "closed") return json({ state: "closed", ...times }, 200, noStore);
+
+      // Inside the window: show the player once the stream has started (or
+      // finished, for the replay). Needs the YouTube key and a video id.
+      if (!env.YOUTUBE_API_KEY) return json({ message: "Live page not configured" }, 500, noStore);
+      if (!cfg.videoId) return json({ state: "waiting", ...times }, 200, noStore);
+
+      let state = "waiting";
+      try {
+        const ytUrl =
+          "https://www.googleapis.com/youtube/v3/videos?part=snippet%2CliveStreamingDetails" +
+          `&id=${cfg.videoId}&key=${encodeURIComponent(env.YOUTUBE_API_KEY)}` +
+          "&fields=items(snippet%2FliveBroadcastContent%2CliveStreamingDetails(actualStartTime%2CactualEndTime))";
+        const cache = caches.default;
+        const cacheKey = new Request(ytUrl, { method: "GET" });
+        let resp = await cache.match(cacheKey);
+        if (!resp) {
+          resp = await fetch(ytUrl);
+          // Only a good answer is kept, for a few seconds, so many viewers
+          // cost one YouTube call per edge location rather than one each.
+          if (resp.ok) {
+            const copy = new Response(resp.clone().body, resp);
+            copy.headers.set("Cache-Control", "public, max-age=15");
+            ctx.waitUntil(cache.put(cacheKey, copy));
+          }
+        }
+        if (resp.ok) state = streamState(await resp.json());
+      } catch {
+        state = "waiting";
+      }
+      // Fallback if YouTube cannot be checked: LIVE_<NAME>_FORCE=1 shows the player.
+      if (state === "waiting" && cfg.force) state = "live";
+
+      if (state === "waiting") return json({ state, ...times }, 200, noStore);
+      return json({ state, videoId: cfg.videoId, ...times }, 200, noStore);
+    }
 
     // ── Album viewing (proxied to Immich) ───────────────────────────────
     // The album page never talks to Immich directly and never sees the

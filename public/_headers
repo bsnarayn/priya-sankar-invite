@@ -7,5 +7,11 @@
 /dashboard
   X-Robots-Tag: noindex, nofollow
 
+/wedding
+  X-Robots-Tag: noindex, nofollow
+
+/reception
+  X-Robots-Tag: noindex, nofollow
+
 /api/*
   X-Robots-Tag: noindex, nofollow
