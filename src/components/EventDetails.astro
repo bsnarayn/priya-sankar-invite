@@ -29,12 +29,10 @@ const mapsEmbedSrc = event.address
     ? `https://www.google.com/maps?q=${encodeURIComponent(event.address)}&output=embed`
     : undefined;
 
+// The countdown reads the start time from here. "Add to calendar" is a plain
+// link to /reception.ics (src/pages/reception.ics.ts), built from event.json.
 const calData = {
     startDatetime: event.start_datetime ?? null,
-    endDatetime: event.end_datetime ?? null,
-    venue: event.venue,
-    address: event.address,
-    mapsUrl: event.maps_url,
 };
 ---
 
@@ -125,7 +123,7 @@ const calData = {
             <div class="btn-row">
                 {
                     calData.startDatetime && (
-                        <button id="cal-btn" class="btn-ghost" type="button">
+                        <a href="/reception.ics" class="btn-ghost cal-link">
                             <svg
                                 width="14"
                                 height="14"
@@ -145,7 +143,7 @@ const calData = {
                                 <path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4" />
                             </svg>
                             Add to calendar
-                        </button>
+                        </a>
                     )
                 }
                 <MenuButton />
@@ -259,6 +257,12 @@ const calData = {
         </div>
     </div>
 
+    <style>
+        .cal-link {
+            text-decoration: none;
+        }
+    </style>
+
     <script
         id="cal-data"
         type="application/json"
@@ -267,45 +271,7 @@ const calData = {
     />
     <script>
         const raw = document.getElementById("cal-data")?.textContent ?? "{}";
-        const { startDatetime, endDatetime, venue, address, mapsUrl } =
-            JSON.parse(raw);
-
-        if (startDatetime) {
-            const toICSDate = (iso: string) =>
-                iso.replace(/[-:]/g, "").replace(/\+\d{2}:\d{2}$/, "+0530");
-
-            document
-                .getElementById("cal-btn")
-                ?.addEventListener("click", () => {
-                    const ics = [
-                        "BEGIN:VCALENDAR",
-                        "VERSION:2.0",
-                        "BEGIN:VEVENT",
-                        `DTSTART;TZID=Asia/Kolkata:${toICSDate(startDatetime)}`,
-                        endDatetime
-                            ? `DTEND;TZID=Asia/Kolkata:${toICSDate(endDatetime)}`
-                            : "",
-                        "SUMMARY:Sankar & Priya — Reception & Celebration",
-                        "DESCRIPTION:Some love stories begin with a flight.",
-                        `LOCATION:${venue}${address ? ", " + address : ""}${mapsUrl ? " " + mapsUrl : ""}`,
-                        mapsUrl
-                            ? `X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=${address};X-TITLE=${venue}:${mapsUrl}`
-                            : "",
-                        "END:VEVENT",
-                        "END:VCALENDAR",
-                    ]
-                        .filter(Boolean)
-                        .join("\r\n");
-
-                    const blob = new Blob([ics], { type: "text/calendar" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "sankar-priya.ics";
-                    a.click();
-                    URL.revokeObjectURL(url);
-                });
-        }
+        const { startDatetime } = JSON.parse(raw);
 
         if (startDatetime) {
             const target = new Date(startDatetime).getTime();
