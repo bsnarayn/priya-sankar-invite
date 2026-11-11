@@ -7,6 +7,9 @@
 /dashboard
   X-Robots-Tag: noindex, nofollow
 
+/live
+  X-Robots-Tag: noindex, nofollow
+
 /wedding
   X-Robots-Tag: noindex, nofollow
 

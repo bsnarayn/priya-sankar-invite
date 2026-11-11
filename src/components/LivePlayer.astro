@@ -1,29 +1,61 @@
 ---
-// Stream page body shared by /wedding and /reception. The page itself holds
-// no video id: the script below asks the Worker (/api/live/<name>), which only
-// reveals the id inside the page's time window, and only once the stream has
-// started (or finished, for the replay). Until then the guest sees a message
-// and a countdown, and the page switches to the player on its own.
+// Stream page body shared by /wedding, /reception and /live. The page itself
+// holds no video id: the script below asks the Worker, which only reveals the
+// id while the page may show it, and only once the stream has started (or
+// finished, for the replay). Until then the guest sees a countdown or a
+// message, and the page switches to the player on its own.
+//   name given ("wedding" | "reception"): that event, from /api/live/<name>.
+//   name omitted (/live): whichever event the Worker says is current, from
+//     /api/live/current; the heading and details follow it.
+import { OPENS_BY } from "../lib/live-copy.js";
+import { LIVE_EVENTS } from "../lib/live-events.js";
+
 interface Props {
-    name: "wedding" | "reception";
-    title: string;
-    intro: string;
+    name?: "wedding" | "reception";
 }
-const { name, title, intro } = Astro.props;
+const { name } = Astro.props;
+const event = name ? LIVE_EVENTS[name] : undefined;
 ---
 
-<section id="live" data-name={name}>
+<section id="live" data-name={name ?? ""}>
     <div class="live-inner">
         <div class="sec-heading-row">
-            <h2 class="sec-heading">{title}</h2>
+            <h2 class="sec-heading" id="live-title">{event?.title ?? "Live Stream"}</h2>
             <span class="sec-script">live</span>
         </div>
-        <p class="sec-sub live-intro">{intro}</p>
+        <p class="sec-sub live-intro" id="live-intro" hidden={!event}>{event?.intro}</p>
+        <dl class="live-details" id="live-details" hidden={!event}>
+            <div><dt>Date</dt><dd id="live-date">{event?.date}</dd></div>
+            <div><dt>Time</dt><dd id="live-clock">{event?.time}</dd></div>
+            <div><dt>Location</dt><dd id="live-location">{event?.location}</dd></div>
+        </dl>
 
-        <div class="live-status" id="live-status" aria-live="polite">
-            <h3 id="live-headline">One moment…</h3>
+        <!-- Same card and numbers as the countdown on the event details. -->
+        <div class="countdown-card live-countdown-card" id="live-countdown-card" hidden>
+            <p class="countdown-label">{OPENS_BY}</p>
+            <div class="countdown-grid">
+                <div class="countdown-unit">
+                    <p class="countdown-value" id="live-cd-days">00</p>
+                    <p class="countdown-unit-label">Days</p>
+                </div>
+                <div class="countdown-unit">
+                    <p class="countdown-value" id="live-cd-hours">00</p>
+                    <p class="countdown-unit-label">Hours</p>
+                </div>
+                <div class="countdown-unit">
+                    <p class="countdown-value" id="live-cd-mins">00</p>
+                    <p class="countdown-unit-label">Minutes</p>
+                </div>
+                <div class="countdown-unit">
+                    <p class="countdown-value" id="live-cd-secs">00</p>
+                    <p class="countdown-unit-label">Seconds</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="live-status" id="live-status" aria-live="polite" hidden>
+            <h3 id="live-headline"></h3>
             <p id="live-text"></p>
-            <p id="live-countdown" class="live-countdown" hidden></p>
         </div>
 
         <div class="live-stage" id="live-stage" hidden>
@@ -62,7 +94,8 @@ const { name, title, intro } = Astro.props;
 </section>
 
 <script>
-    import { liveCopy, countdownText } from "../lib/live-copy.js";
+    import { liveCopy, countdownParts } from "../lib/live-copy.js";
+    import { LIVE_EVENTS } from "../lib/live-events.js";
 
     // Minimal typing for the parts of YouTube's IFrame Player API used here.
     type YTPlayer = {
@@ -83,12 +116,19 @@ const { name, title, intro } = Astro.props;
     }
 
     const root = document.getElementById("live")!;
-    const name = root.dataset.name as "wedding" | "reception";
+    type EventName = keyof typeof LIVE_EVENTS;
+    // Empty on /live, which follows whichever event the Worker says is current.
+    const pinned = (root.dataset.name || null) as EventName | null;
+    let eventName: EventName | null = pinned;
     const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
     const statusBox = $("live-status");
     const headline = $("live-headline");
     const text = $("live-text");
-    const countdown = $("live-countdown");
+    const countdownCard = $("live-countdown-card");
+    const cdDays = $("live-cd-days");
+    const cdHours = $("live-cd-hours");
+    const cdMins = $("live-cd-mins");
+    const cdSecs = $("live-cd-secs");
     const stage = $("live-stage");
     const playBtn = $<HTMLButtonElement>("live-play");
     const playIcon = document.getElementById("live-play-icon")!;
@@ -108,6 +148,20 @@ const { name, title, intro } = Astro.props;
     let progressTimer: number | undefined;
     let seeking = false;
 
+    // Heading and details follow the event being shown (fixed on /wedding and
+    // /reception, changing on /live as the day moves from one event to the next).
+    function applyEvent(next: EventName | null) {
+        eventName = next;
+        const ev = next ? LIVE_EVENTS[next] : null;
+        $("live-title").textContent = ev?.title ?? "Live Stream";
+        $("live-intro").textContent = ev?.intro ?? "";
+        $("live-date").textContent = ev?.date ?? "";
+        $("live-clock").textContent = ev?.time ?? "";
+        $("live-location").textContent = ev?.location ?? "";
+        $("live-intro").hidden = !ev;
+        $("live-details").hidden = !ev;
+    }
+
     function showMessage(copy: { headline: string; text: string }) {
         headline.textContent = copy.headline;
         text.textContent = copy.text;
@@ -116,20 +170,25 @@ const { name, title, intro } = Astro.props;
 
     function stopCountdown() {
         window.clearInterval(tickTimer);
-        countdown.hidden = true;
+        countdownCard.hidden = true;
     }
 
     function startCountdown(opensAt: string) {
         stopCountdown();
         const render = () => {
             const left = Date.parse(opensAt) - Date.now();
-            countdown.textContent = `Opens in ${countdownText(left)}`;
+            const p = countdownParts(left);
+            cdDays.textContent = p.days;
+            cdHours.textContent = p.hours;
+            cdMins.textContent = p.mins;
+            cdSecs.textContent = p.secs;
             if (left <= 0) {
                 stopCountdown();
                 void check();
             }
         };
-        countdown.hidden = false;
+        statusBox.hidden = true;
+        countdownCard.hidden = false;
         render();
         tickTimer = window.setInterval(render, 1000);
     }
@@ -238,9 +297,13 @@ const { name, title, intro } = Astro.props;
 
     async function check() {
         try {
-            const res = await fetch(`/api/live/${name}`, { cache: "no-store" });
+            const res = await fetch(`/api/live/${pinned ?? "current"}`, { cache: "no-store" });
             if (!res.ok) throw new Error(`status ${res.status}`);
             const status = await res.json();
+            const next = (pinned ?? status.event ?? null) as EventName | null;
+            if (next !== eventName) applyEvent(next);
+            // The day moved on to the other event: its video replaces this one.
+            if (shownId && shownId !== status.videoId) hidePlayer();
 
             if ((status.state === "live" || status.state === "replay") && status.videoId) {
                 stopCountdown();
@@ -250,18 +313,19 @@ const { name, title, intro } = Astro.props;
             }
             // Anything else: never leave a player on screen.
             if (shownId) hidePlayer();
-            showMessage(liveCopy(status, name));
             if (status.state === "before") {
                 startCountdown(status.opensAt);
                 schedule(60_000);
             } else {
                 stopCountdown();
+                showMessage(liveCopy(status, eventName ?? "wedding"));
                 if (status.state === "waiting") schedule(15_000);
                 // "closed": nothing more to wait for.
             }
         } catch {
             if (shownId) hidePlayer();
-            showMessage(liveCopy({ state: "error" }, name));
+            stopCountdown();
+            showMessage(liveCopy({ state: "error" }, eventName ?? "wedding"));
             schedule(20_000);
         }
     }
@@ -325,6 +389,33 @@ const { name, title, intro } = Astro.props;
         margin-bottom: 0;
     }
 
+    .live-details {
+        margin-top: 18px;
+        display: grid;
+        gap: 4px;
+        font-family: var(--font-family-sans);
+        font-size: 14px;
+        color: var(--color-text-body);
+    }
+
+    .live-details div {
+        display: flex;
+        gap: 8px;
+    }
+
+    .live-details dt {
+        min-width: 70px;
+        color: var(--color-text-muted);
+    }
+
+    .live-details dd {
+        margin: 0;
+    }
+
+    .live-countdown-card {
+        margin-top: 32px;
+    }
+
     .live-status {
         margin-top: 36px;
         padding: 28px 24px;
@@ -348,13 +439,6 @@ const { name, title, intro } = Astro.props;
         font-size: 16px;
         line-height: 1.6;
         color: var(--color-text-muted);
-    }
-
-    .live-status .live-countdown {
-        font-family: var(--font-family-display);
-        font-style: normal;
-        font-size: 20px;
-        color: var(--color-accent);
     }
 
     .live-stage {

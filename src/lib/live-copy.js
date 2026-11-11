@@ -1,7 +1,10 @@
-// Words for the /wedding and /reception stream pages, built from what the
-// Worker's /api/live/<name> returns. No player is ever described here: the
-// page shows the video only for state "live" or "replay".
-import { day, time } from "./ist-format.js";
+// Words for the /wedding, /reception and /live stream pages, built from what
+// the Worker's /api/live/<name> returns. No player is ever described here: the
+// page shows the video only for state "live" or "replay". (The "before" state
+// is a countdown card, not a message.)
+
+/** Label above the countdown, the same on both pages. */
+export const OPENS_BY = "The event live stream opens by";
 
 const COULD_NOT_CHECK = {
     headline: "We couldn't check the stream just now",
@@ -9,19 +12,12 @@ const COULD_NOT_CHECK = {
 };
 
 /**
- * @param {{state: string, opensAt?: string, closesAt?: string}} status
- * @param {"wedding"|"reception"} name
+ * @param {{state: string}} status
+ * @param {"wedding"|"reception"} name the event the page is about (used in the waiting message)
  * @returns {{headline: string, text: string}}
  */
 export function liveCopy(status, name) {
     switch (status.state) {
-        case "before": {
-            const d = day(status.opensAt);
-            return {
-                headline: `The ${name} stream opens soon`,
-                text: `It opens on ${d.weekday} ${d.label} at ${time(status.opensAt)} IST. Come back then and the video will appear here.`,
-            };
-        }
         case "waiting":
             return {
                 headline: "Waiting for the stream to begin",
@@ -29,27 +25,27 @@ export function liveCopy(status, name) {
             };
         case "closed":
             return {
-                headline: "This stream has ended",
-                text: `The ${name} stream is no longer available on this page. Thank you for celebrating with us.`,
+                headline: "The live stream has ended",
+                text: "Thank you for celebrating with us. If we shared a recording link with you, you can watch it there.",
             };
         default:
             return COULD_NOT_CHECK;
     }
 }
 
-const plural = (n, unit) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+const pad = (n) => String(n).padStart(2, "0");
 
-/** "2 days 3 hours", "3 hours 12 minutes", "12 minutes 5 seconds", "any moment now". */
-export function countdownText(ms) {
-    const total = Math.floor(ms / 1000);
-    if (total <= 0) return "any moment now";
-    const days = Math.floor(total / 86400);
-    const hours = Math.floor((total % 86400) / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-    const pair = (a, aUnit, b, bUnit) => [a && plural(a, aUnit), b && plural(b, bUnit)].filter(Boolean).join(" ");
-    if (days) return pair(days, "day", hours, "hour");
-    if (hours) return pair(hours, "hour", minutes, "minute");
-    if (minutes) return pair(minutes, "minute", seconds, "second");
-    return plural(seconds, "second");
+/**
+ * The numbers for the days / hours / minutes / seconds countdown, as the event
+ * details card shows them: two digits each, never negative.
+ * @param {number} ms milliseconds left
+ */
+export function countdownParts(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    return {
+        days: pad(Math.floor(total / 86400)),
+        hours: pad(Math.floor((total % 86400) / 3600)),
+        mins: pad(Math.floor((total % 3600) / 60)),
+        secs: pad(total % 60),
+    };
 }

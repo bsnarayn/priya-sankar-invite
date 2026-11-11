@@ -31,18 +31,22 @@ ALBUM_OPEN_AT=2026-11-28T18:00:00+05:30
 ALBUM_CLOSE_AT=2026-11-28T23:00:00+05:30
 ALBUM_PERMANENT_AFTER=2026-12-09T00:00:00+05:30
 
-# Stream pages (/wedding, /reception): see docs/2026-11-12-live-stream-pages-design.md.
+# Stream pages (/live, /wedding, /reception): see
+# docs/2026-11-12-live-stream-pages-design.md.
 # A read-only YouTube Data API v3 key (restricted to that one API), used to
 # check whether a stream has started. Set it as a Secret on the deployed Worker.
 YOUTUBE_API_KEY=your-youtube-api-key-here
-# Per page: when the page may show the player (IST, explicit +05:30 offset,
-# open inclusive, close exclusive) and the YouTube video id of the scheduled
-# stream (the 11 characters after /live/ in its link).
+# Per event: OPEN_AT is when the pages open (IST, explicit +05:30 offset; the
+# hand-shared /wedding and /reception never close). ENABLED (1 or true) shows
+# the event on /live, until CLOSE_AT. VIDEO_ID is the 11 characters after
+# /live/ in the stream link.
+LIVE_WEDDING_ENABLED=1
 LIVE_WEDDING_OPEN_AT=2026-11-22T05:45:00+05:30
-LIVE_WEDDING_CLOSE_AT=2026-11-27T23:59:59+05:30
+LIVE_WEDDING_CLOSE_AT=2026-11-22T23:59:59+05:30
 LIVE_WEDDING_VIDEO_ID=cg4Jc0WOclU
+LIVE_RECEPTION_ENABLED=1
 LIVE_RECEPTION_OPEN_AT=2026-11-28T17:30:00+05:30
-LIVE_RECEPTION_CLOSE_AT=2026-11-29T23:59:59+05:30
+LIVE_RECEPTION_CLOSE_AT=2026-11-28T23:59:59+05:30
 LIVE_RECEPTION_VIDEO_ID=HzD1mpUKIww
 # Optional fallback: set to 1 to show the player inside the window even if
 # YouTube cannot be checked. LIVE_RECEPTION_FORCE works the same way.

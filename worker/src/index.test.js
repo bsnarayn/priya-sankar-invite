@@ -264,20 +264,26 @@ test("an HTML page from Immich on upload becomes a clean 502 JSON", async () => 
 });
 
 // -- Live stream pages ----------------------------------------------------
-// /api/live/<wedding|reception>: gated by a time window, and the YouTube video
-// id is only ever in a response while the page may show the player.
+// Three routes, one video each for the wedding and the reception:
+//   /api/live/wedding and /api/live/reception (the hand-shared pages): open from
+//     their opening time and never close; they show the stream, then the replay.
+//   /api/live/current (the /live page): shows the event whose flag is on, from
+//     its opening time until its live-close time, then moves on to the next.
+// The YouTube video id is only ever in a response when the player may be shown.
 const W_ID = "cg4Jc0WOclU";
 const R_ID = "HzD1mpUKIww";
 const W_OPEN = "2026-11-22T05:45:00+05:30";
-const W_CLOSE = "2026-11-27T23:59:00+05:30";
+const W_CLOSE = "2026-11-22T23:59:59+05:30"; // when /live stops showing the wedding
 const R_OPEN = "2026-11-28T17:30:00+05:30";
-const R_CLOSE = "2026-11-29T23:59:00+05:30";
+const R_CLOSE = "2026-11-28T23:59:59+05:30"; // when /live stops showing the reception
 const LIVE_ENV = {
   ...ENV,
   YOUTUBE_API_KEY: "yt-key-1",
+  LIVE_WEDDING_ENABLED: "1",
   LIVE_WEDDING_OPEN_AT: W_OPEN,
   LIVE_WEDDING_CLOSE_AT: W_CLOSE,
   LIVE_WEDDING_VIDEO_ID: W_ID,
+  LIVE_RECEPTION_ENABLED: "1",
   LIVE_RECEPTION_OPEN_AT: R_OPEN,
   LIVE_RECEPTION_CLOSE_AT: R_CLOSE,
   LIVE_RECEPTION_VIDEO_ID: R_ID,
@@ -287,36 +293,106 @@ const ytItem = (liveBroadcastContent, liveStreamingDetails = {}) =>
   jsonResponse({ items: [{ snippet: { liveBroadcastContent }, liveStreamingDetails }] });
 const liveCall = (name, opts = {}) => call(`/api/live/${name}`, { env: LIVE_ENV, now: W_INSIDE, ...opts });
 const ytCalls = () => upstreamCalls.filter((c) => c.url.startsWith("https://www.googleapis.com/youtube/"));
+const without = (env, ...keys) => {
+  const copy = { ...env };
+  for (const k of keys) delete copy[k];
+  return copy;
+};
 
-const liveCases = [
-  ["wedding, before the window", "wedding", at(W_OPEN) - 1, null, { state: "before", opensAt: W_OPEN, closesAt: W_CLOSE }, false],
-  ["wedding, exactly at open, not started yet", "wedding", at(W_OPEN), () => ytItem("upcoming"), { state: "waiting" }, false],
-  ["wedding, streaming now", "wedding", W_INSIDE, () => ytItem("live", { actualStartTime: "x" }), { state: "live", videoId: W_ID }, true],
-  ["wedding, stream ended (replay)", "wedding", W_INSIDE, () => ytItem("none", { actualEndTime: "x" }), { state: "replay", videoId: W_ID }, true],
-  ["wedding, YouTube does not know the video (private/deleted)", "wedding", W_INSIDE, () => jsonResponse({ items: [] }), { state: "waiting" }, false],
-  ["wedding, YouTube errors", "wedding", W_INSIDE, () => jsonResponse({ error: {} }, 500), { state: "waiting" }, false],
-  ["wedding, one ms before close", "wedding", at(W_CLOSE) - 1, () => ytItem("none", { actualEndTime: "x" }), { state: "replay", videoId: W_ID }, true],
-  ["wedding, exactly at close", "wedding", at(W_CLOSE), null, { state: "closed" }, false],
-  ["reception, wedding window is not its window", "reception", W_INSIDE, null, { state: "before", opensAt: R_OPEN }, false],
-  ["reception, live", "reception", at("2026-11-28T18:00:00+05:30"), () => ytItem("live"), { state: "live", videoId: R_ID }, true],
-  ["reception, after close", "reception", at(R_CLOSE), null, { state: "closed" }, false],
+// rows: [name, route, now, YouTube answer or null (not asked), expected fields, id that may appear]
+const rows = [
+  // the hand-shared pages: no closing gate
+  ["wedding page, before it opens", "wedding", at(W_OPEN) - 1, null, { state: "before", opensAt: W_OPEN }, null],
+  ["wedding page, exactly at open, not started", "wedding", at(W_OPEN), () => ytItem("upcoming"), { state: "waiting" }, null],
+  ["wedding page, streaming now", "wedding", W_INSIDE, () => ytItem("live"), { state: "live", videoId: W_ID }, W_ID],
+  ["wedding page, stream ended (replay)", "wedding", W_INSIDE, () => ytItem("none", { actualEndTime: "x" }), { state: "replay", videoId: W_ID }, W_ID],
+  ["wedding page, a month after the live closed: still open", "wedding", at("2026-12-25T10:00:00+05:30"), () => ytItem("none"), { state: "replay", videoId: W_ID }, W_ID],
+  ["wedding page, YouTube does not know the video", "wedding", W_INSIDE, () => jsonResponse({ items: [] }), { state: "waiting" }, null],
+  ["wedding page, YouTube errors", "wedding", W_INSIDE, () => jsonResponse({ error: {} }, 500), { state: "waiting" }, null],
+  ["reception page, the wedding's time is not its time", "reception", W_INSIDE, null, { state: "before", opensAt: R_OPEN }, null],
+  ["reception page, live", "reception", at("2026-11-28T18:00:00+05:30"), () => ytItem("live"), { state: "live", videoId: R_ID }, R_ID],
+  ["reception page, long after: still open", "reception", at("2027-03-01T10:00:00+05:30"), () => ytItem("none"), { state: "replay", videoId: R_ID }, R_ID],
+  // the /live page
+  ["/live, before the wedding", "current", at(W_OPEN) - 1, null, { state: "before", event: "wedding", opensAt: W_OPEN }, null],
+  ["/live, wedding not started", "current", at(W_OPEN), () => ytItem("upcoming"), { state: "waiting", event: "wedding" }, null],
+  ["/live, wedding streaming", "current", W_INSIDE, () => ytItem("live"), { state: "live", event: "wedding", videoId: W_ID }, W_ID],
+  ["/live, wedding replay until its live-close time", "current", at(W_CLOSE) - 1, () => ytItem("none"), { state: "replay", event: "wedding", videoId: W_ID }, W_ID],
+  ["/live, exactly at the wedding's live-close: counts down to the reception", "current", at(W_CLOSE), null, { state: "before", event: "reception", opensAt: R_OPEN }, null],
+  ["/live, between the events", "current", at("2026-11-25T12:00:00+05:30"), null, { state: "before", event: "reception", opensAt: R_OPEN }, null],
+  ["/live, reception streaming", "current", at("2026-11-28T18:00:00+05:30"), () => ytItem("live"), { state: "live", event: "reception", videoId: R_ID }, R_ID],
+  ["/live, one ms before the reception's live-close", "current", at(R_CLOSE) - 1, () => ytItem("none"), { state: "replay", event: "reception", videoId: R_ID }, R_ID],
+  ["/live, exactly at the reception's live-close", "current", at(R_CLOSE), null, { state: "closed" }, null],
+  ["/live, a week later", "current", at("2026-12-05T12:00:00+05:30"), null, { state: "closed" }, null],
 ];
-for (const [name, route, now, yt, expected, revealsId] of liveCases) {
+for (const [name, route, now, yt, expected, mayShow] of rows) {
   test(`live: ${name}`, async () => {
     if (yt) upstreamImpl = async () => yt();
     const res = await liveCall(route, { now });
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("Cache-Control"), "no-store");
     const text = await res.text();
-    assert.deepEqual(Object.fromEntries(Object.entries(JSON.parse(text)).filter(([k]) => k in expected)), expected);
-    // The id of a video never appears unless the player may be shown.
+    const got = JSON.parse(text);
+    assert.deepEqual(Object.fromEntries(Object.entries(got).filter(([k]) => k in expected)), expected);
     for (const id of [W_ID, R_ID]) {
-      assert.equal(text.includes(id), revealsId && id === expected.videoId, `${id} in body of ${name}`);
+      assert.equal(text.includes(id), id === mayShow, `${id} in body of ${name}`);
     }
-    if (!yt) assert.equal(ytCalls().length, 0, "YouTube is not asked outside the window");
+    if (!yt) assert.equal(ytCalls().length, 0, "YouTube is not asked when no player may show");
   });
 }
 
+// -- The flags ---------------------------------------------------------------
+test("/live: wedding flag off -> the wedding is skipped and its id never appears", async () => {
+  const env = { ...LIVE_ENV, LIVE_WEDDING_ENABLED: "0" };
+  upstreamImpl = async () => ytItem("live");
+  const res = await liveCall("current", { env, now: W_INSIDE });
+  const text = await res.text();
+  const got = JSON.parse(text);
+  assert.deepEqual({ state: got.state, event: got.event, opensAt: got.opensAt }, { state: "before", event: "reception", opensAt: R_OPEN });
+  assert.equal(text.includes(W_ID), false);
+  assert.equal(ytCalls().length, 0);
+});
+
+test("/live: reception flag off -> closed once the wedding's live has closed", async () => {
+  const env = { ...LIVE_ENV, LIVE_RECEPTION_ENABLED: "0" };
+  const res = await liveCall("current", { env, now: at(W_CLOSE) });
+  assert.equal((await res.json()).state, "closed");
+});
+
+test("/live: both flags off -> closed, nothing asked of YouTube", async () => {
+  const env = { ...LIVE_ENV, LIVE_WEDDING_ENABLED: "0", LIVE_RECEPTION_ENABLED: "0" };
+  const res = await liveCall("current", { env });
+  const text = await res.text();
+  assert.equal(JSON.parse(text).state, "closed");
+  assert.equal(text.includes(W_ID) || text.includes(R_ID), false);
+  assert.equal(ytCalls().length, 0);
+});
+
+const flagValues = [
+  ["1", true], ["true", true], ["TRUE", true], [" True ", true],
+  ["0", false], ["false", false], ["FALSE", false], ["", false], ["yes", false], ["on", false], ["2", false],
+];
+for (const [value, enabled] of flagValues) {
+  test(`/live: flag ${JSON.stringify(value)} is ${enabled ? "on" : "off"}`, async () => {
+    upstreamImpl = async () => ytItem("live");
+    const env = { ...LIVE_ENV, LIVE_WEDDING_ENABLED: value };
+    const got = await (await liveCall("current", { env, now: W_INSIDE })).json();
+    assert.equal(got.event, enabled ? "wedding" : "reception");
+  });
+}
+
+test("/live: a missing flag is off", async () => {
+  const env = without(LIVE_ENV, "LIVE_WEDDING_ENABLED");
+  assert.equal((await (await liveCall("current", { env, now: W_INSIDE })).json()).event, "reception");
+});
+
+test("the hand-shared pages ignore the flags", async () => {
+  upstreamImpl = async () => ytItem("live");
+  const env = { ...LIVE_ENV, LIVE_WEDDING_ENABLED: "0", LIVE_RECEPTION_ENABLED: "0" };
+  assert.equal((await (await liveCall("wedding", { env })).json()).videoId, W_ID);
+  assert.equal((await (await liveCall("reception", { env, now: at("2026-11-28T18:00:00+05:30") })).json()).videoId, R_ID);
+});
+
+// -- YouTube, caching and the fallback ---------------------------------------
 test("live: asks YouTube about the right video with the key, for unlisted videos too", async () => {
   upstreamImpl = async () => ytItem("live");
   await liveCall("wedding");
@@ -324,6 +400,12 @@ test("live: asks YouTube about the right video with the key, for unlisted videos
   assert.equal(u.pathname, "/youtube/v3/videos");
   assert.equal(u.searchParams.get("id"), W_ID);
   assert.equal(u.searchParams.get("key"), "yt-key-1");
+});
+
+test("/live: asks YouTube about the video of the event it is showing", async () => {
+  upstreamImpl = async () => ytItem("live");
+  await liveCall("current", { now: at("2026-11-28T18:00:00+05:30") });
+  assert.equal(new URL(ytCalls()[0].url).searchParams.get("id"), R_ID);
 });
 
 test("live: the YouTube answer is cached for a few seconds, an error is not", async () => {
@@ -336,60 +418,91 @@ test("live: the YouTube answer is cached for a few seconds, an error is not", as
   assert.equal(cachePutCalls, 0);
 });
 
-test("live: LIVE_<NAME>_FORCE=1 shows the player when YouTube cannot be checked", async () => {
+test("live: LIVE_<NAME>_FORCE=1 shows the player when YouTube cannot be checked (both routes)", async () => {
   upstreamImpl = async () => jsonResponse({ error: {} }, 500);
-  const res = await liveCall("wedding", { env: { ...LIVE_ENV, LIVE_WEDDING_FORCE: "1" } });
-  assert.equal((await res.json()).state, "live");
+  const env = { ...LIVE_ENV, LIVE_WEDDING_FORCE: "1" };
+  assert.equal((await (await liveCall("wedding", { env })).json()).state, "live");
+  assert.equal((await (await liveCall("current", { env })).json()).state, "live");
 });
 
-test("live: FORCE does not open the page outside its window", async () => {
-  const res = await liveCall("wedding", { env: { ...LIVE_ENV, LIVE_WEDDING_FORCE: "1" }, now: at(W_CLOSE) });
-  const text = await res.text();
-  assert.equal(JSON.parse(text).state, "closed");
-  assert.equal(text.includes(W_ID), false);
+test("live: FORCE does not open a page before its opening time", async () => {
+  const env = { ...LIVE_ENV, LIVE_WEDDING_FORCE: "1" };
+  for (const route of ["wedding", "current"]) {
+    const text = await (await liveCall(route, { env, now: at(W_OPEN) - 1 })).text();
+    assert.equal(JSON.parse(text).state, "before");
+    assert.equal(text.includes(W_ID), false);
+  }
 });
 
+test("live: FORCE does not extend /live past the live-close time", async () => {
+  const env = { ...LIVE_ENV, LIVE_WEDDING_FORCE: "1", LIVE_RECEPTION_ENABLED: "0" };
+  const res = await liveCall("current", { env, now: at(W_CLOSE) });
+  assert.equal((await res.json()).state, "closed");
+});
+
+// -- Configuration -------------------------------------------------------------
 test("live: no video id configured yet -> waiting", async () => {
-  const env = { ...LIVE_ENV };
-  delete env.LIVE_WEDDING_VIDEO_ID;
-  const res = await liveCall("wedding", { env });
-  assert.equal((await res.json()).state, "waiting");
+  const env = without(LIVE_ENV, "LIVE_WEDDING_VIDEO_ID");
+  for (const route of ["wedding", "current"]) {
+    const res = await liveCall(route, { env });
+    assert.equal((await res.json()).state, "waiting");
+  }
   assert.equal(ytCalls().length, 0);
 });
 
 test("live: a malformed video id is treated as not configured", async () => {
-  const res = await liveCall("wedding", { env: { ...LIVE_ENV, LIVE_WEDDING_VIDEO_ID: "x&key=evil" } });
-  assert.equal((await res.json()).state, "waiting");
+  const env = { ...LIVE_ENV, LIVE_WEDDING_VIDEO_ID: "x&key=evil" };
+  assert.equal((await (await liveCall("wedding", { env })).json()).state, "waiting");
   assert.equal(ytCalls().length, 0);
 });
 
-test("live: a date without an offset -> 500", async () => {
-  const res = await liveCall("wedding", { env: { ...LIVE_ENV, LIVE_WEDDING_OPEN_AT: "2026-11-22T05:45:00" } });
-  assert.equal(res.status, 500);
-});
-
-test("live: close before open -> 500", async () => {
-  const res = await liveCall("wedding", { env: { ...LIVE_ENV, LIVE_WEDDING_CLOSE_AT: W_OPEN } });
-  assert.equal(res.status, 500);
-});
-
-test("live: no YouTube key -> 500 inside the window, still fine before it", async () => {
-  const env = { ...LIVE_ENV };
-  delete env.YOUTUBE_API_KEY;
+test("live: an opening time without an offset -> 500 on the page and on /live", async () => {
+  const env = { ...LIVE_ENV, LIVE_WEDDING_OPEN_AT: "2026-11-22T05:45:00" };
   assert.equal((await liveCall("wedding", { env })).status, 500);
-  assert.equal((await liveCall("wedding", { env, now: at(W_OPEN) - 1 })).status, 200);
+  assert.equal((await liveCall("current", { env })).status, 500);
 });
 
+test("/live: an enabled event with a bad live-close time -> 500", async () => {
+  for (const bad of ["2026-11-22T23:59:59", W_OPEN, undefined]) {
+    const env = bad === undefined ? without(LIVE_ENV, "LIVE_WEDDING_CLOSE_AT") : { ...LIVE_ENV, LIVE_WEDDING_CLOSE_AT: bad };
+    assert.equal((await liveCall("current", { env })).status, 500, String(bad));
+  }
+});
+
+test("/live: a disabled event needs no configuration", async () => {
+  const env = without({ ...LIVE_ENV, LIVE_WEDDING_ENABLED: "0" }, "LIVE_WEDDING_OPEN_AT", "LIVE_WEDDING_CLOSE_AT", "LIVE_WEDDING_VIDEO_ID");
+  assert.equal((await liveCall("current", { env })).status, 200);
+});
+
+test("the hand-shared pages need no closing time", async () => {
+  const env = without(LIVE_ENV, "LIVE_WEDDING_CLOSE_AT");
+  upstreamImpl = async () => ytItem("live");
+  assert.equal((await (await liveCall("wedding", { env })).json()).state, "live");
+});
+
+test("live: no YouTube key -> 500 inside a window, still fine before it", async () => {
+  const env = without(LIVE_ENV, "YOUTUBE_API_KEY");
+  for (const route of ["wedding", "current"]) {
+    assert.equal((await liveCall(route, { env })).status, 500, route);
+    assert.equal((await liveCall(route, { env, now: at(W_OPEN) - 1 })).status, 200, route);
+  }
+});
+
+// -- Access ----------------------------------------------------------------------
 test("live: an unknown page name -> 404", async () => {
   assert.equal((await liveCall("nope")).status, 404);
 });
 
 test("live: a foreign Referer -> 403 and nothing is asked of YouTube", async () => {
-  const res = await liveCall("wedding", { referer: "https://evil.example/" });
-  assert.equal(res.status, 403);
+  for (const route of ["wedding", "current"]) {
+    const res = await liveCall(route, { referer: "https://evil.example/" });
+    assert.equal(res.status, 403, route);
+  }
   assert.equal(ytCalls().length, 0);
 });
 
 test("live: only GET", async () => {
-  assert.equal((await liveCall("wedding", { method: "POST" })).status, 405);
+  for (const route of ["wedding", "current"]) {
+    assert.equal((await liveCall(route, { method: "POST" })).status, 405, route);
+  }
 });
