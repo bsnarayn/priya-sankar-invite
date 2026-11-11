@@ -34,16 +34,16 @@ starts with a sweet by tradition. Descriptions are written from the dish names
 | Starters | Gobi 65 | Crisp-fried cauliflower florets tossed in a spiced, tangy South Indian masala. |
 | Starters | Bhindi Fry | Tender okra pan-fried with spices until golden and crisp. |
 | Starters | Rasa Vadai | Soft lentil fritters soaked in peppery, tangy rasam. |
-| Mains | Phulka | Soft, puffed whole-wheat flatbread, served hot. Served with: Navaratan Korma. |
-| Mains | Idiyappam | Delicate steamed rice noodles, Served with: Coconut Milk. |
-| Mains | Brinji Rice | Fragrant spiced vegetable rice in the Madras style. Served with: Potato Chips, Navaratan Korma, Cucumber Raita. |
+| Mains | Phulka | Soft, puffed whole-wheat flatbread, served hot. Served with: Navarathna Kurma. |
+| Mains | Idiyappam | Delicate steamed rice noodles, served with your choice of side. Shown as a "Choice of" list: Coconut Milk, Navarathna Kurma. |
+| Mains | Brinji Rice | Fragrant spiced vegetable rice in the Madras style. Served with: Potato Chips, Navarathna Kurma, Cucumber Raita. |
 | Mains | Curd Rice | Cool, creamy curd rice, a comforting South Indian classic. Served with: Pickle. |
 | Desserts | Vanilla Ice Cream | Classic, creamy vanilla ice cream. |
 | Desserts | Chocolate Ice Cream | Rich, smooth chocolate ice cream. |
 | Desserts | Sweet Beeda | A traditional betel-leaf after-dinner treat with sweet, aromatic fillings. |
 
 11 cards in 4 categories (Sweet 1, Starters 3, Mains 4, Desserts 3). Ice cream
-is two cards by decision. Category titles and cards are centred (1, 3, 4, 3 on a wide screen). Navaratan Korma and Cucumber Raita are no longer cards: they are "Served with" sides.
+is two cards by decision. Category titles and cards are centred (1, 3, 4, 3 on a wide screen). Navarathna Kurma and Cucumber Raita are no longer cards: they are "Served with" sides.
 Mains stays a single section, shown as one row of four (`columns: 4` in
 menu.json). Cards keep the same size as in other categories: from 1040px wide the row
 is widened past the page margins to fit all four (no scrolling); below that the
@@ -53,7 +53,7 @@ deliberately not on the page; add it back if guests need it for allergies.
 
 ### 3. Image display - IN PREVIEW
 Photos were not available, so freely licensed ones were sourced: Wikimedia Commons
-for 12 dishes (CC BY-SA, credited on the page; Navaratan Korma is public domain)
+for 12 dishes (CC BY-SA, credited on the page; Navarathna Kurma is public domain)
 and Pexels for Chocolate Ice Cream (no credit required). Brinji uses a Commons
 vegetable biryani photo as a stand-in, since brinji is a Madras dish similar to veg
 biryani and no photo of brinji itself exists. A "Photo coming soon" tile renders for

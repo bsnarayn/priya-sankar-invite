@@ -68,30 +68,30 @@
                     "source": "https://commons.wikimedia.org/wiki/File:Roti_-_Perfect_Gujarati_Fulka_Roti.JPG"
                 },
                 "sides": [
-                    "Navaratan Korma"
+                    "Navarathna Kurma"
                 ],
                 "sides_label": "Served with"
             },
             {
                 "name": "Idiyappam",
-                "description": "Delicate steamed rice noodles.",
+                "description": "Delicate steamed rice noodles, served with your choice of side.",
                 "sides": [
-                    "Coconut Milk"
+                    "Coconut Milk",
+                    "Navarathna Kurma"
                 ],
                 "photo": "idiyappam.jpg",
                 "credit": {
                     "author": "Charles Haynes",
                     "license": "CC BY-SA 2.0",
                     "source": "https://commons.wikimedia.org/wiki/File:Idiyappam_and_curry_in_Green_leaf_plate.jpg"
-                },
-                "sides_label": "Served with"
+                }
             },
             {
                 "name": "Brinji Rice",
                 "description": "Fragrant spiced vegetable rice in the Madras style.",
                 "sides": [
                     "Potato Chips",
-                    "Navaratan Korma",
+                    "Navarathna Kurma",
                     "Cucumber Raita"
                 ],
                 "sides_label": "Served with",
