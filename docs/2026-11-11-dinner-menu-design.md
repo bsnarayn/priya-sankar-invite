@@ -34,21 +34,20 @@ starts with a sweet by tradition. Descriptions are written from the dish names
 | Starters | Gobi 65 | Crisp-fried cauliflower florets tossed in a spiced, tangy South Indian masala. |
 | Starters | Bhindi Fry | Tender okra pan-fried with spices until golden and crisp. |
 | Starters | Rasa Vadai | Soft lentil fritters soaked in peppery, tangy rasam. |
-| Mains | Phulka | Soft, puffed whole-wheat flatbread, served hot. |
-| Mains | Navaratan Korma | A rich, creamy curry of mixed vegetables and nuts in a mild, fragrant gravy. |
-| Mains | Idiyappam | Delicate steamed rice noodles, served with your choice of side. Sides shown as a "Choice of" list: Kadalai Curry, Coconut Milk. |
-| Mains | Brinji Rice | Fragrant spiced vegetable rice in the Madras style. Side shown under a "Served with" label: Potato Chips. |
-| Mains | Cucumber Raita | Cool, lightly spiced yogurt with fresh cucumber. |
-| Mains | Curd Rice | Cool, creamy curd rice, a comforting South Indian classic. |
+| Mains | Phulka | Soft, puffed whole-wheat flatbread, served hot. Served with: Navaratan Korma. |
+| Mains | Idiyappam | Delicate steamed rice noodles, Served with: Coconut Milk. |
+| Mains | Brinji Rice | Fragrant spiced vegetable rice in the Madras style. Served with: Potato Chips, Navaratan Korma, Cucumber Raita. |
+| Mains | Curd Rice | Cool, creamy curd rice, a comforting South Indian classic. Served with: Pickle. |
 | Desserts | Vanilla Ice Cream | Classic, creamy vanilla ice cream. |
 | Desserts | Chocolate Ice Cream | Rich, smooth chocolate ice cream. |
 | Desserts | Sweet Beeda | A traditional betel-leaf after-dinner treat with sweet, aromatic fillings. |
 
-13 cards in 4 categories (Sweet 1, Starters 3, Mains 6, Desserts 3). Ice cream
-is two cards by decision. Navaratan Korma was added after the first list.
-Mains stays a single section (no breads/rice/gravies split), in serving order:
-Phulka, Navaratan Korma, Idiyappam (kadalai curry or coconut milk), Brinji,
-Cucumber Raita, Curd Rice. Note: the couple's original description of the
+11 cards in 4 categories (Sweet 1, Starters 3, Mains 4, Desserts 3). Ice cream
+is two cards by decision. Category titles and cards are centred (1, 3, 4, 3 on a wide screen). Navaratan Korma and Cucumber Raita are no longer cards: they are "Served with" sides.
+Mains stays a single section, shown as one row of four (`columns: 4` in
+menu.json). Cards keep the same size as in other categories: from 1040px wide the row
+is widened past the page margins to fit all four (no scrolling); below that the
+cards wrap two per row, since four full-size cards cannot fit a phone. Order: Phulka, Idiyappam, Brinji, Curd Rice. Note: the couple's original description of the
 Special Curd Rice (grapes, raisins, pomegranate, pickle, mor milagai) is
 deliberately not on the page; add it back if guests need it for allergies.
 

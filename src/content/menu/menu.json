@@ -66,49 +66,40 @@
                     "author": "Zeel Patel",
                     "license": "CC BY-SA 4.0",
                     "source": "https://commons.wikimedia.org/wiki/File:Roti_-_Perfect_Gujarati_Fulka_Roti.JPG"
-                }
-            },
-            {
-                "name": "Navaratan Korma",
-                "description": "A rich, creamy curry of mixed vegetables and nuts in a mild, fragrant gravy.",
-                "photo": "navaratan-korma.jpg",
-                "credit": {
-                    "author": "Kaivalya89",
-                    "license": "CC BY-SA 4.0",
-                    "source": "https://commons.wikimedia.org/wiki/File:Veg_Jafrani_Navratna_Korma.jpg"
-                }
+                },
+                "sides": [
+                    "Navaratan Korma"
+                ],
+                "sides_label": "Served with"
             },
             {
                 "name": "Idiyappam",
-                "description": "Delicate steamed rice noodles, served with your choice of side.",
-                "sides": ["Kadalai Curry", "Coconut Milk"],
+                "description": "Delicate steamed rice noodles.",
+                "sides": [
+                    "Coconut Milk"
+                ],
                 "photo": "idiyappam.jpg",
                 "credit": {
                     "author": "Charles Haynes",
                     "license": "CC BY-SA 2.0",
                     "source": "https://commons.wikimedia.org/wiki/File:Idiyappam_and_curry_in_Green_leaf_plate.jpg"
-                }
+                },
+                "sides_label": "Served with"
             },
             {
                 "name": "Brinji Rice",
                 "description": "Fragrant spiced vegetable rice in the Madras style.",
-                "sides": ["Potato Chips"],
+                "sides": [
+                    "Potato Chips",
+                    "Navaratan Korma",
+                    "Cucumber Raita"
+                ],
                 "sides_label": "Served with",
                 "photo": "brinji.jpg",
                 "credit": {
                     "author": "Phadke09",
                     "license": "CC BY-SA 4.0",
                     "source": "https://commons.wikimedia.org/wiki/File:Vegetable_Biryani_IMG_001.jpg"
-                }
-            },
-            {
-                "name": "Cucumber Raita",
-                "description": "Cool, lightly spiced yogurt with fresh cucumber.",
-                "photo": "cucumber-raita.jpg",
-                "credit": {
-                    "author": "Zeel Patel",
-                    "license": "CC BY-SA 4.0",
-                    "source": "https://commons.wikimedia.org/wiki/File:Cucumber_Raita.JPG"
                 }
             },
             {
@@ -119,9 +110,14 @@
                     "author": "Chinchu.C",
                     "license": "CC BY-SA 4.0",
                     "source": "https://commons.wikimedia.org/wiki/File:Curd_Rice_ThayirSaadam.JPG"
-                }
+                },
+                "sides": [
+                    "Pickle"
+                ],
+                "sides_label": "Served with"
             }
-        ]
+        ],
+        "columns": 4
     },
     {
         "id": "desserts",

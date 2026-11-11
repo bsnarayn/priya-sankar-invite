@@ -53,6 +53,9 @@ const menu = defineCollection({
         // Display order of the category on the page. The file() loader does
         // not guarantee array order out of getCollection, so sort on this.
         order: z.number(),
+        // Show the category as one wide row on large screens (wider than the page
+        // margins, same card size as elsewhere); wraps two per row on small ones.
+        columns: z.number().int().min(1).max(6).optional(),
         items: z.array(
             z.object({
                 name: z.string(),
