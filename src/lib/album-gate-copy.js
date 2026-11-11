@@ -28,14 +28,19 @@ function time(iso) {
  *   receptionCloseAt: string, permanentAfter: string}} status
  */
 export function gateCopy(status) {
-    const permanent = day(status.permanentAfter).label;
+    // No permanent-opening date on purpose: guests are only told to subscribe
+    // and that they will be notified.
+    const subscribe =
+        `The final album will be available to view once you subscribe below, ` +
+        `and we'll notify you as soon as it's ready.`;
     if (status.reason === "between") {
-        return `The album is closed for now. It opens again for good on ${permanent}.`;
+        return `The reception album is closed for now. ${subscribe}`;
     }
     const open = day(status.receptionOpenAt);
     return (
-        `The album opens during the reception on ${open.weekday} ${open.label}, ` +
-        `${time(status.receptionOpenAt)} to ${time(status.receptionCloseAt)}, ` +
-        `and again for good from ${permanent}.`
+        `Our shared album will be open during the reception on ${open.weekday} ${open.label} ` +
+        `(${time(status.receptionOpenAt)} to ${time(status.receptionCloseAt)}), ` +
+        `so you will be able to view the event pictures that you and other guests ` +
+        `upload during the event itself. ${subscribe}`
     );
 }

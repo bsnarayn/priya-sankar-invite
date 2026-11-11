@@ -8,26 +8,33 @@ const times = {
   permanentAfter: "2026-12-09T00:00:00+05:30",
 };
 
-test("before the reception: announces the window and the permanent date", () => {
+test("before the reception: the live album, the final album, and how to subscribe", () => {
   assert.equal(
     gateCopy({ reason: "before", ...times }),
-    "The album opens during the reception on Sat 28 Nov, 6 pm to 11 pm, and again for good from 9 Dec.",
+    "Our shared album will be open during the reception on Sat 28 Nov (6 pm to 11 pm), so you will be able to view the event pictures that you and other guests upload during the event itself. The final album will be available to view once you subscribe below, and we'll notify you as soon as it's ready.",
   );
 });
 
-test("between the window and the permanent date: closed for now", () => {
+test("between the window and the permanent date: closed for now, subscribe for the final album", () => {
   assert.equal(
     gateCopy({ reason: "between", ...times }),
-    "The album is closed for now. It opens again for good on 9 Dec.",
+    "The reception album is closed for now. The final album will be available to view once you subscribe below, and we'll notify you as soon as it's ready.",
   );
+});
+
+test("never mentions the permanent opening date", () => {
+  for (const reason of ["before", "between"]) {
+    const text = gateCopy({ reason, ...times });
+    assert.ok(!/9 Dec|December|2026-12/i.test(text), `${reason}: ${text}`);
+  }
 });
 
 test("dates are shown in IST even when the machine is in another timezone", () => {
   const previous = process.env.TZ;
   process.env.TZ = "America/Los_Angeles";
   try {
-    assert.match(gateCopy({ reason: "before", ...times }), /Sat 28 Nov, 6 pm to 11 pm/);
-    assert.match(gateCopy({ reason: "between", ...times }), /9 Dec\.$/);
+    assert.match(gateCopy({ reason: "before", ...times }), /on Sat 28 Nov \(6 pm to 11 pm\)/);
+    assert.match(gateCopy({ reason: "between", ...times }), /ready\.$/);
   } finally {
     if (previous === undefined) delete process.env.TZ;
     else process.env.TZ = previous;
