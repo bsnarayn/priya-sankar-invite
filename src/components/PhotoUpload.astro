@@ -4,18 +4,12 @@ import QR from "./QR.astro";
 interface Props {
     site: {
         photo_qr_url?: string;
-        immich_base_url?: string;
-        immich_share_slug?: string;
     };
 }
 const { site } = Astro.props;
 ---
 
-<section
-    id="photos"
-    data-immich-base={site.immich_base_url ?? ""}
-    data-immich-slug={site.immich_share_slug ?? ""}
->
+<section id="photos">
     <div class="inner">
         <h2 class="sec-heading">Share your</h2>
         <span class="sec-script">moments</span>
@@ -80,11 +74,6 @@ const { site } = Astro.props;
 <script>
     import { uploadFiles } from "@lib/immich-upload";
 
-    const section = document.getElementById("photos") as HTMLElement | null;
-    const immichBase =
-        section?.dataset.immichBase?.trim().replace(/\/$/, "") ?? "";
-    const immichSlug = section?.dataset.immichSlug?.trim() ?? "";
-
     const uploadBtn = document.getElementById("upload-btn");
     const fileInput = document.getElementById(
         "file-input",
@@ -116,12 +105,8 @@ const { site } = Astro.props;
         const valid = Array.from(files);
 
         if (!valid.length) return;
-        if (!immichBase || !immichSlug) {
-            showStatus("Upload isn't set up yet — please scan the QR code.");
-            return;
-        }
 
-        const config = { base: immichBase, slug: immichSlug, deviceId: "WEB" };
+        const config = { deviceId: "WEB" };
 
         const uploaded = await uploadFiles(valid, config, (done, total) => {
             showStatus(`Uploading ${done} of ${total}…`);

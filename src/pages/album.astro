@@ -9,8 +9,6 @@ const siteEntry = await getEntry("site", "site");
 if (!siteEntry) throw new Error("Missing site content entry");
 const site = siteEntry.data;
 
-// "2025-12-31T23:00:00" — local IST datetime string, no timezone suffix
-const albumAvailableAfter = site.album_available_after ?? "";
 const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
 ---
 
@@ -23,8 +21,11 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
             <AlbumHeading />
 
             <p class="sec-sub" style="margin: 24px 0 36px;">
-                The album will be available after the celebration. Leave your
-                details and we'll notify you as soon as it's live.
+                <span id="gate-copy"
+                    >The album opens during the reception and again after the
+                    celebration.</span
+                >
+                Leave your details and we'll notify you once it's open for good.
             </p>
 
             <div class="gate-form" id="gate-form">
@@ -312,27 +313,54 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
     }
 </style>
 
-<!-- Step 1: time gate check — runs immediately, no module boundary -->
-<script define:vars={{ albumAvailableAfter, notifyWebhookUrl }}>
-    function isAlbumLive() {
-        if (!albumAvailableAfter) return true; // no gate configured → always open
-        // Parse the IST datetime string as UTC+5:30
-        // Format expected: "YYYY-MM-DDTHH:MM:SS"
-        const [datePart, timePart] = albumAvailableAfter.split("T");
-        const [y, mo, d] = datePart.split("-").map(Number);
-        const [h, mi, s] = (timePart ?? "00:00:00").split(":").map(Number);
-        // IST = UTC+5:30, so subtract 5h30m to get UTC ms
-        const istOffsetMs = (5 * 60 + 30) * 60 * 1000;
-        const availableUtcMs =
-            Date.UTC(y, mo - 1, d, h, mi, s ?? 0) - istOffsetMs;
-        return Date.now() >= availableUtcMs;
+<!-- Step 1: open/closed comes from the Worker, which holds the clock and the
+     window times. Fires "album:open" when the album may be shown, and listens
+     for "album:closed" if the window ends while the page is open. -->
+<script>
+    import { gateCopy } from "../lib/album-gate-copy.js";
+
+    const gate = document.getElementById("gate")!;
+    const albumContent = document.getElementById("album-content")!;
+    const gateCopyEl = document.getElementById("gate-copy");
+
+    function openAlbum() {
+        gate.style.display = "none";
+        albumContent.style.display = "flex";
+        window.__albumOpen = true;
+        document.dispatchEvent(new CustomEvent("album:open"));
     }
 
-    if (isAlbumLive()) {
-        document.getElementById("gate").style.display = "none";
-        document.getElementById("album-content").style.display = "flex";
+    async function checkStatus() {
+        try {
+            const res = await fetch("/api/album/status");
+            if (!res.ok) throw new Error(`status ${res.status}`);
+            const status = await res.json();
+            if (status.state === "open") {
+                openAlbum();
+            } else if (gateCopyEl) {
+                gateCopyEl.textContent = gateCopy(status);
+            }
+        } catch {
+            // Never show the album when we couldn't confirm it is open.
+            if (gateCopyEl) {
+                gateCopyEl.textContent =
+                    "We couldn't check the album just now, please try again in a moment.";
+            }
+        }
     }
 
+    document.addEventListener("album:closed", () => {
+        window.__albumOpen = false;
+        albumContent.style.display = "none";
+        gate.style.display = "";
+        checkStatus();
+    });
+
+    checkStatus();
+</script>
+
+<!-- Notification form -->
+<script define:vars={{ notifyWebhookUrl }}>
     // Notification form
     const submitBtn = document.getElementById("notify-submit");
     const successEl = document.getElementById("notify-success");
@@ -425,10 +453,9 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
     });
 </script>
 
-<!-- Step 2: album loading — only runs if album is live -->
+<!-- Step 2: album loading — runs once Step 1 reports the album is open -->
 <script>
-    const gate = document.getElementById("gate");
-    if (gate?.style.display === "none") {
+    function startAlbum() {
         // Album is live — load photos
         const grid = document.getElementById(
             "album-grid",
@@ -635,6 +662,22 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
             return buckets;
         }
 
+        // A thumbnail that fails to load may mean the window just closed.
+        // Image errors don't expose the HTTP status, so ask the Worker.
+        let recheckStarted = false;
+        async function recheckIfClosed() {
+            if (recheckStarted) return;
+            recheckStarted = true;
+            try {
+                const res = await fetch("/api/album/status");
+                if ((await res.json()).state === "closed") {
+                    document.dispatchEvent(new CustomEvent("album:closed"));
+                }
+            } catch {
+                // leave the album as is; the next load will re-check
+            }
+        }
+
         async function loadAlbum() {
             if (!grid) {
                 if (status) status.textContent = "Album isn't set up yet.";
@@ -642,6 +685,11 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
             }
             try {
                 const infoRes = await fetch("/api/album/info");
+                if (infoRes.status === 403) {
+                    // Window closed while the page was open: back to the gate.
+                    document.dispatchEvent(new CustomEvent("album:closed"));
+                    return;
+                }
                 if (!infoRes.ok)
                     throw new Error(`Album lookup failed: ${infoRes.status}`);
                 const info = await infoRes.json();
@@ -669,6 +717,10 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
                         `/api/album/bucket?albumId=${encodeURIComponent(albumId)}` +
                         `&order=desc&timeBucket=${encodeURIComponent(timeBucket)}`;
                     const res = await fetch(url);
+                    if (res.status === 403) {
+                        document.dispatchEvent(new CustomEvent("album:closed"));
+                        return;
+                    }
                     if (!res.ok) continue;
                     const data = await res.json();
                     const ids: string[] = data?.id ?? [];
@@ -680,6 +732,9 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
                         img.src = thumbUrl(id, "thumbnail");
                         img.alt = "Shared photo";
                         img.loading = "lazy";
+                        img.addEventListener("error", recheckIfClosed, {
+                            once: true,
+                        });
                         img.addEventListener("click", () =>
                             openLightbox(index),
                         );
@@ -705,4 +760,7 @@ const notifyWebhookUrl = site.album_notify_webhook_url ?? "";
 
         loadAlbum();
     }
+
+    if (window.__albumOpen) startAlbum();
+    else document.addEventListener("album:open", startAlbum, { once: true });
 </script>

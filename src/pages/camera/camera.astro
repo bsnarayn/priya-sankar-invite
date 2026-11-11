@@ -5,8 +5,6 @@ import Base from "../../layouts/Base.astro";
 const [siteEntry] = await getCollection("site");
 const site = siteEntry.data;
 
-const immichBase = (site.immich_base_url ?? "").replace(/\/$/, "");
-const immichSlug = site.immich_share_slug ?? "";
 const MAX_SHOTS = site.camera_max_shots ?? 0; // 0 = unlimited
 const MAX_UPLOADS = site.camera_max_uploads ?? 0; // 0 = unlimited
 ---
@@ -111,8 +109,8 @@ const MAX_UPLOADS = site.camera_max_uploads ?? 0; // 0 = unlimited
     <input type="file" id="gallery-input" accept="image/*" multiple />
 
     <!-- Script 1: pass server-side values to window -->
-    <script define:vars={{ immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS }}>
-        window.__CAM__ = { immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS };
+    <script define:vars={{ MAX_SHOTS, MAX_UPLOADS }}>
+        window.__CAM__ = { MAX_SHOTS, MAX_UPLOADS };
     </script>
     <!-- Script 2: module script — can now import shared utilities -->
     <script>
@@ -122,8 +120,7 @@ const MAX_UPLOADS = site.camera_max_uploads ?? 0; // 0 = unlimited
             compressImage,
         } from "@lib/immich-upload";
 
-        const { immichBase, immichSlug, MAX_SHOTS, MAX_UPLOADS } =
-            window.__CAM__;
+        const { MAX_SHOTS, MAX_UPLOADS } = window.__CAM__;
 
         /* ── Persistent identity & shot/upload counts ── */
         function getOrCreateUserId() {
@@ -158,8 +155,6 @@ const MAX_UPLOADS = site.camera_max_uploads ?? 0; // 0 = unlimited
         if (uploadsCapped) uploadsUsed = Math.min(uploadsUsed, MAX_UPLOADS);
 
         const config = {
-            base: immichBase,
-            slug: immichSlug,
             deviceId: "WEB-CAM",
             userId,
         };

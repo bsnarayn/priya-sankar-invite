@@ -8,27 +8,25 @@
 
 
 export interface ImmichConfig {
-    base: string;   // e.g. "https://photos.sankaranarayan.in"
-    slug: string;   // share slug
     deviceId?: string; // defaults to "WEB"
     userId?: string;   // optional — prefixed to deviceAssetId for traceability
 }
 
 /**
- * Uploads a single File to an Immich shared album.
+ * Uploads a single File to the Immich shared album, through the invite
+ * site's own Worker (which holds the share slug, so it never reaches a
+ * browser).
  * Returns true on success (HTTP 200 or 201), false otherwise.
  */
 export async function uploadToImmich(
     file: File,
     config: ImmichConfig,
 ): Promise<boolean> {
-    if (!config.base || !config.slug) return false;
-
     const compressed = await compressImage(file);
 
     const ts = Date.now();
     const now = new Date(file.lastModified || ts).toISOString();
-    const endpoint = `${config.base}/api/assets?slug=${encodeURIComponent(config.slug)}`;
+    const endpoint = "/api/album/upload";
     const assetId = config.userId
         ? `${config.userId}-${ts}`
         : `${config.deviceId ?? "WEB"}-${file.name}-${ts}`;
